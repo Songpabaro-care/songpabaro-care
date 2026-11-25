@@ -750,6 +750,8 @@ function kcl(n,bw,k){
  const c=k<2?80:k<2.5?60:k<3?40:k<3.5?28:20,mx=.5*bw;
  return h+`• 저칼륨혈증 단계별 첨가 농도: ${c} mEq/L\n• 수액 1 L당 KCl ${c} mEq (2 mEq/mL KCl ${(c/2).toFixed(1)} mL)\n• 수액 500 mL당 KCl ${(c/2).toFixed(0)} mEq (${(c/4).toFixed(2)} mL)\n• 최대 칼륨 투여 속도: 0.5 mEq/kg/h = ${mx.toFixed(1)} mEq/h\n• 이 농도에서 수액 최대 속도: ${(mx/c*1000).toFixed(0)} mL/h 이하\n• 기존 수액(LRS 등)의 칼륨(약 4~5 mEq/L)도 총량에 포함해 계산\n• KCl은 반드시 희석해 투여, 볼루스 금지\n• 저마그네슘혈증이 있으면 교정이 안 되므로 Mg 확인\n• 신부전·요폐색·핍뇨 환자는 주의\n• 4~6시간 후 K+ 재측정`}
 
+function lvd(n,bw,d){const v=d/Math.pow(bw,.294),lim=1.7*Math.pow(bw,.294);
+ return `[LVIDDN 계산]\n• 환자: ${n} (${bw} kg)\n• LVIDd ${d} cm\n• LVIDDN = LVIDd ÷ BW^0.294 = ${v.toFixed(2)}\n• 기준 1.7: ${v>1.7?"> 1.7 (좌심실 확장, 기준 초과)":"< 1.7 (정상)"}\n• 이 체중에서 LVIDDN 1.7에 해당하는 LVIDd: ${lim.toFixed(2)} cm`}
 function txf(n,sp,bw,cur,tgt,prod){
  const h=`[수혈 계산]\n• 환자: ${n} (${bw} kg, ${sp==="cat"?"고양이":"강아지"}) · PCV ${cur}% → 목표 ${tgt}%\n`;
  if(tgt<=cur)return h+`• 목표 PCV가 현재 PCV 이하입니다. 값을 확인해 주세요.`;
@@ -762,6 +764,9 @@ function labExtra(p){const l=p.lab||{},id=p.id,cat=p.species==="cat",
  return sec("🧪 칼륨(K+) 교정",`<div class="meta">위 체중을 같이 사용합니다 · 측정 K+를 넣으면 보충량이 나옵니다</div>
  <div class="f"><label>측정 K+ (mEq/L)</label><input class="in" type="number" step="0.1" id="kk-${id}" value="${l.k||""}"></div>
  <button class="btn" style="width:100%" data-act="kcalc" data-id="${id}">칼륨 교정 계산</button>${out(l.kres,"kres")}`)+
+ sec("❤️ LVIDDN 계산",`<div class="meta">위 체중을 같이 사용합니다 · LVIDDN = LVIDd ÷ 체중<sup>0.294</sup> · 기준 1.7</div>
+ <div class="f"><label>LVIDd (cm)</label><input class="in" type="number" step="0.01" id="lvd-${id}" value="${l.lvd||""}"></div>
+ <button class="btn" style="width:100%" data-act="lvcalc" data-id="${id}">LVIDDN 계산</button>${out(l.lvres,"lvres")}`)+
  sec("🩸 수혈",`<div class="meta">${cat?"고양이":"강아지"} 기준 · 위 체중 사용 · 총량 = ${cat?60:90} × 체중 × (목표−현재 PCV) ÷ 공혈 PCV</div>
  <div class="g2"><div class="f"><label>현재 PCV (%)</label><input class="in" type="number" step="0.1" id="pcv-${id}" value="${l.pcv||""}"></div>
  <div class="f"><label>목표 PCV (%)</label><input class="in" type="number" step="0.1" id="tpcv-${id}" value="${l.tpcv||(cat?20:25)}"></div></div>
@@ -916,6 +921,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
  peopt:()=>{const p=find("checkup",id);if(!p)return;p.pe=p.pe||{};const k=d.k,v=d.v;if(d.m){const a=soapList(p.pe[k]),i=a.indexOf(v);if(i>=0)a.splice(i,1);else a.push(v);p.pe[k]=a.join(", ")}else p.pe[k]=p.pe[k]===v?"":v;render();save("checkup")},
  penorm:()=>{const p=find("checkup",id),c=OSC.find(x=>x.t===d.c);if(!p||!c)return;p.pe=p.pe||{};c.r.forEach(r=>{const z=(c.z||{})[r.k];if(z===undefined)return;(r.lr?[r.k+"_a",r.k+"_b"]:[r.k]).forEach(q=>{if(!p.pe[q])p.pe[q]=z})});render();save("checkup");toast(`${c.t} 정상값을 빈칸에 채웠어요`)},
  peclr:()=>{const p=find("checkup",id),c=OSC.find(x=>x.t===d.c);if(!p||!c||!p.pe)return;if(!confirm(`${c.t} 입력값을 모두 비울까요?`))return;c.r.forEach(r=>{delete p.pe[r.k];delete p.pe[r.k+"_a"];delete p.pe[r.k+"_b"]});render();save("checkup");toast(`${c.t} 입력값을 비웠어요`)},
+ lvcalc:()=>{const p=find("lab_fluid",id);if(!p)return;p.lab=p.lab||{};const bw=parseFloat($("#bw-"+id).value)||0,dd=parseFloat($("#lvd-"+id).value)||0;p.lab.bw=bw;p.lab.hco3=parseFloat($("#hc-"+id).value)||0;p.lab.lvd=dd;if(bw<=0||dd<=0){toast("체중과 LVIDd를 입력해 주세요");return}p.lab.lvres=lvd(p.name,bw,dd);render();save("lab_fluid");toast("LVIDDN을 계산했어요")},
  kcalc:()=>{const p=find("lab_fluid",id);if(!p)return;p.lab=p.lab||{};const bw=parseFloat($("#bw-"+id).value)||0,k=parseFloat($("#kk-"+id).value)||0;p.lab.bw=bw;p.lab.hco3=parseFloat($("#hc-"+id).value)||0;p.lab.k=k;if(bw<=0||k<=0){toast("체중과 K+를 입력해 주세요");return}p.lab.kres=kcl(p.name,bw,k);render();save("lab_fluid");toast("칼륨 교정량을 계산했어요")},
  txcalc:()=>{const p=find("lab_fluid",id);if(!p)return;p.lab=p.lab||{};const bw=parseFloat($("#bw-"+id).value)||0,cu=parseFloat($("#pcv-"+id).value)||0,tg=parseFloat($("#tpcv-"+id).value)||0,pr=parseFloat($("#tprod-"+id).value)||0;p.lab.bw=bw;p.lab.hco3=parseFloat($("#hc-"+id).value)||0;p.lab.pcv=cu;p.lab.tpcv=tg;p.lab.prod=pr;if(bw<=0||cu<=0||tg<=0||pr<=0){toast("체중, 현재·목표 PCV, 공혈 PCV를 입력해 주세요");return}p.lab.txres=txf(p.name,p.species,bw,cu,tg,pr);render();save("lab_fluid");toast("수혈량을 계산했어요")},
  copylab:()=>{const p=find("lab_fluid",id),t=p&&p.lab&&p.lab[d.f];if(t)copy(t,"계산 결과를 복사했어요")},
