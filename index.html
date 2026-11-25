@@ -409,7 +409,7 @@ const ST={},ES={},QT={},FT={};let RT;
 const typing=()=>{const a=document.activeElement;return a&&(a.tagName==="INPUT"||a.tagName==="SELECT")&&!a.closest(".mask")&&a.id!=="roomCode"&&a.id!=="q"&&a.closest("#list")};
 function applyEv(st,d,patch){
  const path=String(d.path||"/").split("/").filter(Boolean),data=d.data;
- const merge=(t,o)=>{Object.entries(o||{}).forEach(([k,v])=>{if(v===null)delete t[k];else t[k]=v});return t};
+ const merge=(t,o)=>{Object.entries(o||{}).forEach(([k,v])=>{if(k.includes("/")){const ks=k.split("/").filter(Boolean);let x=t;for(let i=0;i<ks.length-1;i++){if(!x[ks[i]]||typeof x[ks[i]]!=="object")x[ks[i]]={};x=x[ks[i]]}const lk=ks[ks.length-1];if(v===null)delete x[lk];else x[lk]=v}else if(v===null)delete t[k];else t[k]=v});return t};
  if(!path.length){if(patch)st.v=merge(st.v&&typeof st.v==="object"?st.v:{},data);else st.v=data;return}
  if(!st.v||typeof st.v!=="object")st.v={};
  let o=st.v;for(let i=0;i<path.length-1;i++){if(!o[path[i]]||typeof o[path[i]]!=="object")o[path[i]]={};o=o[path[i]]}
@@ -417,19 +417,16 @@ function applyEv(st,d,patch){
  if(patch)o[k]=merge(o[k]&&typeof o[k]==="object"?o[k]:{},data);else if(data===null)delete o[k];else o[k]=data;
 }
 function softRender(){clearTimeout(RT);RT=setTimeout(()=>{if(typing()){softRender();return}render()},typing()?700:120)}
-function flush(key,fn){const w=(QT[key]||0)-Date.now();if(w>0){clearTimeout(FT[key]);FT[key]=setTimeout(()=>flush(key,fn),w+60);return}fn(ST[key].v)}
-function onRoom(r){return v=>{const list=toList(v);
- if(v&&typeof v==="object"&&list.length)S.p[r]=list.map(i=>r==="care"?{...i,category:cat(i)}:i);
- else S.p[r]=[];
- if(S.room===r)softRender()}}
-const onDis=v=>{S.dis=v&&typeof v==="object"?toList(v):[];if(S.room==="care")softRender()};
+function flush(key,fn){const w=(QT[key]||0)-Date.now();if(w>0){clearTimeout(FT[key]);FT[key]=setTimeout(()=>flush(key,fn),w+60);return}if(!ST[key]||!ST[key].got)return;fn(ST[key].v)}
+function onRoom(r){return v=>{ingest(r,v,r==="care");if(S.room===r)softRender()}}
+const onDis=v=>{ingest("dis",v,false);if(S.room==="care")softRender()};
 function watch(key,fn){
  if(ES[key]){ES[key].close();delete ES[key]}
  const st=ST[key]={v:null};
  return new Promise(res=>{let done=false;const fin=()=>{if(!done){done=true;res()}};setTimeout(fin,4000);
   let es;try{es=new EventSource(url(key))}catch(e){badge(false);fin();return}
   ES[key]=es;
-  const h=patch=>e=>{try{applyEv(st,JSON.parse(e.data),patch)}catch(x){return}fin();flush(key,fn)};
+  const h=patch=>e=>{try{applyEv(st,JSON.parse(e.data),patch)}catch(x){return}st.got=true;fin();flush(key,fn)};
   es.addEventListener("put",h(false));es.addEventListener("patch",h(true));
   es.onopen=()=>badge(true);es.onerror=()=>badge(false)})}
 function stopAll(){Object.keys(ES).forEach(k=>{ES[k].close();delete ES[k]})}
@@ -445,9 +442,52 @@ async function put(key,o){
  catch(e){badge(false)}
  finally{QT[key]=Date.now()+1200}
 }
-async function save(r){const o={};(S.p[r]||[]).forEach(p=>o[p.id]=p);await put(PATHS[r],o);
- if(r==="lab_fluid"){const c={};(S.p.care||[]).forEach(p=>c[p.id]=p);if(Object.keys(c).length)await put(PATHS.care,c)}}
-async function saveDis(){const o={};S.dis.forEach(p=>o[p.id]=p);await put("discharged_patients",o)}
+/* ---- 환축 단위 저장: 바뀐 환축(바뀐 항목)만 서버에 쓰고, 다른 사람이 바꾼 내용은 덮어쓰지 않습니다 ---- */
+const SO={},PD={},DIRTY=new Set(),WQ={};let RETRY;
+const clone=v=>v===undefined?undefined:JSON.parse(JSON.stringify(v));
+const nrm=v=>{if(Array.isArray(v)){const a=v.map(nrm).filter(x=>x!==undefined);return a.length?a:undefined}
+ if(v&&typeof v==="object"){const o={};Object.keys(v).sort().forEach(k=>{const x=nrm(v[k]);if(x!==undefined)o[k]=x});return Object.keys(o).length?o:undefined}
+ if(v===null||v===undefined||(typeof v==="number"&&!isFinite(v)))return undefined;return v};
+const sj=v=>{const x=nrm(v);return x===undefined?"~":JSON.stringify(x)};
+const isO=v=>v&&typeof v==="object"&&!Array.isArray(v);
+function dfs(l,b,pre,out){const ks=new Set([...(isO(l)?Object.keys(l):[]),...(isO(b)?Object.keys(b):[])]);
+ ks.forEach(k=>{const lv=isO(l)?l[k]:undefined,bv=isO(b)?b[k]:undefined;if(sj(lv)===sj(bv))return;
+  if(isO(lv)&&isO(bv))dfs(lv,bv,pre+k+"/",out);else out[pre+k]=lv===undefined?null:clone(lv)})}
+function applyPath(o,path,val){const ks=path.split("/");let t=o;for(let i=0;i<ks.length-1;i++){if(!isO(t[ks[i]]))t[ks[i]]={};t=t[ks[i]]}const k=ks[ks.length-1];if(val===null)delete t[k];else t[k]=clone(val)}
+const PK={care:PATHS.care,checkup:PATHS.checkup,lab_fluid:PATHS.lab_fluid,dis:"discharged_patients"};
+const getL=n=>n==="dis"?S.dis:(S.p[n]||[]),setL=(n,a)=>{if(n==="dis")S.dis=a;else S.p[n]=a};
+/* 서버에서 받은 목록을 반영하되, 아직 저장되지 않은 내 수정은 항목 단위로 유지합니다 */
+function ingest(n,v,enrich){
+ const incoming=toList(v).map(i=>clone(enrich?{...i,category:cat(i)}:i));
+ const loc=new Map(getL(n).map(p=>[p.id,p])),old=SO[n]||{},pd=PD[n]||(PD[n]=new Set()),out=[],seen=new Set();
+ incoming.forEach(i=>{seen.add(i.id);if(pd.has(i.id))return;
+  const l=loc.get(i.id),b=old[i.id];
+  if(l&&b&&sj(l)!==sj(b)){const m=clone(i),d={};dfs(l,b,"",d);Object.entries(d).forEach(([k,v])=>applyPath(m,k,v));out.push(m)}
+  else out.push(clone(i))});
+ loc.forEach((l,id)=>{if(!seen.has(id)&&!old[id])out.push(l)});
+ pd.forEach(id=>{if(!seen.has(id))pd.delete(id)});
+ const so={};incoming.forEach(i=>{so[i.id]=i});SO[n]=so;setL(n,out)}
+const save=r=>Promise.all((r==="lab_fluid"?[r,"care"]:[r]).map(sync));
+const saveDis=()=>sync("dis");
+function sync(n){return WQ[n]=(WQ[n]||Promise.resolve()).then(()=>syncNow(n),()=>syncNow(n))}
+async function syncNow(n){
+ const key=PK[n],cur=getL(n),old=SO[n]||(SO[n]={}),pd=PD[n]||(PD[n]=new Set()),ops=[],ids=new Set(cur.map(p=>p.id));
+ pd.forEach(id=>{if(ids.has(id))pd.delete(id)});
+ cur.forEach(p=>{const b=old[p.id],sent=clone(p);
+  if(!b)ops.push({id:p.id,m:"PUT",body:sent,sent});
+  else if(sj(p)!==sj(b)){const body={};dfs(p,b,"",body);ops.push({id:p.id,m:"PATCH",body,sent})}});
+ Object.keys(old).forEach(id=>{if(!ids.has(id))pd.add(id)});
+ pd.forEach(id=>ops.push({id,m:"DELETE"}));
+ if(!ops.length)return;
+ QT[key]=Date.now()+60000;let fail=false;
+ await Promise.all(ops.map(async o=>{try{
+  const x=await fetch(url(key+"/"+encodeURIComponent(o.id)),{method:o.m,headers:{"Content-Type":"application/json"},body:o.m==="DELETE"?undefined:JSON.stringify(o.body)});
+  if(!x.ok)throw new Error("HTTP "+x.status);
+  if(o.m==="DELETE"){delete old[o.id];pd.delete(o.id)}else old[o.id]=o.sent}catch(e){fail=true}}));
+ QT[key]=Date.now()+1200;
+ if(fail){DIRTY.add(n);badge(false);clearTimeout(RETRY);RETRY=setTimeout(retryAll,6000)}else{DIRTY.delete(n);if(!DIRTY.size)badge(true)}}
+const retryAll=()=>{[...DIRTY].forEach(sync)};
+window.addEventListener("online",retryAll);
 
 /* ---- Rendering ---- */
 function applyQ(){const q=nz($("#q").value);document.querySelectorAll("#list .tile").forEach(a=>{a.style.display=!q||nz(a.textContent).includes(q)?"":"none"})}
