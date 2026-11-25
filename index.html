@@ -67,6 +67,7 @@ main{padding-top:16px;display:grid;gap:14px}
 .chip{min-height:40px;padding:8px 13px;border-radius:99px;border:1px solid var(--line);background:var(--soft);font-size:12.5px;font-weight:500;transition:.12s}
 .chip:hover{border-color:var(--brand);background:var(--brand-s)}
 .chip:active{transform:scale(.96)}
+.chip.gd{border-radius:14px;text-align:left;flex:1 1 46%;min-width:140px}.chip small.cd{display:block;font-size:10.5px;font-weight:400;opacity:.85;line-height:1.3;margin-top:2px}.chip.sel small.cd{opacity:.95}
 .chip.sel{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:700;box-shadow:0 2px 8px rgba(11,122,117,.35)}
 .card[data-r=checkup] .chip:hover{border-color:var(--soap);background:var(--soap-s)}
 .card[data-r=checkup] .chip.sel{background:var(--soap);border-color:var(--soap);color:#fff;font-weight:700}
@@ -203,7 +204,7 @@ main{padding-top:16px;display:grid;gap:14px}
   <input class="in" id="dbUrl" type="url" style="font-family:ui-monospace,monospace;font-size:12px">
   <div class="row"><button class="btn gh" data-act="dreset">기본값</button><button class="btn" style="flex:1" data-act="dsave">연결하고 동기화</button></div>
 </div></div>
-<datalist id="dl-us"><option value="WNL"><option value="mild hyperechoic"><option value="hypoechoic"><option value="mass r/o"><option value="sludge"><option value="mineralization"><option value="mild enlargement"></datalist>
+<datalist id="dl-us"><option value="NRF"><option value="mild hyperechoic"><option value="hypoechoic"><option value="mass r/o"><option value="sludge"><option value="mineralization"><option value="mild enlargement"></datalist>
 <div class="mask" id="tm"><div class="sheet" style="text-align:center">
   <div class="row" style="justify-content:space-between;align-items:center"><h3 id="tapTitle">탭 측정</h3><button class="ib" data-act="tapclose" aria-label="닫기">✕</button></div>
   <div class="meta">박동·호흡을 느끼는 박자에 맞춰 아래 큰 버튼을 탭하세요. 정한 횟수가 되면 분당 수치를 자동 계산합니다.</div>
@@ -238,7 +239,7 @@ O:{
   "MM pink & moist","MM pale","MM icteric","MM hyperemic / tacky"
  ],
  "Cardiopulmonary":[
-  "Auscultation WNL","No murmur heard",
+  "Auscultation NRF","No murmur heard",
   "Systolic murmur Grade I-II/VI","Systolic murmur Grade III-IV/VI","Systolic murmur Grade V-VI/VI",
   "Femoral pulse strong & synchronous","Weak / irregular pulse",
   "Lung sounds clear","Harsh lung sounds","Wheezes","Crackles",
@@ -246,21 +247,21 @@ O:{
   "Tracheal sensitivity negative","Cough reflex positive"
  ],
  "Oral · Dental":[
-  "Oral mucosa WNL","No halitosis","Mild-to-moderate halitosis",
+  "Oral mucosa NRF","No halitosis","Mild-to-moderate halitosis",
   "Calculus Grade 1","Calculus Grade 2","Calculus Grade 3",
   "Gingivitis mild","Gingivitis moderate-severe","Gingival recession",
   "Tooth discoloration","Tooth fracture","Tooth mobility / Periodontal pocket",
   "Persistent deciduous tooth","Oral mass / ulcer noted"
  ],
  "Ophthalmic · Otic":[
-  "Ocular exam WNL","Conjunctival hyperemia","Chemosis","Epiphora",
+  "Ocular exam NRF","Conjunctival hyperemia","Chemosis","Epiphora",
   "Cornea clear","Corneal opacity / ulcer r/o","Incipient cataract","Nuclear sclerosis",
   "PLR normal (direct & consensual)",
   "Ear canals clean","Left otitis externa","Right otitis externa","Bilateral otitis externa",
   "Pinna erythema / crusting","Otoscopic discharge (brown / purulent / malodorous)"
  ],
  "Skin · Musculoskeletal · Abd":[
-  "Coat condition WNL","Dry skin / scaling","Focal alopecia","Pruritus / excoriation",
+  "Coat condition NRF","Dry skin / scaling","Focal alopecia","Pruritus / excoriation",
   "Cutaneous nodule / mass noted",
   "ROM normal in all joints",
   "MPL / LPL Grade 1","MPL / LPL Grade 2","MPL / LPL Grade 3-4","Lameness noted",
@@ -268,12 +269,12 @@ O:{
   "Peripheral LNs normal","Mandibular / popliteal LN enlargement"
  ],
  "Radiography (X-ray)":[
-  "Thoracic radiograph WNL","Cardiac silhouette normal","Left-sided cardiomegaly suspected",
+  "Thoracic radiograph NRF","Cardiac silhouette normal","Left-sided cardiomegaly suspected",
   "Dorsal elevation of trachea","Pulmonary parenchyma clear","Bronchial pattern noted","Interstitial pattern noted","Alveolar pattern noted",
-  "Pleural space clear","Abdominal radiograph WNL","Radiopaque urolith r/o","Hepatomegaly r/o","Splenomegaly r/o"
+  "Pleural space clear","Abdominal radiograph NRF","Radiopaque urolith r/o","Hepatomegaly r/o","Splenomegaly r/o"
  ],
  "Ultrasound":[
-  "Abdominal ultrasound WNL","Liver parenchymal echogenicity normal","Gallbladder sludge noted","Gallbladder mucocele r/o",
+  "Abdominal ultrasound NRF","Liver parenchymal echogenicity normal","Gallbladder sludge noted","Gallbladder mucocele r/o",
   "Spleen normal size and echotexture","Renal corticomedullary differentiation normal","Renal pyelectasia r/o",
   "Urinary bladder sediment noted","Bladder wall thickening r/o","No free peritoneal fluid detected"
  ]
@@ -301,26 +302,48 @@ const OX=k=>SOAP.O[k]||[],EARRE=/^(Ear|Left otitis|Right otitis|Bilateral otitis
 const op=(k,l,o,m)=>({k,l,o,m}),nm=(k,l,n)=>({k,l,n}),tx=(k,l,ph,dl)=>({k,l,ph,dl}),lr=(k,l,o,n,s)=>({k,l,lr:1,o,n,s});
 const PM=["+","-"],PM3=["-","mild","moderate","severe"],G3=["0","1","2"];
 const OSC=[
-{t:"PE",n:"PE",r:[op("ment","Mentation",["BAR","QAR","aggressive","depressed","anxious/fearful"]),op("mm","Mucous membrane",["pink","pale","yellowish"]),op("turg","Skin turgor",["normal","<5%",">5%",">10%"]),op("crt","CRT",["<1.5sec",">1.5sec"]),op("bcs","BCS",[1,2,3,4,5,6,7,8,9].map(i=>i+"/9")),nm("bt","Body temp °C","37.5~39.5"),nm("bp","Blood pressure sys","<150"),nm("hr","Heart rate",""),nm("rr","Respiratory rate","<30"),op("aus","AUS",["Heart murmur","Heart arrhythmia","Heart thrill","LUNG crackle sound","LUNG clear","LUNG wheeze"],1)],
- x:[...OX("Vitals · Hydration · BCS").filter(v=>!/^(BCS|Dehydration|CRT|MM (pink|pale|icteric))/.test(v)),...OX("Cardiopulmonary").filter(v=>!/^(Lung sounds clear|Wheezes|Crackles)$/.test(v)),...OX("Skin · Musculoskeletal · Abd").filter(v=>/^Abdom/.test(v))],
+{t:"PE",n:"PE",r:[op("ment","Mentation",["BAR","QAR","aggressive","depressed","anxious/fearful"]),op("mm","Mucous membrane",["pink","pale","yellowish"]),op("turg","Skin turgor",["normal","<5%",">5%",">10%"]),op("crt","CRT",["<1.5sec",">1.5sec"]),op("bcs","BCS",[1,2,3,4,5,6,7,8,9].map(i=>i+"/9")),nm("bt","Body temp °C","37.5~39.5"),nm("bp","Blood pressure sys","<150"),nm("hr","Heart rate",""),nm("rr","Respiratory rate","<30"),{...op("mur","Heart murmur (grade)",["No murmur","Grade I/VI","Grade II/VI","Grade III/VI","Grade IV/VI","Grade V/VI","Grade VI/VI"]),d:{"No murmur":"심잡음 없음","Grade I/VI":"아주 약함 · 조용한 곳에서 한참 집중해야 들림","Grade II/VI":"약하지만 청진기를 대면 바로 들림","Grade III/VI":"중간 크기 · 바로 뚜렷하게 들림 · thrill 없음","Grade IV/VI":"크게 들림 · 넓게 방사 · thrill 없음","Grade V/VI":"매우 큼 · 촉진되는 thrill · 청진기 필요","Grade VI/VI":"청진기를 떼도 들림 · thrill 있음"}},
+op("aus","Cardiac rhythm / thrill",["Heart arrhythmia","Heart thrill"],1),
+{...op("lung","Lung sounds",["Clear","Harsh","Crackles","Wheezes","Decreased / muffled","Referred upper airway sound"],1),d:{"Clear":"정상 폐음","Harsh":"거칠고 커진 호흡음 · 기관지염·부종 의심","Crackles":"끊기는 '틱틱' 소리 · 폐부종·폐렴·섬유화","Wheezes":"높은 '쉭쉭' 소리 · 기도 협착·기관지 수축","Decreased / muffled":"소리 감소 · 흉수·기흉·종괴 의심","Referred upper airway sound":"상부기도 소리가 전달됨 · 청진 위치 확인"}}],
+ x:[...OX("Vitals · Hydration · BCS").filter(v=>!/^(BCS|Dehydration|CRT|MM (pink|pale|icteric))/.test(v)),...OX("Cardiopulmonary").filter(v=>!/^(Lung sounds clear|Harsh lung sounds|Wheezes|Crackles|No murmur|Systolic murmur Grade)/.test(v)),...OX("Skin · Musculoskeletal · Abd").filter(v=>/^Abdom/.test(v))],
  z:{ment:"BAR",mm:"pink",turg:"normal",crt:"<1.5sec"}},
 {t:"Eye",n:"Eye",s:["OS","OD"],r:[lr("menace","Menace",PM),lr("plr","PLR",PM),lr("pupil","Pupil size & symmetry",["normal","anisocoria","miosis","mydriasis"]),lr("dazzle","Dazzle reflex",PM),lr("palp","Palpebral reflex",PM),lr("iop","IOP","", "10~25"),lr("fluo","Fluorescent",PM),lr("schir","Schirmer tear test","", ">15"),lr("ulcer","Corneal ulcer",PM),lr("eros","Corneal erosion",PM),lr("perf","Corneal perforation",PM),lr("conj","Conjunctival hyperemia",PM3),lr("scl","Scleral congestion",PM3),lr("cat","Cataract",["normal","incipient","immature","mature","hypermature"])],
- x:OX("Ophthalmic · Otic").filter(v=>!EARRE.test(v)&&!/^(Conjunctival hyperemia|Incipient cataract)$/.test(v)),
+ x:OX("Ophthalmic · Otic").filter(v=>!EARRE.test(v)&&!/^(Conjunctival hyperemia|Incipient cataract|Cornea clear|Corneal opacity|PLR normal)/.test(v)),
  z:{menace:"+",plr:"+",pupil:"normal",dazzle:"+",palp:"+",fluo:"-",ulcer:"-",eros:"-",perf:"-",conj:"-",scl:"-",cat:"normal"}},
 {t:"Ear",n:"Ear",s:["LT","RT"],r:[["yw","Yellow earwax"],["br","Brown earwax"],["er","Erythema"],["ed","Edema"],["di","Ear discharge"],["bl","Bleeding"],["ma","Mass"]].map(([k,l])=>lr(k,l,PM)),
- x:OX("Ophthalmic · Otic").filter(v=>EARRE.test(v)),z:{yw:"-",br:"-",er:"-",ed:"-",di:"-",bl:"-",ma:"-"}},
-{t:"Dent",n:"Dent",r:[tx("dent","Dental grade","CI=1/3")],x:OX("Oral · Dental")},
-{t:"Ortho",n:"Ortho",s:["LT","RT"],r:[lr("mpl","Patellar luxation (MPL)",["-","G1","G2","G3","G4"]),tx("msk","Musculoskeletal","")],
- x:OX("Skin · Musculoskeletal · Abd").filter(v=>/^(ROM|MPL|Lameness)/.test(v))},
+ x:OX("Ophthalmic · Otic").filter(v=>EARRE.test(v)&&!/^Pinna erythema/.test(v)),z:{yw:"-",br:"-",er:"-",ed:"-",di:"-",bl:"-",ma:"-"}},
+{t:"Dent",n:"Dent",r:[op("calc","Calculus grade",["1","2","3"]),op("ging","Gingival grade",["1","2","3"]),tx("omass","Oral mass","location / size"),tx("tfx","Tooth fx","tooth # (e.g. 104, 208)")],x:OX("Oral · Dental").filter(v=>!/^(Calculus Grade|Gingivitis|Tooth fracture)/.test(v))},
+{t:"Ortho",n:"Ortho",s:["LT","RT"],r:[lr("mpl","Patellar luxation (MPL)",["-","G1","G2","G3","G4"]),lr("hipext","Hip extension test",["+","-"]),op("xl","Radiograph (limb)",["arthritis","MPL","hip luxation","hip subluxation"],1),tx("msk","Musculoskeletal","")]},
 {t:"Neuro",n:"Neuro",s:["LT","RT"],h:"0 normal · 1 delayed · 2 absent",r:[["knuck","Knuckling"],["wb","Wheelbarrow"],["hop","Hopping"],["plv","Placing (visual)"],["plt","Placing (tactile)"],["ept","Extensor postural thrust"],["hemi","Hemiwalking"]].map(([k,l])=>lr(k,l,G3)),
  z:{knuck:"0",wb:"0",hop:"0",plv:"0",plt:"0",ept:"0",hemi:"0"}},
-{t:"Skin/LN",n:"Skin/LN",r:[op("skin","Skin",["normal","dry","greasy","scaly","lesion","lump","alopecia"],1),op("ln","Lymph node",["Mandibular LN enlargement","Prescapular LN enlargement","Axillary LN enlargement","Inguinal LN enlargement","Popliteal LN enlargement"],1)],
- x:OX("Skin · Musculoskeletal · Abd").filter(v=>/^(Coat|Dry skin|Focal|Pruritus|Cutaneous|Peripheral)/.test(v)),z:{skin:"normal"}},
-{t:"X-ray",n:"X-ray",r:[nm("vhs","Thoracic VHS",p=>p.species==="cat"?"cat 7.5~8.5":"dog 8.5~10.5"),nm("vlas","VLAS","<2.3"),op("xt","Thoracic",["Pleural effusion","Pulmonary edema"],1),op("xa","Abdomen",["hepatomegaly","splenomegaly","renal calculi","gall bladder enlargement","gall bladder sludge","urinary bladder calculi","diffuse soft tissue opacity (ascites susp)"],1),op("xl","Limb",["arthritis","MPL","hip luxation","hip subluxation"],1)],
- x:OX("Radiography (X-ray)").filter(v=>!/^(Hepatomegaly|Splenomegaly)/.test(v))},
+{t:"Skin/LN",n:"Skin/LN",s:["LT","RT"],r:[
+ op("skin","Skin condition",["normal","dry","greasy","scaly / dandruff","erythema","papule","pustule","crust","excoriation","hyperpigmentation","lichenification","comedone","malodor","ectoparasite"],1),
+ op("alop","Alopecia",["none","focal","multifocal","symmetric","diffuse"],1),
+ op("coat","Coat quality",["normal","dull","matted","oily"],1),
+ op("prur","Pruritus",["none","mild","moderate","severe"]),
+ tx("lesion","Lesion location","e.g. face, ventral abdomen"),
+ tx("smass","Skin mass / lump","location / size"),
+ lr("lnmd","LN · Mandibular",["normal","enlarged"]),lr("lnps","LN · Prescapular",["normal","enlarged"]),lr("lnax","LN · Axillary",["normal","enlarged"]),lr("lnin","LN · Inguinal",["normal","enlarged"]),lr("lnpo","LN · Popliteal",["normal","enlarged"])],
+ z:{skin:"normal",alop:"none",coat:"normal",prur:"none",lnmd:"normal",lnps:"normal",lnax:"normal",lnin:"normal",lnpo:"normal"}},
+{t:"XR Thorax",n:"X-ray · Thorax",r:[nm("vhs","VHS",p=>p.species==="cat"?"cat 7.5~8.5":"dog 8.5~10.5"),nm("vlas","VLAS","<2.3"),
+ op("xcs","Cardiac silhouette",["normal","LA enlargement","LV enlargement","RA/RV enlargement","generalized cardiomegaly"],1),
+ op("xtr","Trachea",["normal","dorsal elevation","collapse susp"],1),
+ op("xlp","Lung pattern",["normal","bronchial","interstitial","alveolar","vascular","pulmonary edema"],1),
+ op("xt","Pleural space",["normal","pleural effusion","pneumothorax"],1),
+ tx("xtm","Thoracic mass / nodule","location / size")],
+ z:{xcs:"normal",xtr:"normal",xlp:"normal",xt:"normal"}},
+{t:"XR Abd",n:"X-ray · Abdomen",r:[
+ op("xliv","Liver",["normal","hepatomegaly","microhepatia"],1),
+ op("xsp","Spleen",["normal","splenomegaly"],1),
+ op("xki","Kidney",["normal","enlarged","small","renal calculi"],1),
+ op("xgi","Stomach / GI",["normal","gas distension","fluid-filled","foreign body susp","obstructive pattern susp"],1),
+ op("xub","Urinary bladder",["normal","distended","urinary bladder calculi"],1),
+ op("xa","Peritoneal cavity",["normal","loss of serosal detail (ascites susp)","mass effect"],1),
+ tx("xam","Abdominal mass","location / size")],
+ z:{xliv:"normal",xsp:"normal",xki:"normal",xgi:"normal",xub:"normal",xa:"normal"}},
 {t:"US",n:"US",r:[{...tx("liver","Liver"),dl:1},{...tx("gb","GB"),dl:1},{...lr("kid","Kidney"),dl:1,s:["RT","LT"]},{...tx("stom","Stomach"),dl:1},{...tx("panc","Pancreas"),dl:1},{...tx("ut","Uterus"),dl:1},{...tx("ub","Urinary bladder"),dl:1},{...tx("usln","LN"),dl:1},{...lr("adr","Adrenal gland"),dl:1,s:["RT","LT"]}],
- x:OX("Ultrasound"),z:{liver:"WNL",gb:"WNL",kid:"WNL",stom:"WNL",panc:"WNL",ub:"WNL",usln:"WNL",adr:"WNL"}},
-{t:"Urinalysis",n:"Urinalysis",r:[nm("sg","Gravity","1.025~1.045"),op("bact","Bacteria",["No","Yes"]),tx("crys","Crystal","")],z:{bact:"No"}}
+ x:OX("Ultrasound"),z:{liver:"NRF",gb:"NRF",kid:"NRF",stom:"NRF",panc:"NRF",ub:"NRF",usln:"NRF",adr:"NRF"}},
+{t:"Urinalysis",n:"Urinalysis",r:[nm("sg","Gravity","1.025~1.045"),op("bact","Bacteria",["No","Yes"]),{...op("crys","Crystal",["None","Struvite","Ca oxalate dihydrate","Ca oxalate monohydrate","Ammonium biurate / Urate","Cystine","Ca phosphate","Bilirubin","Amorphous"],1),d:{"None":"결정 없음","Struvite":"관 모양(관뚜껑형) · 알칼리뇨 · 세균 감염 연관","Ca oxalate dihydrate":"봉투(envelope) 모양 · 산성뇨","Ca oxalate monohydrate":"아령·타원형 · 산성뇨 · 에틸렌글리콜 중독 시 주의","Ammonium biurate / Urate":"갈색 구형·가시(thorn apple) · 간문맥션트·달마시안","Cystine":"육각형 판상 · 산성뇨 · 선천성 요세관 이상","Ca phosphate":"판상·프리즘형 · 알칼리~중성뇨","Bilirubin":"황갈색 바늘·과립 · 고양이는 비정상, 개는 농축뇨에서 가능","Amorphous":"무정형 입자 · pH 따라 urate·phosphate 구분"}}],z:{bact:"No"}}
 ];
 const OCATS=OSC.map(c=>c.t);
 const S={room:"care",code:"songpa-baro-care",db:DB0,filter:"ALL",oCat:OCATS[0],drafts:{},deleted:{checkup:[],lab_fluid:[]},p:seed(),dis:[],cands:[]};
@@ -761,7 +784,7 @@ function soapChart(p){const s=p.soap||{},sec=(h,a)=>`${h}\n${a.length?a.map(x=>`
  return `[IntoVet 건강검진 SOAP - ${p.name} (${p.room})]\n\n${sec("S)",splitItems(s.s,SOAP.S))}\n\nO)\n${oText(p)||"-"}\n\n${sec("A)",splitItems(s.a,SOAP.A))}\n\n${sec("P)",splitItems(s.p,SOAP.P))}`}
 function updPv(p){const e=$("#pv-"+p.id);if(e)e.textContent=oText(p)||"입력한 검진 소견이 여기에 정리됩니다"}
 function oRow(p,r,c){const pe=p.pe||{},id=p.id,k=r.k,ref=typeof r.n==="function"?r.n(p):r.n,lab=`${esc(r.l)}${ref?` <small>(${esc(ref)})</small>`:""}`;
- if(r.o&&!r.lr)return `<div class="grp"><label>${lab}</label><div class="chips">${r.o.map(o=>{const on=r.m?soapList(pe[k]).includes(o):pe[k]===o;return `<button class="chip ${on?"sel":""}" data-act="peopt" data-id="${id}" data-k="${k}" data-v="${esc(o)}" ${r.m?'data-m="1"':""}>${esc(o)}</button>`}).join("")}</div></div>`;
+ if(r.o&&!r.lr)return `<div class="grp"><label>${lab}</label><div class="chips">${r.o.map(o=>{const on=r.m?soapList(pe[k]).includes(o):pe[k]===o;return `<button class="chip ${on?"sel":""}${r.d?" gd":""}" data-act="peopt" data-id="${id}" data-k="${k}" data-v="${esc(o)}" ${r.m?'data-m="1"':""}>${esc(o)}${r.d&&r.d[o]?`<small class="cd">${esc(r.d[o])}</small>`:""}</button>`}).join("")}</div></div>`;
  const ctl=(key,side)=>r.o?`<select class="in" data-pe="${key}" data-id="${id}"><option value="">${side}</option>${r.o.map(o=>`<option ${pe[key]===o?"selected":""}>${esc(o)}</option>`).join("")}</select>`
   :`<input class="in" ${r.n!==undefined?'type="number" step="any" inputmode="decimal"':'type="text"'} ${r.dl?'list="dl-us"':""} data-pe="${key}" data-id="${id}" value="${esc(pe[key]||"")}" placeholder="${esc(side||r.ph||"")}">`;
  if(r.lr){const sd=r.s||c.s;return `<div class="prow"><label>${lab}<small>${sd[0]} / ${sd[1]}</small></label><div class="g2">${ctl(k+"_a",sd[0])}${ctl(k+"_b",sd[1])}</div></div>`}
