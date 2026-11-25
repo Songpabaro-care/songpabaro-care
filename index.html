@@ -368,7 +368,7 @@ function watch(key,fn){
   es.addEventListener("put",h(false));es.addEventListener("patch",h(true));
   es.onopen=()=>badge(true);es.onerror=()=>badge(false)})}
 function stopAll(){Object.keys(ES).forEach(k=>{ES[k].close();delete ES[k]})}
-async function load(r){stopAll();const pr=watch(PATHS[r],onRoom(r));if(r==="care")watch("discharged_patients",onDis);await pr}
+async function load(r){stopAll();const pr=watch(PATHS[r],onRoom(r));if(r==="care")watch("discharged_patients",onDis);if(r==="lab_fluid")watch(PATHS.care,onRoom("care"));await pr}
 async function loadDis(){}
 function startPoll(){}
 document.addEventListener("visibilitychange",()=>{if(document.hidden)stopAll();else load(S.room)});
@@ -380,18 +380,19 @@ async function put(key,o){
  catch(e){badge(false)}
  finally{QT[key]=Date.now()+1200}
 }
-async function save(r){const o={};(S.p[r]||[]).forEach(p=>o[p.id]=p);await put(PATHS[r],o)}
+async function save(r){const o={};(S.p[r]||[]).forEach(p=>o[p.id]=p);await put(PATHS[r],o);
+ if(r==="lab_fluid"){const c={};(S.p.care||[]).forEach(p=>c[p.id]=p);if(Object.keys(c).length)await put(PATHS.care,c)}}
 async function saveDis(){const o={};S.dis.forEach(p=>o[p.id]=p);await put("discharged_patients",o)}
 
 /* ---- Rendering ---- */
 function applyQ(){const q=nz($("#q").value);document.querySelectorAll("#list .tile").forEach(a=>{a.style.display=!q||nz(a.textContent).includes(q)?"":"none"})}
 function tile(p){const cr=S.room==="care",lg=(p.logs||[])[0],
- bd=cr?`<span class="badge ${cat(p)==="호텔"?"h":""}">${cat(p)}${dayN(p)}</span>`:"",
+ bd=(cr||isCareP(p.id))?`<span class="badge ${cat(p)==="호텔"?"h":""}">${cat(p)}${dayN(p)}</span>`:"",
  l2=cr?(p.dx?esc(p.dx):"병명 미입력"):esc(p.breed||"")+(p.owner?" · "+esc(p.owner):"");
  return `<div class="tile" role="button" tabindex="0" data-act="sel" data-id="${p.id}"><div class="tt"><div class="av">${p.species==="cat"?"🐱":"🐶"}</div><div class="tn">${esc(p.name)}</div></div><div class="meta">${bd}<span class="badge n">${esc(p.room)}</span></div><div class="meta td">${l2}</div>${cr&&lg?`<div class="meta">🕒 ${logDate(lg)&&logDate(lg)!==todayStr()?esc(fmtD(logDate(lg)).slice(0,5))+" ":""}${esc(lg.time)} 마지막 기록</div>`:""}${cr&&(p.logs||[]).length?`<button type="button" class="btn-xs" style="justify-self:start" data-act="copycare" data-m="new" data-id="${p.id}">📋 새 기록 복사</button>`:""}</div>`}
 function render(){
  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.r===S.room));
- const all=S.p[S.room]||[],id=S.sel[S.room],cur=id&&all.find(p=>p.id===id);if(id&&!cur)S.sel[S.room]=null;
+ const all=rowsOf(S.room),id=S.sel[S.room],cur=id&&all.find(p=>p.id===id);if(id&&!cur)S.sel[S.room]=null;
  const L=$("#list"),sb=document.querySelector(".searchbar");
  if(cur){$("#dash").innerHTML="";$("#dis").innerHTML="";sb.style.display="none";L.className="";
   L.innerHTML=`<div><button class="btn-s" data-act="back">← 목록으로</button></div>`+card(cur);return}
@@ -411,11 +412,11 @@ function renderDash(){
 }
 
 function head(p,r){
- const b=r==="care"?`<span class="badge ${cat(p)==="호텔"?"h":""}">${cat(p)}${dayN(p)}</span>`:"";
+ const lc=r!=="care"&&isCareP(p.id),b=(r==="care"||lc)?`<span class="badge ${cat(p)==="호텔"?"h":""}">${cat(p)}${dayN(p)}</span>`:"";
  const d=r==="care"?`<button class="btn-s bad" data-act="discharge" data-id="${p.id}">퇴원</button>`:"";
  return `<div class="top"><div class="av">${p.species==="cat"?"🐱":"🐶"}</div><div class="sp"><div class="nm">${esc(p.name)}</div>
  <div class="meta">${b}<span class="badge n">${esc(p.room)}</span>${esc(p.breed||"")}${r==="care"?`<span id="dxm-${p.id}">${p.dx?" · 병명 "+esc(p.dx):""}</span>`:(p.owner?" · 보호자 "+esc(p.owner):"")}</div></div>
- <div class="act">${d}<button class="btn-s" data-act="remove" data-id="${p.id}" aria-label="삭제">✕</button></div></div>`}
+ <div class="act">${d}${lc?"":`<button class="btn-s" data-act="remove" data-id="${p.id}" aria-label="삭제">✕</button>`}</div></div>`}
 
 function soapList(raw){
  return String(raw||"").split(",").map(x=>x.trim()).filter(Boolean);
@@ -485,7 +486,9 @@ function renderDis(){const el=$("#dis");if(S.room!=="care"){el.innerHTML="";retu
  (S.dis.length?S.dis.map(d=>`<div class="dis"><div class="sp"><b>${esc(d.name)}</b> <span class="meta">${d.species==="cat"?"🐱":"🐶"} ${esc(d.room||"")}${d.dx?" · "+esc(d.dx):""}<br>퇴원 ${esc(d.dischargedAt||"-")}</span></div><button class="btn-s" style="background:var(--brand);color:#fff" data-act="restore" data-id="${d.id}">복원</button></div>`).join(""):`<div class="meta" style="padding:0 4px">퇴원 처리된 환축이 없습니다.</div>`)}
 
 /* ---- Actions & Handlers ---- */
-const find=(r,id)=>(S.p[r]||[]).find(p=>p.id===id);
+const isCareP=id=>(S.p.care||[]).some(p=>p.id===id);
+const rowsOf=r=>{const a=S.p[r]||[];if(r!=="lab_fluid")return a;const ids=new Set(a.map(p=>p.id));return[...(S.p.care||[]).filter(p=>!ids.has(p.id)),...a]};
+const find=(r,id)=>rowsOf(r).find(p=>p.id===id);
 
 function chartText(p){
  if(S.room==="care"){
