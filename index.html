@@ -157,6 +157,7 @@ main{padding-top:16px;display:grid;gap:14px}
       <div class="sync" id="sync"><span class="dot"></span><span id="syncTxt">실시간 동기화 중</span></div></div>
     <button class="ib" data-act="theme" id="themeBtn" aria-label="화면 모드 전환">🌙</button>
     <button class="ib" data-act="shareweb" aria-label="웹 공유 및 링크 복사">🔗</button>
+    <button class="ib" data-act="mjopen" aria-label="사전 문진 보기">📋</button>
   </div>
   <div class="tabs" id="tabs">
     <button class="tab on" data-r="care" data-act="room"><span>🏥</span>환축 케어</button>
@@ -207,6 +208,12 @@ main{padding-top:16px;display:grid;gap:14px}
   <button class="btn" style="width:100%" data-act="psave">저장</button>
 </div></div>
 
+<div class="mask" id="mj"><div class="sheet">
+  <div class="row" style="justify-content:space-between;align-items:center"><h3>📋 사전 문진</h3><button class="ib" data-act="mjclose" aria-label="닫기">✕</button></div>
+  <div class="meta">보호자가 링크로 제출한 문진입니다. 7일 지나면 자동 삭제돼요.</div>
+  <div class="row" style="margin:6px 0"><button class="btn gh" style="flex:1" data-act="mjopen">새로고침</button><button class="btn gh" style="flex:1" data-act="mjlink">문진 링크 복사</button></div>
+  <div id="mjList"></div>
+</div></div>
 <div class="mask" id="dm"><div class="sheet">
   <div class="row" style="justify-content:space-between;align-items:center"><h3>Firebase 연결</h3><button class="ib" data-act="dclose" aria-label="닫기">✕</button></div>
   <div class="meta">rooms/{방 코드}/{care|checkup|lab_fluid}_patients, discharged_patients 경로로 저장됩니다.</div>
@@ -304,6 +311,26 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 
 function bicarb(n,bw,h){const t=25,r=x=>Math.round(x*10)/10;if(h>=t)return `[중탄산처치]\n• 체중 ${bw} kg · 측정 HCO3- ${h} mEq/L (목표 ${t})\n• 목표치 이상이라 별도 교정이 필요하지 않습니다.`;
 const D=bw*.3*(t-h),d=r(D),tot=r(D*5),ns=r(D*4),fr=r(D*5/6);return `[중탄산처치]\nCalculate the sodium bicarbonate requirement\n= BW x 0.3 x (desired-measured HCO3)\n= ${bw}*0.3*(${t}-${h})\n= ${d}ml\n\n5배 희석 : 총 부피 ${tot}ml = N/S ${ns}ml + NaHCO3 ${d}ml\n6시간 CRI, FR= ${fr}ml/hr`}
+
+const MJF=["식욕","음수량","활동성","대변","소변"];
+function mjText(d){const L=[`[사전 문진 #${d.no}] ${d.name} (${[d.sp,d.br,d.age,d.sx,d.bw?d.bw+"kg":""].filter(Boolean).join(" · ")})`];
+ if((d.sym||[]).length)L.push("• 방문 이유: "+d.sym.join(", "));if(d.det)L.push("• 경과: "+d.det);
+ const st=MJF.filter(k=>d["s_"+k]).map(k=>k+" "+d["s_"+k]);if(st.length)L.push("• 상태: "+st.join(" / "));
+ if(d.med)L.push("• 복용약: "+d.med);if(d.hx)L.push("• 병력/알레르기: "+d.hx);if(d.food)L.push("• 사료·간식: "+d.food);if(d.vac)L.push("• 예방접종·구충: "+d.vac);if(d.etc)L.push("• 기타: "+d.etc);return L.join("\n")}
+const mjUrl=()=>base()+"/munjin";
+async function mjLoad(){const box=$("#mjList");box.innerHTML='<div class="meta">불러오는 중...</div>';
+ try{const r=await fetch(mjUrl()+".json");const o=await r.json()||{},now=Date.now(),arr=[];
+  for(const k of Object.keys(o)){const d=o[k];if(!d||now-(d.t||0)>7*864e5){fetch(`${mjUrl()}/${k}.json`,{method:"DELETE"});continue}arr.push([k,d])}
+  arr.sort((x,y)=>y[1].t-x[1].t);S.mj=Object.fromEntries(arr);
+  if(!arr.length){box.innerHTML='<div class="meta" style="padding:14px 0">아직 제출된 문진이 없어요</div>';return}
+  const pts=(S.p.care||[]);
+  box.innerHTML=arr.map(([k,d])=>{const tm=new Date(d.t).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});
+   const m=pts.find(p=>nz(p.name)===nz(d.name));
+   return `<div class="card" style="margin:8px 0"><div><b>#${esc(d.no)}</b> ${esc(d.name)} <span class="meta">${esc(d.sp)} · ${tm}</span></div><div class="pre" style="white-space:pre-wrap;margin:6px 0;font-size:13px">${esc(mjText(d))}</div>
+   <div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn gh" data-act="mjcopy" data-k="${esc(k)}">복사</button>
+   ${pts.length?`<select class="in" id="mjs-${esc(k)}" style="flex:1;min-width:120px">${pts.map(p=>`<option value="${p.id}" ${m&&m.id===p.id?"selected":""}>${esc(p.name)} · ${esc(p.room||"")}</option>`).join("")}</select><button class="btn" data-act="mjadd" data-k="${esc(k)}">케어 기록에 추가</button>`:""}
+   <button class="btn gh" data-act="mjdel" data-k="${esc(k)}">삭제</button></div></div>`}).join("")}
+ catch(e){box.innerHTML='<div class="meta">불러오지 못했어요</div>'}}
 
 function seed(){return{care:[],checkup:[],lab_fluid:[]}}
 
@@ -1054,6 +1081,11 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
  recoverItem:()=>recoverDeletedItem(d.room,d.recid),
  calc:()=>{const p=find("lab_fluid",id);if(!p)return;p.lab=p.lab||{};const bw=parseFloat($("#bw-"+id).value)||0,h=parseFloat($("#hc-"+id).value)||0;p.lab.bw=bw;p.lab.hco3=h;if(bw<=0||h<=0){toast("체중과 HCO3-를 입력해 주세요");return}p.lab.result=bicarb(p.name,bw,h);render();save("lab_fluid");toast("계산했어요")},
  applycode:()=>{const c=$("#roomCode").value.trim().replace(/[^a-zA-Z0-9_-]/g,"");if(!c){toast("방 코드를 입력해 주세요");return}S.code=c;$("#roomCode").value=c;toast(`방 코드 '${c}' 적용`);load(S.room);loadDis()},
+ mjopen:()=>{$("#mj").classList.add("open");mjLoad()},mjclose:()=>$("#mj").classList.remove("open"),
+ mjlink:()=>{const u=location.href.replace(/[#?].*$/,"").replace(/[^\/]*$/,"")+"munjin.html";if(u.startsWith("file:")){toast("웹에 올라간 주소에서 눌러 주세요");return}copy(u,"문진 링크를 복사했어요")},
+ mjcopy:()=>{const x=(S.mj||{})[d.k];if(x)copy(mjText(x),"문진 내용을 복사했어요")},
+ mjadd:()=>{const x=(S.mj||{})[d.k],sel=$("#mjs-"+d.k),p=sel&&find("care",sel.value);if(!x||!p)return;p.logs=p.logs||[];p.logs.unshift({id:`l${Date.now()}`,time:now(),d:todayStr(),text:mjText(x).replace(/\n/g," / ")});save("care");render();toast(`${p.name} 케어 기록에 추가했어요`)},
+ mjdel:async()=>{if(!confirm("이 문진을 삭제할까요?"))return;await fetch(`${mjUrl()}/${d.k}.json`,{method:"DELETE"});mjLoad()},
  dbopen:()=>{$("#dbUrl").value=S.db;$("#dm").classList.add("open")},dclose:()=>$("#dm").classList.remove("open"),
  dreset:()=>{S.db=DB0;$("#dbUrl").value=DB0;toast("기본 주소로 되돌렸어요")},
  dsave:async()=>{const v=$("#dbUrl").value.trim();if(!/^https?:\/\//i.test(v)){toast("올바른 Database URL을 입력해 주세요");return}S.db=v.replace(/\/+$/,"");$("#dm").classList.remove("open");await load(S.room);await save(S.room);await loadDis();startPoll();toast("동기화를 연결했어요")}
