@@ -333,7 +333,7 @@ async function mjLoad(){const box=$("#mjList");box.innerHTML='<div class="meta">
    return `<div class="card" style="margin:8px 0"><div><b>#${esc(d.no)}</b> ${esc(d.name)} <span class="meta">${esc(d.sp)} · ${tm}</span>${sm.length>1?` <span style="color:var(--warn,#b4531a);font-size:12px;font-weight:700">⚠ 동명 환축 ${sm.length}마리 · 확인 후 선택</span>`:""}</div><div class="pre" style="white-space:pre-wrap;margin:6px 0;font-size:13px">${esc(mjText(d))}</div>
    <div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn gh" data-act="mjcopy" data-k="${esc(k)}">복사</button>
    ${pts.length?`<select class="in" id="mjs-${esc(k)}" style="flex:1;min-width:120px"><option value="" ${m?"":"selected"}>환축을 선택하세요</option>${pts.map(p=>`<option value="${p.id}" ${m&&m.id===p.id?"selected":""}>${p.species==="cat"?"🐱":"🐶"} ${esc(p.name)} · ${esc(p.room||"")}</option>`).join("")}</select><button class="btn" data-act="mjadd" data-k="${esc(k)}">케어 기록에 추가</button>`:""}
-   <button class="btn gh" data-act="mjdel" data-k="${esc(k)}">삭제</button></div></div>`}).join("")}
+   <button class="btn gh" data-act="mjnew" data-k="${esc(k)}">새 환축으로 등록</button><button class="btn gh" data-act="mjdel" data-k="${esc(k)}">삭제</button></div></div>`}).join("")}
  catch(e){box.innerHTML='<div class="meta">불러오지 못했어요</div>'}}
 
 function seed(){return{care:[],checkup:[],lab_fluid:[]}}
@@ -762,13 +762,14 @@ function bulk(){const n=S.cands.filter(c=>c.on&&String(c.name).trim()&&!dup(c));
 
 /* ---- Modals ---- */
 const catW=()=>{const c=$("#fRoom").value==="care";$("#fCatW").style.display=c?"block":"none";$("#fOwL").textContent=c?"병명":"보호자명";$("#fOw").placeholder=c?"예: 급성 췌장염":"예: 최유진"};
-function openP(room,cam){S.cands=[];["fName","fRm","fBr","fOw"].forEach(i=>$("#"+i).value="");$("#fRoom").value=room||S.room;$("#fCat").value="입원";$("#fSp").value="dog";catW();
+function openP(room,cam){S.mjPending=null;S.cands=[];["fName","fRm","fBr","fOw"].forEach(i=>$("#"+i).value="");$("#fRoom").value=room||S.room;$("#fCat").value="입원";$("#fSp").value="dog";catW();
  $("#ocrBox").style.display=$("#fRoom").value==="care"?"grid":"none";$("#ocrMsg").style.display="none";$("#ocrPrev").style.display="none";$("#ocrPanel").style.display="none";$("#pm").classList.add("open");if(cam)setTimeout(()=>$("#ocrFile").click(),150)}
-const closeP=()=>$("#pm").classList.remove("open");
+const closeP=()=>{S.mjPending=null;$("#pm").classList.remove("open")};
 function saveP(){const r=$("#fRoom").value,name=$("#fName").value.trim(),room=$("#fRm").value.trim();if(!name||!room){toast("환축명과 병실을 입력해 주세요");return}
  const owner=$("#fOw").value.trim();if(r==="care"&&dup({name,room,owner:""})){toast(`${name}(${room})은 이미 등록돼 있어요`);return}
  const p={id:`p-${r}-${Date.now()}`,name,room,species:$("#fSp").value,breed:$("#fBr").value.trim(),owner:r==="care"?"":owner,dx:r==="care"?owner:""};
  if(r==="care"){p.category=$("#fCat").value;p.logs=[];p.adm=todayStr()}else if(r==="checkup")p.soap={s:"",o:"",a:"",p:""};else p.lab={bw:0,hco3:0,ocrText:"",result:""};
+ if(r==="care"&&S.mjPending)p.logs.unshift({id:`l${Date.now()}`,time:now(),d:todayStr(),text:S.mjPending});
  (S.p[r]=S.p[r]||[]).unshift(p);closeP();setRoom(r);save(r);toast(`${name} 등록 완료`)}
 
 /* ---- 검사·수액: 칼륨 교정 / 수혈 계산 ---- */
@@ -1089,6 +1090,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
  mjlink:()=>{const u=location.href.replace(/[#?].*$/,"").replace(/[^\/]*$/,"")+"munjin.html";if(u.startsWith("file:")){toast("웹에 올라간 주소에서 눌러 주세요");return}copy(u,"문진 링크를 복사했어요")},
  mjcopy:()=>{const x=(S.mj||{})[d.k];if(x)copy(mjText(x),"문진 내용을 복사했어요")},
  mjadd:()=>{const x=(S.mj||{})[d.k],sel=$("#mjs-"+d.k),p=sel&&sel.value&&find("care",sel.value);if(!x)return;if(!p){toast("환축을 먼저 선택해 주세요");return}p.logs=p.logs||[];p.logs.unshift({id:`l${Date.now()}`,time:now(),d:todayStr(),text:mjText(x).replace("\n"," ").replace(/\n- /g," / ")});save("care");render();toast(`${p.name} 케어 기록에 추가했어요`)},
+ mjnew:()=>{const x=(S.mj||{})[d.k];if(!x)return;$("#mj").classList.remove("open");openP("care");$("#fName").value=x.name||"";$("#fSp").value=x.sp==="고양이"?"cat":"dog";catW();$("#fBr").value=x.br||"";S.mjPending=mjText(x).replace("\n"," ").replace(/\n- /g," / ");toast("병실을 입력하고 저장하면 문진이 케어 기록에 같이 들어가요")},
  mjdel:async()=>{if(!confirm("이 문진을 삭제할까요?"))return;await fetch(`${mjUrl()}/${d.k}.json`,{method:"DELETE"});mjLoad()},
  dbopen:()=>{$("#dbUrl").value=S.db;$("#dm").classList.add("open")},dclose:()=>$("#dm").classList.remove("open"),
  dreset:()=>{S.db=DB0;$("#dbUrl").value=DB0;toast("기본 주소로 되돌렸어요")},
