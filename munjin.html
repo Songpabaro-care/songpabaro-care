@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>송파바로동물병원 사전 문진</title>
+<style>
+:root{--bg:#f6f7f4;--card:#fff;--ink:#1f2a24;--sub:#6b776f;--line:#dfe5df;--brand:#2f7d5b;--brand2:#e8f3ed;--warn:#b4531a}
+@media(prefers-color-scheme:dark){:root{--bg:#141a17;--card:#1d2621;--ink:#e8efe9;--sub:#93a39a;--line:#2e3a33;--brand:#4fb88a;--brand2:#1f3329;--warn:#e29a63}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;-webkit-text-size-adjust:100%}
+.wrap{max-width:560px;margin:0 auto;padding:16px 16px 90px}
+h1{font-size:20px;margin:6px 0 4px}
+.sub{color:var(--sub);font-size:14px;margin:0 0 14px}
+.notice{background:var(--brand2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.card h2{font-size:15px;margin:0 0 10px;color:var(--brand)}
+label{display:block;font-size:14px;color:var(--sub);margin:10px 0 4px}
+label:first-of-type{margin-top:0}
+input,textarea,select{width:100%;font:inherit;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+textarea{min-height:76px;resize:vertical}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:9px 13px;border-radius:999px;font:inherit;font-size:15px;cursor:pointer}
+.chip.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn{width:100%;border:0;background:var(--brand);color:#fff;font:inherit;font-weight:700;padding:15px;border-radius:12px;cursor:pointer}
+.btn.gh{background:transparent;color:var(--brand);border:1px solid var(--brand)}
+.btn.sm{width:auto;padding:9px 14px;font-size:14px}
+.bar{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--bg) 30%)}
+.bar .btn{max-width:528px;display:block;margin:0 auto}
+.done{text-align:center;padding:40px 10px}
+.num{font-size:44px;font-weight:800;color:var(--brand);letter-spacing:4px;margin:10px 0}
+.err{color:var(--warn);font-size:14px;margin:8px 0}
+.hide{display:none}
+.row{display:flex;gap:8px;align-items:center}
+.item{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:var(--card)}
+.item b{color:var(--brand)}
+pre{white-space:pre-wrap;word-break:break-word;font:14px/1.55 inherit;margin:8px 0}
+.tag{font-size:12px;color:var(--sub)}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+const DB="https://songpabaro-default-rtdb.asia-southeast1.firebasedatabase.app";
+const PATH="munjin";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const STAFF=/[?&]staff=1/.test(location.search);
+
+/* ---- 문진 항목 ---- */
+const SYM=["구토","설사","식욕 저하","기침","호흡이 빠름","절뚝거림","피부 가려움","귀 긁음/냄새","눈 분비물","소변 이상","변비","기력 저하","경련","체중 변화","정기검진/예방접종","기타"];
+const FIELDS=[
+ ["식욕",["좋음","보통","줄었음","거의 안 먹음"]],
+ ["음수량",["평소와 같음","늘었음","줄었음"]],
+ ["활동성",["평소와 같음","조금 처짐","많이 처짐"]],
+ ["대변",["정상","무른 변","설사","변비","못 봄"]],
+ ["소변",["정상","자주 봄","양이 많음","양이 적음/힘줌","피가 섞임"]]
+];
+const F={sym:[],v:{}};
+const chips=(opts,sel,fn)=>opts.map(o=>`<button type="button" class="chip ${sel(o)?"on":""}" data-c="${fn}" data-v="${esc(o)}">${esc(o)}</button>`).join("");
+
+function formView(){
+ const v=F.v;
+ return `<h1>🐾 송파바로동물병원 사전 문진</h1>
+<p class="sub">내원 전에 미리 적어 주시면 진료가 빨라집니다. 1~2분 걸려요.</p>
+<div class="notice">🔒 <b>보호자 성함·전화번호·주소는 입력하지 마세요.</b> 반려동물 정보만 받습니다. 제출 후 나오는 <b>문진번호</b>만 접수 때 알려 주세요.</div>
+<div class="card"><h2>아이 정보</h2>
+ <label>이름 *</label><input id="f_name" placeholder="반려동물 이름" value="${esc(v.name||"")}">
+ <label>종 *</label><div class="chips">${chips(["강아지","고양이","기타"],o=>v.sp===o,"sp")}</div>
+ <div class="g2"><div><label>품종</label><input id="f_br" placeholder="예: 말티즈" value="${esc(v.br||"")}"></div>
+ <div><label>나이</label><input id="f_age" placeholder="예: 7살 / 8개월" value="${esc(v.age||"")}"></div></div>
+ <div class="g2"><div><label>체중(kg)</label><input id="f_bw" type="number" step="0.1" inputmode="decimal" value="${esc(v.bw||"")}"></div>
+ <div><label>성별</label><select id="f_sx"><option value="">선택</option>${["수컷","암컷","수컷(중성화)","암컷(중성화)"].map(o=>`<option ${v.sx===o?"selected":""}>${o}</option>`).join("")}</select></div></div>
+</div>
+<div class="card"><h2>오늘 방문 이유 (여러 개 선택)</h2><div class="chips">${chips(SYM,o=>F.sym.includes(o),"sym")}</div>
+ <label>자세히 (언제부터, 어떻게)</label><textarea id="f_det" placeholder="예: 어제 저녁부터 하루 3번 구토">${esc(v.det||"")}</textarea></div>
+<div class="card"><h2>요즘 상태</h2>
+ ${FIELDS.map(([k,o])=>`<label>${k}</label><div class="chips">${chips(o,x=>v["s_"+k]===x,"fld:"+k)}</div>`).join("")}
+</div>
+<div class="card"><h2>그 밖에 알려 주세요</h2>
+ <label>복용 중인 약·영양제</label><textarea id="f_med" placeholder="없으면 비워 두세요">${esc(v.med||"")}</textarea>
+ <label>과거 병력·알레르기</label><textarea id="f_hx" placeholder="예: 심장약 복용, 닭고기 알레르기">${esc(v.hx||"")}</textarea>
+ <label>사료·간식</label><input id="f_food" placeholder="예: 로얄캐닌 ○○, 닭가슴살 간식" value="${esc(v.food||"")}">
+ <label>예방접종·구충 마지막 시기</label><input id="f_vac" placeholder="예: 올해 3월" value="${esc(v.vac||"")}">
+ <label>수의사에게 하고 싶은 말</label><textarea id="f_etc">${esc(v.etc||"")}</textarea>
+</div>
+<div id="err" class="err hide"></div>
+<div class="bar"><button class="btn" id="send">제출하기</button></div>`}
+
+function grab(){const g=id=>($("#"+id)||{}).value||"";
+ Object.assign(F.v,{name:g("f_name").trim(),br:g("f_br").trim(),age:g("f_age").trim(),bw:g("f_bw"),sx:g("f_sx"),det:g("f_det").trim(),med:g("f_med").trim(),hx:g("f_hx").trim(),food:g("f_food").trim(),vac:g("f_vac").trim(),etc:g("f_etc").trim()})}
+
+function toText(d){
+ const L=[`[사전 문진 #${d.no}] ${d.name} (${d.sp}${d.br?" · "+d.br:""}${d.age?" · "+d.age:""}${d.sx?" · "+d.sx:""}${d.bw?" · "+d.bw+"kg":""})`];
+ if((d.sym||[]).length)L.push("• 방문 이유: "+d.sym.join(", "));
+ if(d.det)L.push("• 경과: "+d.det);
+ const st=FIELDS.filter(([k])=>d["s_"+k]).map(([k])=>k+" "+d["s_"+k]);if(st.length)L.push("• 상태: "+st.join(" / "));
+ if(d.med)L.push("• 복용약: "+d.med);if(d.hx)L.push("• 병력/알레르기: "+d.hx);
+ if(d.food)L.push("• 사료·간식: "+d.food);if(d.vac)L.push("• 예방접종·구충: "+d.vac);if(d.etc)L.push("• 기타: "+d.etc);
+ return L.join("\n")}
+
+async function submit(){
+ grab();const v=F.v,er=$("#err");const bad=!v.name?"이름을 입력해 주세요":!v.sp?"종을 선택해 주세요":!F.sym.length&&!v.det?"방문 이유를 선택하거나 적어 주세요":"";
+ if(bad){er.textContent=bad;er.classList.remove("hide");return}
+ const no=String(Math.floor(1000+Math.random()*9000));
+ const d={no,t:Date.now(),name:v.name,sp:v.sp,br:v.br,age:v.age,bw:v.bw,sx:v.sx,sym:F.sym,det:v.det,med:v.med,hx:v.hx,food:v.food,vac:v.vac,etc:v.etc};
+ FIELDS.forEach(([k])=>{if(v["s_"+k])d["s_"+k]=v["s_"+k]});
+ $("#send").disabled=true;$("#send").textContent="전송 중...";
+ try{const r=await fetch(`${DB}/${PATH}/${Date.now()}_${no}.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)});if(!r.ok)throw 0}
+ catch(e){er.textContent="전송에 실패했어요. 인터넷 연결을 확인하고 다시 눌러 주세요";er.classList.remove("hide");$("#send").disabled=false;$("#send").textContent="제출하기";return}
+ $("#app").innerHTML=`<div class="done"><div style="font-size:48px">✅</div><h1>제출되었어요</h1><p class="sub">접수할 때 아래 <b>문진번호</b>를 알려 주세요.</p><div class="num">${no}</div><p class="sub">문진 내용은 진료 목적으로만 사용되며, 일정 기간 후 삭제됩니다.</p></div>`}
+
+/* ---- 병원용 목록 (?staff=1) ---- */
+async function staffView(){
+ const a=$("#app");a.innerHTML=`<h1>📋 사전 문진 목록</h1><p class="sub">제출된 문진이 최신순으로 보입니다. 7일 지난 문진은 열 때 자동 삭제됩니다.</p><div class="row" style="margin-bottom:10px"><button class="btn sm" id="rf">새로고침</button></div><div id="list"></div>`;
+ $("#rf").onclick=load;load()}
+async function load(){
+ const box=$("#list");box.innerHTML='<div class="sub">불러오는 중...</div>';
+ try{const r=await fetch(`${DB}/${PATH}.json`);const o=await r.json()||{};const now=Date.now(),arr=[];
+  for(const k of Object.keys(o)){const d=o[k];if(!d||now-(d.t||0)>7*864e5){fetch(`${DB}/${PATH}/${k}.json`,{method:"DELETE"});continue}arr.push([k,d])}
+  arr.sort((x,y)=>y[1].t-x[1].t);
+  if(!arr.length){box.innerHTML='<div class="sub">아직 제출된 문진이 없어요</div>';return}
+  box.innerHTML=arr.map(([k,d])=>{const tm=new Date(d.t).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});
+   return `<div class="item"><div class="row" style="justify-content:space-between"><span><b>#${esc(d.no)}</b> ${esc(d.name)} <span class="tag">${esc(d.sp)} · ${tm}</span></span></div><pre>${esc(toText(d))}</pre><div class="row"><button class="btn sm" data-copy="${esc(k)}">복사</button><button class="btn sm gh" data-del="${esc(k)}">삭제</button></div></div>`}).join("");
+  window.__m=Object.fromEntries(arr)}
+ catch(e){box.innerHTML='<div class="err">불러오지 못했어요</div>'}}
+
+document.addEventListener("click",async e=>{
+ const c=e.target.closest("[data-c]");
+ if(c){grab();const t=c.dataset.c,val=c.dataset.v;
+  if(t==="sp")F.v.sp=val;else if(t==="sym"){const i=F.sym.indexOf(val);i<0?F.sym.push(val):F.sym.splice(i,1)}
+  else if(t.startsWith("fld:")){const k="s_"+t.slice(4);F.v[k]=F.v[k]===val?"":val}
+  const y=scrollY;$("#app").innerHTML=formView();scrollTo(0,y);return}
+ if(e.target.id==="send"){submit();return}
+ const cp=e.target.closest("[data-copy]");
+ if(cp){const d=(window.__m||{})[cp.dataset.copy];if(d){try{await navigator.clipboard.writeText(toText(d));cp.textContent="복사됨"}catch(x){cp.textContent="복사 실패"}}return}
+ const dl=e.target.closest("[data-del]");
+ if(dl){if(!confirm("이 문진을 삭제할까요?"))return;await fetch(`${DB}/${PATH}/${dl.dataset.del}.json`,{method:"DELETE"});load()}
+});
+if(STAFF)staffView();else $("#app").innerHTML=formView();
+</script>
+</body>
+</html>
