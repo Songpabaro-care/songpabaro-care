@@ -68,6 +68,11 @@ main{padding-top:16px;display:grid;gap:14px}
 .chip:hover{border-color:var(--brand);background:var(--brand-s)}
 .chip:active{transform:scale(.96)}
 .chip.gd{border-radius:14px;text-align:left;flex:1 1 46%;min-width:140px}.chip small.cd{display:block;font-size:10.5px;font-weight:400;opacity:.85;line-height:1.3;margin-top:2px}.chip.sel small.cd{opacity:.95}
+.trow{display:flex;align-items:center;gap:6px;margin:4px 0}.tq{font-size:10px;font-weight:800;color:var(--mute);width:38px;flex:none}.tteeth{display:flex;gap:3px;flex:1}
+.tooth{flex:1;min-width:0;min-height:40px;padding:0;border:1px solid var(--line);background:#fff;font-size:9.5px;font-weight:700;color:var(--mute);border-radius:6px 6px 12px 12px}
+.tooth.ti{flex:.9;min-height:34px;font-size:8px;letter-spacing:-.5px}.tooth.tc{flex:1.1;min-height:46px;border-radius:50% 50% 12px 12px}.tooth.tp{min-height:42px}.tooth.tm{flex:1.3;min-height:40px;border-radius:6px}
+.tooth.fx{background:#e5484d;border-color:#e5484d;color:#fff}.tooth.ms{box-shadow:0 0 0 2.5px #f59f00;border-color:#f59f00}.tooth.ms:not(.fx){background:#fff3d6;color:#8a5a00}
+.tmid{height:1px;background:var(--line);margin:6px 0 6px 44px}.dmode{display:flex;gap:6px;margin-top:6px}
 .chip.sel{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:700;box-shadow:0 2px 8px rgba(11,122,117,.35)}
 .card[data-r=checkup] .chip:hover{border-color:var(--soap);background:var(--soap-s)}
 .card[data-r=checkup] .chip.sel{background:var(--soap);border-color:var(--soap);color:#fff;font-weight:700}
@@ -312,7 +317,7 @@ op("aus","Cardiac rhythm / thrill",["Heart arrhythmia","Heart thrill"],1),
  z:{menace:"+",plr:"+",pupil:"normal",dazzle:"+",palp:"+",fluo:"-",ulcer:"-",eros:"-",perf:"-",conj:"-",scl:"-",cat:"normal"}},
 {t:"Ear",n:"Ear",s:["LT","RT"],r:[["yw","Yellow earwax"],["br","Brown earwax"],["er","Erythema"],["ed","Edema"],["di","Ear discharge"],["bl","Bleeding"],["ma","Mass"]].map(([k,l])=>lr(k,l,PM)),
  x:OX("Ophthalmic · Otic").filter(v=>EARRE.test(v)&&!/^Pinna erythema/.test(v)),z:{yw:"-",br:"-",er:"-",ed:"-",di:"-",bl:"-",ma:"-"}},
-{t:"Dent",n:"Dent",r:[op("calc","Calculus grade",["1","2","3"]),op("ging","Gingival grade",["1","2","3"]),tx("omass","Oral mass","location / size"),tx("tfx","Tooth fx","tooth # (e.g. 104, 208)")],x:OX("Oral · Dental").filter(v=>!/^(Calculus Grade|Gingivitis|Tooth fracture)/.test(v))},
+{t:"Dent",n:"Dent",r:[op("calc","Calculus grade",["1","2","3"]),op("ging","Gingival grade",["1","2","3"]),tx("omloc","Oral mass · near tooth #","차트에서 선택 또는 직접 입력"),tx("omass","Oral mass · size / note","size / description"),tx("tfx","Tooth fx · tooth #","차트에서 선택 또는 직접 입력")],x:OX("Oral · Dental").filter(v=>!/^(Calculus Grade|Gingivitis|Tooth fracture)/.test(v))},
 {t:"Ortho",n:"Ortho",s:["LT","RT"],r:[lr("mpl","Patellar luxation (MPL)",["-","G1","G2","G3","G4"]),lr("hipext","Hip extension test",["+","-"]),op("xl","Radiograph (limb)",["arthritis","MPL","hip luxation","hip subluxation"],1),tx("msk","Musculoskeletal","")]},
 {t:"Neuro",n:"Neuro",s:["LT","RT"],h:"0 normal · 1 delayed · 2 absent",r:[["knuck","Knuckling"],["wb","Wheelbarrow"],["hop","Hopping"],["plv","Placing (visual)"],["plt","Placing (tactile)"],["ept","Extensor postural thrust"],["hemi","Hemiwalking"]].map(([k,l])=>lr(k,l,G3)),
  z:{knuck:"0",wb:"0",hop:"0",plv:"0",plt:"0",ept:"0",hemi:"0"}},
@@ -789,10 +794,26 @@ function oRow(p,r,c){const pe=p.pe||{},id=p.id,k=r.k,ref=typeof r.n==="function"
   :`<input class="in" ${r.n!==undefined?'type="number" step="any" inputmode="decimal"':'type="text"'} ${r.dl?'list="dl-us"':""} data-pe="${key}" data-id="${id}" value="${esc(pe[key]||"")}" placeholder="${esc(side||r.ph||"")}">`;
  if(r.lr){const sd=r.s||c.s;return `<div class="prow"><label>${lab}<small>${sd[0]} / ${sd[1]}</small></label><div class="g2">${ctl(k+"_a",sd[0])}${ctl(k+"_b",sd[1])}</div></div>`}
  return `<div class="prow"><label>${lab}</label>${ctl(k,"")}</div>`}
+/* ---- 치아 차트 (Triadan) ---- */
+const DQ=[["Upper R",1,0],["Upper L",2,1],["Lower R",4,0],["Lower L",3,1]];
+function teethOf(sp,q){const up=q===1||q===2,cat=sp==="cat",a=[];
+ const n=up?(cat?[1,2,3,4,6,7,8,9]:[1,2,3,4,5,6,7,8,9,10]):(cat?[1,2,3,4,7,8,9]:[1,2,3,4,5,6,7,8,9,10,11]);
+ n.forEach(i=>a.push(q*100+i));return a}
+const toothType=n=>{const i=n%100;return i<=3?"i":i===4?"c":i<=8?"p":"m"};
+const tList=v=>String(v||"").split(/[\s,]+/).filter(Boolean);
+function dentChart(p){const pe=p.pe||{},sp=p.species==="cat"?"cat":"dog",mode=S.dm||"tfx",fx=new Set(tList(pe.tfx)),ms=new Set(tList(pe.omloc)),id=p.id;
+ const row=([lb,q,rev])=>{let t=teethOf(sp,q);if(!rev)t=t.slice().reverse();
+  return `<div class="trow"><span class="tq">${lb}</span><div class="tteeth">${t.map(n=>`<button type="button" class="tooth t${toothType(n)} ${fx.has(String(n))?"fx":""} ${ms.has(String(n))?"ms":""}" data-act="tooth" data-id="${id}" data-n="${n}" aria-label="치아 ${n}">${n}</button>`).join("")}</div></div>`};
+ return `<div class="dchart"><div class="otitle">치아 차트 · ${sp==="cat"?"고양이 30본":"강아지 42본"} (Triadan)</div>
+ <div class="dmode"><button type="button" class="chip ${mode==="tfx"?"sel":""}" data-act="dmode" data-m="tfx">Tooth fx</button><button type="button" class="chip ${mode==="omloc"?"sel":""}" data-act="dmode" data-m="omloc">Oral mass 위치</button></div>
+ <div class="meta" style="margin:4px 0 6px">${mode==="tfx"?"골절된 치아를 누르세요 (빨강)":"종양 근처 치아를 누르세요 (주황)"} · 다시 누르면 해제</div>
+ ${DQ.slice(0,2).map(row).join("")}<div class="tmid"></div>${DQ.slice(2).map(row).join("")}</div>`}
+
 function oBlock(p,s){const cur=OSC.find(c=>c.t===S.oCat)||OSC[0],id=p.id,xs=cur.x||[];
  return `<div class="grp"><div class="soapk">${SOAPN.O}</div>
  <div class="osub"><div class="otabs">${OSC.map(c=>`<button class="otab ${c===cur?"on":""}" data-act="osub" data-id="${id}" data-c="${esc(c.t)}">${esc(c.t)}</button>`).join("")}</div>
  <div class="subcopy" style="border:0;padding:0"><span class="otitle">▾ ${esc(cur.t)}${cur.h?` · ${esc(cur.h)}`:""}</span><span style="display:flex;gap:6px">${cur.z?`<button class="btn-xs" data-act="penorm" data-id="${id}" data-c="${esc(cur.t)}">정상값 채우기</button>`:""}<button class="btn-xs" style="color:var(--bad)" data-act="peclr" data-id="${id}" data-c="${esc(cur.t)}">비우기</button></span></div>
+ ${cur.t==="Dent"?dentChart(p):""}
  ${cur.r.map(r=>oRow(p,r,cur)).join("")}
  ${xs.length?`<div class="otitle">추가 소견 선택</div><div class="chips">${xs.map(o=>`<button class="chip ${isSoapSelected(p,"O",o)?"sel":""}" data-act="soap" data-id="${id}" data-k="O" data-v="${esc(o)}">${esc(o)}</button>`).join("")}</div>`:""}
  <div class="subcopy"><span class="meta">${esc(cur.t)} 소견만 바로 복사</span><button class="btn-xs" data-act="copyosub" data-id="${id}" data-c="${esc(cur.t)}">복사</button></div></div>
@@ -861,7 +882,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
  discharge:()=>discharge(id),restore:()=>restore(id),
  remove:()=>{const target=find(S.room,id);S.p[S.room]=(S.p[S.room]||[]).filter(p=>p.id!==id);delete S.drafts[id];render();save(S.room);toast(`${target?target.name+" 카드를 ":"환축 카드를 "}삭제했어요`)},
  copy:()=>{const p=find(S.room,id);if(p)copy(chartText(p),`${p.name} 차트를 복사했어요`)},
- osub:()=>{S.oCat=d.c;render()},soapvoice:()=>soapVoice(id,d.k),copyosub:()=>copyOsub(id,d.c),
+ osub:()=>{S.oCat=d.c;render()},dmode:()=>{S.dm=d.m;render()},tooth:()=>{const p=find("checkup",id);if(!p)return;p.pe=p.pe||{};const k=S.dm||"tfx",a=tList(p.pe[k]),i=a.indexOf(d.n);if(i>=0)a.splice(i,1);else a.push(d.n);a.sort((x,y)=>x-y);p.pe[k]=a.join(", ");render();save("checkup")},soapvoice:()=>soapVoice(id,d.k),copyosub:()=>copyOsub(id,d.c),
  soap:()=>toggleSoapChip(id,d.k,d.v),
  clearSoap:()=>clearSoapField(id,d.k),
  clearLab:()=>clearLabRecord(id),
