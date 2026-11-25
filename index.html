@@ -121,6 +121,7 @@ main{padding-top:16px;display:grid;gap:14px}
 .tappad b{font-size:64px;line-height:1;font-weight:800}.tappad small{font-size:14px;opacity:.9}
 .tappad:active{filter:brightness(.88)}.tappad.done{background:var(--soap)}
 .tapres{font-size:26px;font-weight:800;color:var(--brand)}
+.logd{font-size:11.5px;font-weight:800;color:var(--mute);border-top:1px dashed var(--line);padding-top:6px;margin-top:2px}.log>.logd:first-child{border-top:0;padding-top:0;margin-top:0}.tile{cursor:pointer}
 .copy{text-align:center;font-size:11.5px;color:var(--mute);padding:8px 16px 0;font-weight:500}
 #toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:var(--card);padding:10px 18px;border-radius:99px;font-weight:700;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:60;max-width:92vw;text-align:center}
 #toast.show{opacity:1}
@@ -385,9 +386,9 @@ async function saveDis(){const o={};S.dis.forEach(p=>o[p.id]=p);await put("disch
 /* ---- Rendering ---- */
 function applyQ(){const q=nz($("#q").value);document.querySelectorAll("#list .tile").forEach(a=>{a.style.display=!q||nz(a.textContent).includes(q)?"":"none"})}
 function tile(p){const cr=S.room==="care",lg=(p.logs||[])[0],
- bd=cr?`<span class="badge ${cat(p)==="호텔"?"h":""}">${cat(p)}</span>`:"",
+ bd=cr?`<span class="badge ${cat(p)==="호텔"?"h":""}">${cat(p)}${dayN(p)}</span>`:"",
  l2=cr?(p.dx?esc(p.dx):"병명 미입력"):esc(p.breed||"")+(p.owner?" · "+esc(p.owner):"");
- return `<button class="tile" data-act="sel" data-id="${p.id}"><div class="tt"><div class="av">${p.species==="cat"?"🐱":"🐶"}</div><div class="tn">${esc(p.name)}</div></div><div class="meta">${bd}<span class="badge n">${esc(p.room)}</span></div><div class="meta td">${l2}</div>${cr&&lg?`<div class="meta">🕒 ${esc(lg.time)} 마지막 기록</div>`:""}</button>`}
+ return `<div class="tile" role="button" tabindex="0" data-act="sel" data-id="${p.id}"><div class="tt"><div class="av">${p.species==="cat"?"🐱":"🐶"}</div><div class="tn">${esc(p.name)}</div></div><div class="meta">${bd}<span class="badge n">${esc(p.room)}</span></div><div class="meta td">${l2}</div>${cr&&lg?`<div class="meta">🕒 ${logDate(lg)&&logDate(lg)!==todayStr()?esc(fmtD(logDate(lg)).slice(0,5))+" ":""}${esc(lg.time)} 마지막 기록</div>`:""}${cr&&(p.logs||[]).length?`<button type="button" class="btn-xs" style="justify-self:start" data-act="copycare" data-m="new" data-id="${p.id}">📋 새 기록 복사</button>`:""}</div>`}
 function render(){
  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.r===S.room));
  const all=S.p[S.room]||[],id=S.sel[S.room],cur=id&&all.find(p=>p.id===id);if(id&&!cur)S.sel[S.room]=null;
@@ -410,7 +411,7 @@ function renderDash(){
 }
 
 function head(p,r){
- const b=r==="care"?`<span class="badge ${cat(p)==="호텔"?"h":""}">${cat(p)}</span>`:"";
+ const b=r==="care"?`<span class="badge ${cat(p)==="호텔"?"h":""}">${cat(p)}${dayN(p)}</span>`:"";
  const d=r==="care"?`<button class="btn-s bad" data-act="discharge" data-id="${p.id}">퇴원</button>`:"";
  return `<div class="top"><div class="av">${p.species==="cat"?"🐱":"🐶"}</div><div class="sp"><div class="nm">${esc(p.name)}</div>
  <div class="meta">${b}<span class="badge n">${esc(p.room)}</span>${esc(p.breed||"")}${r==="care"?`<span id="dxm-${p.id}">${p.dx?" · 병명 "+esc(p.dx):""}</span>`:(p.owner?" · 보호자 "+esc(p.owner):"")}</div></div>
@@ -562,7 +563,7 @@ function drPv(id){const dr=getDraft(id),ni=$("#note-"+id);return carePartsOf(dr.
 function commitDraft(id){const p=find("care",id);if(!p)return;
  const dr=getDraft(id),ni=$("#note-"+id),memo=(ni?ni.value:dr.memo||"").trim(),parts=carePartsOf(dr.f,memo);
  if(!parts.length){toast("항목을 입력하거나 선택해 주세요");return}
- p.logs=p.logs||[];p.logs.unshift({id:`l${Date.now()}`,time:now(),text:parts.join(" / ")});
+ p.logs=p.logs||[];p.logs.unshift({id:`l${Date.now()}`,time:now(),d:todayStr(),text:parts.join(" / ")});
  S.drafts[id]={items:[],memo:"",f:{}};
  render();save("care");toast(`${p.name} · 한 줄로 추가됨`)}
 
@@ -581,8 +582,9 @@ function careBody(p){const id=p.id,dr=getDraft(id),f=dr.f,ct=p.species==="cat",
  <div class="draft-box"><div class="draft-top"><span>기록될 내용 미리보기 ('추가'를 누르면 한 줄로 등록)</span><button class="btn-xs" data-act="clearDraft" data-id="${id}">비우기</button></div>
  <div class="pre" id="dpv-${id}" style="padding:8px 10px;font-size:12px">${esc(drPv(id)||"값을 입력하거나 선택하면 여기에 한 줄로 정리됩니다.")}</div></div>
  <div class="row"><input class="in" id="note-${id}" data-draftmemo="${id}" value="${esc(dr.memo||"")}" placeholder="메모 입력 또는 음성"><button class="btn gh" data-act="voice" data-id="${id}">🎤</button><button class="btn" data-act="note" data-id="${id}">추가</button></div>
- <div class="log">${(p.logs||[]).length?p.logs.map(l=>`<div class="log-item"><span><i>${esc(l.time)}</i>${esc(l.text||(l.category?l.category+" · "+l.detail:""))}</span><button type="button" class="log-del" data-act="delLog" data-id="${id}" data-lid="${l.id}" aria-label="기록 삭제">삭제</button></div>`).join(""):`<div class="empty">아직 기록이 없습니다</div>`}</div>
- <button class="btn dk" data-act="copy" data-id="${id}">IntoVet 케어 차트 복사</button>`}
+ <div class="log">${logHtml(p)}</div>
+ <div class="row" style="flex-wrap:wrap"><button class="btn" style="flex:2;min-width:130px" data-act="copycare" data-m="new" data-id="${id}">📋 새 기록만 복사</button><button class="btn dk" style="flex:1;width:auto;min-width:90px" data-act="copycare" data-m="today" data-id="${id}">오늘</button><button class="btn gh" style="flex:1;min-width:70px" data-act="copycare" data-m="all" data-id="${id}">전체</button></div>
+ <div class="meta" id="cpm-${id}">${p.cpAt?"마지막 복사 "+fmtDT(p.cpAt):"아직 복사한 적 없어요 · 'IntoVet 차트'에 붙여넣기용"}</div>`}
 
 function deleteLog(id,logId){const p=find("care",id);if(!p||!Array.isArray(p.logs))return;
  const idx=p.logs.findIndex(l=>l.id===logId);if(idx<0)return;
@@ -605,7 +607,7 @@ function copyOsub(id,catName){const p=find("checkup",id),c=OSC.find(x=>x.t===cat
  copy(`[${p.name}]\n`+(catBlock(c,p,ex)||"-"),`${catName} 소견을 복사했어요`)}
 
 function discharge(id){const l=S.p.care,i=l.findIndex(p=>p.id===id);if(i<0)return;const[x]=l.splice(i,1);S.dis.unshift({...x,category:cat(x),dischargedAt:nowDT()});render();save("care");saveDis();toast(`${x.name} 퇴원 처리 · 아래 명단에서 복원할 수 있어요`)}
-function restore(id){const i=S.dis.findIndex(p=>p.id===id);if(i<0)return;const[x]=S.dis.splice(i,1);delete x.dischargedAt;if(dup(x))x.id="p-care-"+Date.now();S.p.care.unshift({...x,category:cat(x)});render();save("care");saveDis();toast(`${x.name} 케어 룸으로 복원했어요`)}
+function restore(id){const i=S.dis.findIndex(p=>p.id===id);if(i<0)return;const[x]=S.dis.splice(i,1);delete x.dischargedAt;if(dup(x)){x.adm=x.adm||admOf(x);x.id="p-care-"+Date.now()}S.p.care.unshift({...x,category:cat(x)});render();save("care");saveDis();toast(`${x.name} 케어 룸으로 복원했어요`)}
 function setRoom(r){S.room=r;S.filter="ALL";S.sel[r]=null;render();load(r);if(r==="care")loadDis()}
 
 async function labOcr(id,inp){const f=inp.files&&inp.files[0];if(!f)return;const p=find("lab_fluid",id);if(!p)return;p.lab=p.lab||{bw:0,hco3:0,ocrText:"",result:""};toast("검사지를 읽는 중…");
@@ -694,7 +696,7 @@ function renderCands(){const el=$("#ocrPanel");if(!S.cands.length){el.style.disp
  updCount()}
 function updCount(){const e=$("#cCount");if(e)e.textContent=`${S.cands.length}건 인식 · 선택 ${S.cands.filter(c=>c.on&&!dup(c)).length}건`}
 function bulk(){const n=S.cands.filter(c=>c.on&&String(c.name).trim()&&!dup(c));if(!n.length){toast("등록할 신규 환축을 선택해 주세요");return}
- n.forEach((c,i)=>S.p.care.unshift({id:`p-care-${Date.now()}-${i}`,name:c.name.trim(),room:String(c.room||"").trim()||`${c.category} 미지정`,category:c.category,species:c.species,breed:String(c.breed||"").trim(),owner:"",dx:String(c.dx||"").trim(),logs:[]}));
+ n.forEach((c,i)=>S.p.care.unshift({id:`p-care-${Date.now()}-${i}`,name:c.name.trim(),room:String(c.room||"").trim()||`${c.category} 미지정`,category:c.category,species:c.species,breed:String(c.breed||"").trim(),owner:"",dx:String(c.dx||"").trim(),logs:[],adm:todayStr()}));
  const sk=S.cands.length-n.length;closeP();setRoom("care");save("care");toast(`${n.length}마리 등록${sk?` · ${sk}건 제외`:""}`)}
 
 /* ---- Modals ---- */
@@ -705,7 +707,7 @@ const closeP=()=>$("#pm").classList.remove("open");
 function saveP(){const r=$("#fRoom").value,name=$("#fName").value.trim(),room=$("#fRm").value.trim();if(!name||!room){toast("환축명과 병실을 입력해 주세요");return}
  const owner=$("#fOw").value.trim();if(r==="care"&&dup({name,room,owner:""})){toast(`${name}(${room})은 이미 등록돼 있어요`);return}
  const p={id:`p-${r}-${Date.now()}`,name,room,species:$("#fSp").value,breed:$("#fBr").value.trim(),owner:r==="care"?"":owner,dx:r==="care"?owner:""};
- if(r==="care"){p.category=$("#fCat").value;p.logs=[]}else if(r==="checkup")p.soap={s:"",o:"",a:"",p:""};else p.lab={bw:0,hco3:0,ocrText:"",result:""};
+ if(r==="care"){p.category=$("#fCat").value;p.logs=[];p.adm=todayStr()}else if(r==="checkup")p.soap={s:"",o:"",a:"",p:""};else p.lab={bw:0,hco3:0,ocrText:"",result:""};
  (S.p[r]=S.p[r]||[]).unshift(p);closeP();setRoom(r);save(r);toast(`${name} 등록 완료`)}
 
 /* ---- 검사·수액: 칼륨 교정 / 수혈 계산 ---- */
@@ -786,6 +788,36 @@ $("#tapPad").addEventListener("pointerdown",e=>{e.preventDefault();if(TP.val!=nu
  if(TP.ts.length>=TP.n)TP.val=tapRate(TP.ts);tapUI()});
 $("#tapCnt").addEventListener("change",()=>{TP.n=+$("#tapCnt").value||20;tapReset()});
 
+/* ---- 날짜 구분 / 입원 일수 / 케어 차트 복사 ---- */
+const WD=["일","월","화","수","목","금","토"],pad2=n=>String(n).padStart(2,"0");
+const dStr=d=>`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`,todayStr=()=>dStr(new Date());
+const tsOf=x=>{const m=String(x||"").match(/(\d{13})/);return m?+m[1]:0};
+const logTs=l=>tsOf(l.id),logDate=l=>l.d||(logTs(l)?dStr(new Date(logTs(l))):"");
+const parseD=s=>{const[y,m,d]=String(s).split("-").map(Number);return new Date(y,m-1,d)};
+const fmtD=s=>{if(!s)return"";const t=parseD(s);return `${pad2(t.getMonth()+1)}/${pad2(t.getDate())} (${WD[t.getDay()]})`};
+const fmtDT=ts=>{const t=new Date(ts);return `${pad2(t.getMonth()+1)}/${pad2(t.getDate())} ${pad2(t.getHours())}:${pad2(t.getMinutes())}`};
+const admOf=p=>p.adm||(/^p-care-\d{13}/.test(p.id||"")?dStr(new Date(tsOf(p.id))):"");
+const dayNum=p=>{const a=admOf(p);if(!a)return 0;const t=new Date(),n=Math.floor((new Date(t.getFullYear(),t.getMonth(),t.getDate())-parseD(a))/864e5)+1;return n>0?n:0};
+const dayN=p=>{const n=dayNum(p);return n?` ${n}일차`:""};
+function logHtml(p){const L=p.logs||[];if(!L.length)return `<div class="empty">아직 기록이 없습니다</div>`;let prev=null;
+ return L.map(l=>{const d=logDate(l),h=d&&d!==prev?`<div class="logd">${esc(fmtD(d))}${d===todayStr()?" · 오늘":""}</div>`:"";if(d)prev=d;
+  return h+`<div class="log-item"><span><i>${esc(l.time)}</i>${esc(l.text||(l.category?l.category+" · "+l.detail:""))}</span><button type="button" class="log-del" data-act="delLog" data-id="${p.id}" data-lid="${l.id}" aria-label="기록 삭제">삭제</button></div>`}).join("")}
+function careRows(p,mode){const all=(p.logs||[]).slice().reverse(),td=todayStr(),last=p.cpAt||0;
+ return mode==="today"?all.filter(l=>logDate(l)===td):mode==="new"?all.filter(l=>last===0||logTs(l)>last):all}
+function careChart(p,rows){const adm=admOf(p),n=dayNum(p),out=[];
+ out.push(`[IntoVet ${cat(p)}/케어 차트 - ${p.name} (${p.room})]`);
+ out.push(`구분: ${cat(p)} | ${p.species==="cat"?"고양이":"강아지"} / ${p.breed||"-"}`);
+ out.push(`병명: ${p.dx||"-"}`);
+ if(adm)out.push(`${cat(p)}일: ${fmtD(adm)}${n?` · ${n}일차`:""}`);
+ let prev=null;if(!rows.length)out.push("- 기록 없음");
+ rows.forEach(l=>{const d=logDate(l);if(d&&d!==prev){out.push("",`[${fmtD(d)}]`);prev=d}out.push(`- [${l.time}] ${l.text||(l.category?l.category+": "+l.detail:"")}`)});
+ return out.join("\n")}
+function copyCare(p,mode){const rows=careRows(p,mode),nm={today:"오늘 기록",new:"새 기록",all:"전체 기록"}[mode]||"기록";
+ if(!rows.length&&mode!=="all"){toast(mode==="new"?"마지막 복사 이후 새 기록이 없어요":"오늘 기록이 없어요");return}
+ copy(careChart(p,rows),`${p.name} ${nm} ${rows.length}건을 복사했어요`);
+ p.cpAt=Date.now();save("care");const m=$("#cpm-"+p.id);if(m)m.textContent="마지막 복사 "+fmtDT(p.cpAt)}
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.classList&&e.target.classList.contains("tile"))e.target.click()});
+
 /* ---- Global Event Listeners ---- */
 document.addEventListener("click",e=>{const b=e.target.closest('[data-act="remove"]');if(!b)return;const p=find(S.room,b.dataset.id);
  if(!confirm(`${p?p.name:"이 환축"} 카드를 삭제할까요?`)){e.stopPropagation();e.preventDefault()}},true);
@@ -805,6 +837,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
  soap:()=>toggleSoapChip(id,d.k,d.v),
  clearSoap:()=>clearSoapField(id,d.k),
  clearLab:()=>clearLabRecord(id),
+ copycare:()=>{const p=find("care",id);if(p)copyCare(p,d.m)},
  tapopen:()=>tapOpen(id,d.k),tapclose:()=>$("#tm").classList.remove("open"),tapreset:tapReset,
  tapnow:()=>{if(TP.ts.length<3){toast("최소 3번 이상 탭해 주세요");return}TP.val=tapRate(TP.ts);tapUI()},tapuse:tapUse,
  sel:()=>{S.y=window.scrollY;S.sel[S.room]=id;render();window.scrollTo(0,0)},
