@@ -149,6 +149,12 @@ main{padding-top:16px;display:grid;gap:14px}
 .cand2 .in{height:38px;font-size:13px}
 @media(max-width:420px){.stat b{font-size:20px}.hd h1{font-size:14.5px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+#gate{position:fixed;inset:0;z-index:9999;background:var(--bg,#fff);display:none;overflow:auto}
+#gate.open{display:block}
+#gate .gw{max-width:420px;margin:0 auto;padding:40px 20px;display:grid;gap:14px;text-align:center}
+#gate .code{font:800 30px ui-monospace,monospace;letter-spacing:4px;padding:12px;border-radius:12px;background:rgba(127,127,127,.12)}
+.dvrow{display:grid;gap:6px;padding:10px 0;border-bottom:1px solid rgba(127,127,127,.2)}
+.dvrow .st{font-size:12px;font-weight:700}.dvrow .st.ok{color:#1a8f4a}.dvrow .st.no{color:#b4531a}
 </style>
 </head>
 <body>
@@ -160,6 +166,7 @@ main{padding-top:16px;display:grid;gap:14px}
     <button class="ib" data-act="theme" id="themeBtn" aria-label="화면 모드 전환">🌙</button>
     <button class="ib" data-act="shareweb" aria-label="웹 공유 및 링크 복사">🔗</button>
     <button class="ib" id="mjBtn" data-act="mjopen" aria-label="사전 문진 보기">📋</button>
+    <button class="ib" id="dvBtn" data-act="devopen" aria-label="기기 관리" style="display:none">🔐</button>
   </div>
   <div class="tabs" id="tabs">
     <button class="tab on" data-r="care" data-act="room"><span>🏥</span>환축 케어</button>
@@ -231,6 +238,13 @@ main{padding-top:16px;display:grid;gap:14px}
   <div class="tapres" id="tapOut">-</div>
   <div class="meta" id="tapSub">화면을 탭해서 시작하세요</div>
   <div class="row"><button class="btn gh" style="flex:1" data-act="tapreset">다시</button><button class="btn gh" style="flex:1" data-act="tapnow">지금까지로 계산</button><button class="btn" style="flex:1" data-act="tapuse">입력칸에 넣기</button></div>
+</div></div>
+<div id="gate"><div class="gw" id="gateBody"></div></div>
+<div class="mask" id="dv"><div class="sheet">
+  <div class="row" style="justify-content:space-between;align-items:center"><h3>🔐 기기 관리</h3><button class="ib" data-act="devclose" aria-label="닫기">✕</button></div>
+  <div class="meta">승인된 기기만 케어 노트와 문진을 볼 수 있어요. 분실·퇴사 시 승인을 해제하세요.</div>
+  <div class="row" style="margin:6px 0"><button class="btn gh" style="flex:1" data-act="devopen">새로고침</button></div>
+  <div id="dvList"></div>
 </div></div>
 <div id="toast"></div>
 
@@ -403,6 +417,39 @@ const cat=p=>p.category==="입원"||p.category==="호텔"?p.category:(String(p.r
 const nz=s=>String(s||"").trim().toLowerCase().replace(/\s+/g,"");
 function dup(c){return(S.p.care||[]).some(e=>nz(e.name)===nz(c.name)&&((nz(c.room)&&nz(e.room)===nz(c.room))||(nz(c.owner)&&nz(e.owner)===nz(c.owner))||(!nz(c.room)&&!nz(e.room))))}
 
+/* ---- 기기 인증: Firebase 익명 로그인 + 관리자 승인 ---- */
+const FBK="AIzaSyB7SmDVueDq1ghmIbNTjcHGxMM2vpHSvWw";
+const DBH="https://songpabaro-default-rtdb.asia-southeast1.firebasedatabase.app";
+const AU={tok:null,exp:0,uid:null};let AUP=null;
+const auGet=()=>{try{return JSON.parse(localStorage.getItem("sbauth")||"null")}catch(e){return null}};
+const auSet=v=>{try{localStorage.setItem("sbauth",JSON.stringify(v))}catch(e){}};
+const withAuth=(u,t)=>t?u+(u.includes("?")?"&":"?")+"auth="+encodeURIComponent(t):u;
+const isDbUrl=u=>typeof u==="string"&&/firebasedatabase\.app|firebaseio\.com/.test(u)&&!/[?&]auth=/.test(u);
+function auTok(){if(AU.tok&&Date.now()<AU.exp-120000)return Promise.resolve(AU.tok);return AUP||(AUP=auFetch().finally(()=>{AUP=null}))}
+async function auFetch(){
+ const a=auGet();let r,j;
+ if(a&&a.rt){
+  r=await fetch("https://securetoken.googleapis.com/v1/token?key="+FBK,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"grant_type=refresh_token&refresh_token="+encodeURIComponent(a.rt)});
+  j=await r.json().catch(()=>({}));
+  if(r.ok){auSet({uid:j.user_id,rt:j.refresh_token});AU.uid=j.user_id;AU.tok=j.id_token;AU.exp=Date.now()+(+j.expires_in||3600)*1000;return AU.tok}
+  const m=(j.error&&j.error.message)||"";
+  if(!/TOKEN_EXPIRED|INVALID_REFRESH_TOKEN|USER_NOT_FOUND|USER_DISABLED/.test(m))throw new Error("auth:"+(m||r.status));
+ }
+ r=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="+FBK,{method:"POST",headers:{"Content-Type":"application/json"},body:'{"returnSecureToken":true}'});
+ j=await r.json().catch(()=>({}));if(!r.ok)throw new Error("auth:"+((j.error&&j.error.message)||r.status));
+ auSet({uid:j.localId,rt:j.refreshToken});AU.uid=j.localId;AU.tok=j.idToken;AU.exp=Date.now()+(+j.expiresIn||3600)*1000;return AU.tok}
+const devCode=uid=>String(uid||"").slice(-6).toUpperCase();
+/* DB 주소로 가는 요청에는 자동으로 로그인 토큰을 붙입니다 */
+const _fetch=window.fetch.bind(window);
+window.fetch=async(u,o)=>{if(isDbUrl(u)&&window.AUTH_ON!==false){let t=null;try{t=await auTok()}catch(e){}u=withAuth(u,t)}return _fetch(u,o)};
+/* 이 기기의 승인 상태: {ok, adm, hasAdm, dev} */
+async function devState(){
+ await auTok();const uid=AU.uid,g=async p=>{const r=await fetch(`${DBH}/${p}.json`);if(!r.ok)return {__denied:r.status};return r.json()};
+ const dev=await g(`devices/${uid}`).catch(()=>null),adm=(await g(`admins/${uid}`).catch(()=>null))===true;
+ let hasAdm=true;if(!adm){const x=await g("admins").catch(()=>null);hasAdm=!!(x&&!x.__denied&&Object.keys(x).length)||!!(x&&x.__denied)}
+ return {ok:!!(dev&&dev.ok===true),adm,hasAdm,dev:dev&&!dev.__denied?dev:null}}
+const devPatch=o=>fetch(`${DBH}/devices/${AU.uid}.json`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(o)});
+
 /* ---- Firebase Realtime Database Sync ---- */
 const base=()=>(S.db||DB0).trim().replace(/\/+$/,"");
 const url=k=>`${base()}/rooms/${encodeURIComponent(S.code)}/${k}.json`;
@@ -428,21 +475,26 @@ const onDis=v=>{ingest("dis",v,false);pruneDis();if(S.room==="care")softRender()
 const DAY=864e5;
 function pruneDis(){const n=Date.now();let ch=false;S.dis=S.dis.filter(d=>{if(!d.dischargedTs){d.dischargedTs=n;ch=true;return true}if(n-d.dischargedTs>DAY){ch=true;return false}return true});if(ch)saveDis()}
 setInterval(()=>{if(S.room==="care"&&!document.hidden&&S.live&&S.live.dis)pruneDis()},600000);
+let EGEN=0;
 function watch(key,fn){
  if(ES[key]){ES[key].close();delete ES[key]}
- const st=ST[key]={v:null};
- return new Promise(res=>{let done=false;const fin=()=>{if(!done){done=true;res()}};setTimeout(fin,4000);
-  let es;try{es=new EventSource(url(key))}catch(e){badge(false);fin();return}
+ const st=ST[key]={v:null},g=EGEN;
+ return new Promise(async res=>{let done=false;const fin=()=>{if(!done){done=true;res()}};setTimeout(fin,4000);
+  let t=null;try{t=await auTok()}catch(e){}
+  if(g!==EGEN){fin();return}if(ES[key]){ES[key].close();delete ES[key]}
+  let es;try{es=new EventSource(withAuth(url(key),t))}catch(e){badge(false);fin();return}
+  es.addEventListener("auth_revoked",()=>{es.close();AU.tok=null;if(ES[key]===es&&g===EGEN)watch(key,fn)});
+  es.addEventListener("cancel",()=>{es.close();badge(false);recheck()});
   ES[key]=es;
   const h=patch=>e=>{try{applyEv(st,JSON.parse(e.data),patch)}catch(x){return}st.got=true;fin();flush(key,fn)};
   es.addEventListener("put",h(false));es.addEventListener("patch",h(true));
   es.onopen=()=>badge(true);es.onerror=()=>badge(false)})}
-function stopAll(){Object.keys(ES).forEach(k=>{ES[k].close();delete ES[k]})}
+function stopAll(){EGEN++;Object.keys(ES).forEach(k=>{ES[k].close();delete ES[k]})}
 async function load(r){const _l=await load0(r);useCache(r==="care"?["care","dis"]:[r]);return _l}
 async function load0(r){stopAll();if(r==="calc"){await watch(PATHS.care,onRoom("care"));watch(PATHS.lab_fluid,onRoom("lab_fluid"));return}const pr=watch(PATHS[r],onRoom(r));if(r==="care")watch("discharged_patients",onDis);if(r==="lab_fluid")watch(PATHS.care,onRoom("care"));await pr}
 async function loadDis(){}
 function startPoll(){}
-document.addEventListener("visibilitychange",()=>{if(document.hidden)stopAll();else load(S.room)});
+document.addEventListener("visibilitychange",()=>{if(document.hidden)stopAll();else if(OKD)load(S.room)});
 
 async function put(key,o){
  QT[key]=Date.now()+60000;
@@ -1143,7 +1195,14 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
  recoverItem:()=>recoverDeletedItem(d.room,d.recid),
  calc:()=>{const p=find("lab_fluid",id);if(!p)return;p.lab=p.lab||{};const bw=parseFloat($("#bw-"+id).value)||0,h=parseFloat($("#hc-"+id).value)||0;p.lab.bw=bw;p.lab.hco3=h;if(bw<=0||h<=0){toast("체중과 HCO3-를 입력해 주세요");return}p.lab.result=bicarb(p.name,bw,h);render();save("lab_fluid");toast("계산했어요")},
  applycode:()=>{const c=$("#roomCode").value.trim().replace(/[^a-zA-Z0-9_-]/g,"");if(!c){toast("방 코드를 입력해 주세요");return}S.code=c;$("#roomCode").value=c;toast(`방 코드 '${c}' 적용`);load(S.room);loadDis()},
- mjopen:()=>{$("#mj").classList.add("open");mjLoad()},mjclose:()=>$("#mj").classList.remove("open"),
+ mjopen:()=>{$("#mj").classList.add("open");mjLoad()},
+ devopen:()=>{$("#dv").classList.add("open");devLoad()},devclose:()=>$("#dv").classList.remove("open"),
+ devok:async()=>{await fetch(`${DBH}/devices/${d.u}/ok.json`,{method:"PUT",body:d.v==="1"?"true":"false"});devLoad()},
+ devadm:async()=>{if(d.v==="1"&&!confirm("이 기기를 관리자로 지정할까요? 관리자는 다른 기기를 승인·해제할 수 있어요."))return;if(d.v!=="1"&&d.u===AU.uid){toast("내 기기의 관리자 권한은 여기서 해제할 수 없어요");return}await fetch(`${DBH}/admins/${d.u}.json`,{method:d.v==="1"?"PUT":"DELETE",body:d.v==="1"?"true":undefined});devLoad()},
+ devdel:async()=>{if(d.u===AU.uid){toast("지금 쓰는 기기는 삭제할 수 없어요");return}if(!confirm("이 기기를 목록에서 삭제할까요? 다시 쓰려면 새로 승인받아야 해요."))return;await fetch(`${DBH}/admins/${d.u}.json`,{method:"DELETE"});await fetch(`${DBH}/devices/${d.u}.json`,{method:"DELETE"});devLoad()},
+ gatereq:async()=>{const n=$("#gName").value.trim();if(!n){toast("기기 이름을 입력해 주세요");return}try{const r=await devPatch({name:n.slice(0,30),t:Date.now()});if(!r.ok)throw 0;toast("승인 요청을 보냈어요");startGate()}catch(e){toast("요청하지 못했어요. 인터넷을 확인해 주세요")}},
+ gateadm:async()=>{const n=$("#gName").value.trim()||"관리자 기기";if(!confirm("이 기기를 병원 관리자 기기로 등록할까요? (처음 한 번만 가능)"))return;try{let r=await fetch(`${DBH}/admins/${AU.uid}.json`,{method:"PUT",body:"true"});if(!r.ok)throw 0;r=await devPatch({name:n.slice(0,30),t:Date.now(),ok:true});if(!r.ok)throw 0;startGate()}catch(e){toast("등록하지 못했어요")}},
+ gatecheck:()=>startGate(),mjclose:()=>$("#mj").classList.remove("open"),
  mjlink:()=>{const u=location.href.replace(/[#?].*$/,"").replace(/[^\/]*$/,"")+"munjin.html";if(u.startsWith("file:")){toast("웹에 올라간 주소에서 눌러 주세요");return}copy(u,"문진 링크를 복사했어요")},
  mjcopy:()=>{const x=(S.mj||{})[d.k];if(x)copy(mjText(x),"문진 내용을 복사했어요")},
  mjadd:()=>{const x=(S.mj||{})[d.k],sel=$("#mjs-"+d.k),p=sel&&sel.value&&find("care",sel.value);if(!x)return;if(!p){toast("환축을 먼저 선택해 주세요");return}p.logs=p.logs||[];p.logs.unshift({id:`l${Date.now()}`,time:now(),d:todayStr(),text:mjText(x).replace("\n"," ").replace(/\n- /g," / ")});save("care");render();toast(`${p.name} 케어 기록에 추가했어요`)},
@@ -1185,7 +1244,40 @@ document.querySelectorAll(".mask").forEach(m=>m.addEventListener("click",e=>{if(
 function toggleTheme(){const r=document.documentElement,dk=r.dataset.theme!=="dark";r.dataset.theme=dk?"dark":"light";$("#themeBtn").textContent=dk?"☀️":"🌙"}
 if(matchMedia("(prefers-color-scheme:dark)").matches)toggleTheme();
 
-render();load("care");loadDis();startPoll();mjPoll();setInterval(mjPoll,90000);
+/* ---- 기기 승인 화면 ---- */
+let OKD=false,GPOLL,MJI;
+function clearCache(){try{Object.keys(localStorage).filter(k=>k.startsWith("cc:")).forEach(k=>localStorage.removeItem(k))}catch(e){}}
+function gateView(st){const c=devCode(AU.uid),req=st.dev&&st.dev.name;
+ return `<div style="font-size:44px">🔐</div><h2 style="margin:0">승인된 기기만 사용할 수 있어요</h2>
+ <div class="meta">${req?`'<b>${esc(st.dev.name)}</b>' 이름으로 승인을 요청했어요. 관리자(원장님)가 승인하면 자동으로 열립니다.`:"기기 이름을 적고 승인을 요청해 주세요. 관리자(원장님)에게 아래 기기 코드를 알려 주세요."}</div>
+ <div class="code">${c}</div>
+ <input class="in" id="gName" maxlength="30" placeholder="예: 1진료실 PC, 입원실 태블릿, 김OO 간호사 폰" value="${esc(req||"")}">
+ <button class="btn" data-act="gatereq">${req?"이름 바꿔서 다시 요청":"승인 요청"}</button>
+ <button class="btn gh" data-act="gatecheck">승인됐는지 확인</button>
+ ${st.hasAdm?"":`<hr style="width:100%;opacity:.3"><div class="meta">아직 관리자 기기가 없어요. 원장님 기기라면 아래 버튼으로 관리자 등록을 해 주세요. 처음 한 번만 할 수 있어요.</div><button class="btn gh" data-act="gateadm">이 기기를 관리자로 등록</button>`}`}
+async function startGate(){
+ clearInterval(GPOLL);let st;
+ try{st=await devState()}catch(e){
+  if(localStorage.getItem("sbok")==="1"){openApp(false);return}
+  $("#gateBody").innerHTML=`<div style="font-size:44px">📡</div><h2 style="margin:0">연결할 수 없어요</h2><div class="meta">인터넷 연결을 확인한 뒤 다시 시도해 주세요.</div><button class="btn" data-act="gatecheck">다시 시도</button>`;$("#gate").classList.add("open");return}
+ if(st.ok){S.adm=st.adm;try{localStorage.setItem("sbok","1")}catch(e){}devPatch({t:Date.now()}).catch(()=>{});openApp(true);return}
+ OKD=false;stopAll();clearCache();try{localStorage.removeItem("sbok")}catch(e){}
+ $("#gateBody").innerHTML=gateView(st);$("#gate").classList.add("open");
+ if(st.dev&&st.dev.name)GPOLL=setInterval(()=>{if(!document.hidden)startGate()},20000)}
+function openApp(online){$("#gate").classList.remove("open");$("#dvBtn").style.display=S.adm?"":"none";if(OKD)return;OKD=true;
+ render();load("care");loadDis();startPoll();mjPoll();clearInterval(MJI);MJI=setInterval(mjPoll,90000)}
+let RCK=0;async function recheck(){if(Date.now()-RCK<15000)return;RCK=Date.now();try{const st=await devState();if(!st.ok){OKD=false;startGate()}}catch(e){}}
+async function devLoad(){const box=$("#dvList");box.innerHTML='<div class="meta">불러오는 중...</div>';
+ try{const [dr,ar]=await Promise.all([fetch(`${DBH}/devices.json`),fetch(`${DBH}/admins.json`)]);if(!dr.ok)throw 0;const ds=await dr.json()||{},as=(ar.ok?await ar.json():null)||{};
+  const arr=Object.entries(ds).filter(([,v])=>v).sort((a,b)=>(a[1].ok?1:0)-(b[1].ok?1:0)||(b[1].t||0)-(a[1].t||0));
+  if(!arr.length){box.innerHTML='<div class="meta">등록된 기기가 없어요</div>';return}
+  box.innerHTML=arr.map(([u,v])=>{const seen=v.t?new Date(v.t).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}):"-",me=u===AU.uid,adm=as[u]===true;
+   return `<div class="dvrow"><div><b>${esc(v.name||"(이름 없음)")}</b>${me?" <span class='meta'>· 지금 이 기기</span>":""}${adm?" <span class='meta'>· 관리자</span>":""}</div>
+   <div class="meta">코드 <b>${devCode(u)}</b> · 마지막 접속 ${seen} · <span class="st ${v.ok?"ok":"no"}">${v.ok?"승인됨":"승인 대기"}</span></div>
+   <div class="row" style="gap:6px;flex-wrap:wrap">${v.ok?(me?"":`<button class="btn gh" data-act="devok" data-u="${esc(u)}" data-v="0">승인 해제</button>`):`<button class="btn" data-act="devok" data-u="${esc(u)}" data-v="1">승인</button>`}
+   ${me?"":`<button class="btn gh" data-act="devadm" data-u="${esc(u)}" data-v="${adm?0:1}">${adm?"관리자 해제":"관리자로 지정"}</button><button class="btn gh" data-act="devdel" data-u="${esc(u)}">삭제</button>`}</div></div>`}).join("")}
+ catch(e){box.innerHTML='<div class="meta">불러오지 못했어요 (관리자 기기에서만 볼 수 있어요)</div>'}}
+startGate();
 </script>
 </body>
 </html>

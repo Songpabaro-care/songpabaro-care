@@ -52,6 +52,40 @@ const PATH="munjin";
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const STAFF=/[?&]staff=1/.test(location.search);
+window.AUTH_ON=STAFF; /* 보호자 화면은 로그인 없이 제출만 합니다 */
+/* ---- 기기 인증: Firebase 익명 로그인 + 관리자 승인 ---- */
+const FBK="AIzaSyB7SmDVueDq1ghmIbNTjcHGxMM2vpHSvWw";
+const DBH="https://songpabaro-default-rtdb.asia-southeast1.firebasedatabase.app";
+const AU={tok:null,exp:0,uid:null};let AUP=null;
+const auGet=()=>{try{return JSON.parse(localStorage.getItem("sbauth")||"null")}catch(e){return null}};
+const auSet=v=>{try{localStorage.setItem("sbauth",JSON.stringify(v))}catch(e){}};
+const withAuth=(u,t)=>t?u+(u.includes("?")?"&":"?")+"auth="+encodeURIComponent(t):u;
+const isDbUrl=u=>typeof u==="string"&&/firebasedatabase\.app|firebaseio\.com/.test(u)&&!/[?&]auth=/.test(u);
+function auTok(){if(AU.tok&&Date.now()<AU.exp-120000)return Promise.resolve(AU.tok);return AUP||(AUP=auFetch().finally(()=>{AUP=null}))}
+async function auFetch(){
+ const a=auGet();let r,j;
+ if(a&&a.rt){
+  r=await fetch("https://securetoken.googleapis.com/v1/token?key="+FBK,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"grant_type=refresh_token&refresh_token="+encodeURIComponent(a.rt)});
+  j=await r.json().catch(()=>({}));
+  if(r.ok){auSet({uid:j.user_id,rt:j.refresh_token});AU.uid=j.user_id;AU.tok=j.id_token;AU.exp=Date.now()+(+j.expires_in||3600)*1000;return AU.tok}
+  const m=(j.error&&j.error.message)||"";
+  if(!/TOKEN_EXPIRED|INVALID_REFRESH_TOKEN|USER_NOT_FOUND|USER_DISABLED/.test(m))throw new Error("auth:"+(m||r.status));
+ }
+ r=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="+FBK,{method:"POST",headers:{"Content-Type":"application/json"},body:'{"returnSecureToken":true}'});
+ j=await r.json().catch(()=>({}));if(!r.ok)throw new Error("auth:"+((j.error&&j.error.message)||r.status));
+ auSet({uid:j.localId,rt:j.refreshToken});AU.uid=j.localId;AU.tok=j.idToken;AU.exp=Date.now()+(+j.expiresIn||3600)*1000;return AU.tok}
+const devCode=uid=>String(uid||"").slice(-6).toUpperCase();
+/* DB 주소로 가는 요청에는 자동으로 로그인 토큰을 붙입니다 */
+const _fetch=window.fetch.bind(window);
+window.fetch=async(u,o)=>{if(isDbUrl(u)&&window.AUTH_ON!==false){let t=null;try{t=await auTok()}catch(e){}u=withAuth(u,t)}return _fetch(u,o)};
+/* 이 기기의 승인 상태: {ok, adm, hasAdm, dev} */
+async function devState(){
+ await auTok();const uid=AU.uid,g=async p=>{const r=await fetch(`${DBH}/${p}.json`);if(!r.ok)return {__denied:r.status};return r.json()};
+ const dev=await g(`devices/${uid}`).catch(()=>null),adm=(await g(`admins/${uid}`).catch(()=>null))===true;
+ let hasAdm=true;if(!adm){const x=await g("admins").catch(()=>null);hasAdm=!!(x&&!x.__denied&&Object.keys(x).length)||!!(x&&x.__denied)}
+ return {ok:!!(dev&&dev.ok===true),adm,hasAdm,dev:dev&&!dev.__denied?dev:null}}
+const devPatch=o=>fetch(`${DBH}/devices/${AU.uid}.json`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(o)});
+
 
 /* ---- 문진 항목 ---- */
 const SYM=["구토","설사","식욕 저하","기침","호흡이 빠름","절뚝거림","피부 가려움","귀 긁음/냄새","눈 분비물","소변 이상","변비","기력 저하","경련","체중 변화","정기검진/예방접종","기타"];
@@ -113,8 +147,7 @@ function toText(d){const t=x=>String(x==null?"":x).replace(/\s+/g," ").trim(),L=
 async function submit(){
  grab();const v=F.v,er=$("#err");const bad=!v.name?"이름을 입력해 주세요":!v.sp?"종을 선택해 주세요":!F.sym.length&&!v.det?"방문 이유를 선택하거나 적어 주세요":"";
  if(bad){er.textContent=bad;er.classList.remove("hide");return}
- let used=new Set();try{const r0=await fetch(`${DB}/${PATH}.json?shallow=true`);const o0=await r0.json();Object.keys(o0||{}).forEach(k=>used.add(k.split("_")[1]))}catch(e){}
- let no;for(let i=0;i<20;i++){no=String(Math.floor(1000+Math.random()*9000));if(!used.has(no))break}
+ const no=String(Math.floor(1000+Math.random()*9000));
  const d={no,t:Date.now(),name:v.name,sp:v.sp,br:v.br,age:v.age,bw:v.bw,sx:v.sx,sym:F.sym,det:v.det,med:v.med,hx:v.hx,food:v.food,vac:v.vac,etc:v.etc};
  FIELDS.forEach(([k])=>{if(v["s_"+k])d["s_"+k]=v["s_"+k]});
  ["p_vac","p_in","p_out","p_hw"].forEach(k=>{if(v[k])d[k]=v[k]});
@@ -153,7 +186,11 @@ document.addEventListener("click",async e=>{
  const dl=e.target.closest("[data-del]");
  if(dl){if(!confirm("이 문진을 삭제할까요?"))return;await fetch(`${DB}/${PATH}/${dl.dataset.del}.json`,{method:"DELETE"});load()}
 });
-if(STAFF)staffView();else $("#app").innerHTML=formView();
+async function staffGate(){
+ let st=null;try{st=await devState()}catch(e){}
+ if(st&&st.ok){staffView();return}
+ $("#app").innerHTML=`<div class="done"><div style="font-size:44px">🔐</div><h1>승인된 기기만 볼 수 있어요</h1><p class="sub">${st?"케어 노트를 열어 이 기기의 승인을 받은 뒤 다시 열어 주세요.":"인터넷 연결을 확인한 뒤 다시 열어 주세요."}</p><p><a class="btn" href="./">케어 노트 열기</a></p></div>`}
+if(STAFF)staffGate();else $("#app").innerHTML=formView();
 </script>
 </body>
 </html>
