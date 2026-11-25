@@ -30,6 +30,8 @@ header{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px
 .dot{width:7px;height:7px;border-radius:50%;background:var(--brand)}
 .sync.off .dot{background:var(--warn)}
 .hd .sp{flex:1;min-width:0}
+.stk{position:sticky;bottom:0;z-index:6;background:var(--card);padding:8px 0 calc(8px + env(safe-area-inset-bottom,0));box-shadow:0 -8px 12px -10px rgba(0,0,0,.25)}
+.ib{position:relative}.bdg{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;border-radius:9px;background:#e5484d;color:#fff;font-size:11px;line-height:18px;text-align:center;padding:0 4px}
 .ib{height:38px;min-width:38px;padding:0 12px;border-radius:11px;border:1px solid var(--line);background:var(--soft);font-weight:700;font-size:12.5px}
 .cprev{white-space:pre-wrap;word-break:break-all;background:var(--bg,#f4f4f4);border:1px solid var(--line,#ddd);border-radius:8px;padding:8px 10px;font:12px/1.5 inherit;margin:4px 0 0}
 .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;padding:4px;background:var(--soft);border:1px solid var(--line);border-radius:14px;margin:12px 0 12px}
@@ -60,7 +62,7 @@ main{padding-top:16px;display:grid;gap:14px}
 .badge.h{background:var(--warn-s);color:var(--warn)}.badge.n{background:var(--soft);color:var(--ink);border:1px solid var(--line)}
 .top .sp{flex:1;min-width:0}
 .act{display:flex;gap:6px}
-.btn-s{height:32px;padding:0 12px;border-radius:99px;font-size:12px;font-weight:700;border:1px solid var(--line);background:var(--soft)}
+.btn-s{height:38px;padding:0 12px;border-radius:99px;font-size:12px;font-weight:700;border:1px solid var(--line);background:var(--soft)}
 .btn-s.bad{color:var(--bad);background:var(--bad-s);border-color:transparent}
 .grp{display:grid;gap:6px}
 .grp>label{font-size:12px;font-weight:700;color:var(--mute)}
@@ -86,7 +88,7 @@ main{padding-top:16px;display:grid;gap:14px}
 .dtag{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:99px;background:var(--brand-s);color:var(--brand);font-size:12px;font-weight:700}
 .dtag button{font-size:12px;line-height:1;padding:0 2px;color:inherit;font-weight:800}
 .log-item{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.log-del{font-size:11px;font-weight:700;color:var(--bad);background:var(--bad-s);padding:2px 7px;border-radius:6px;flex:none}
+.log-del{font-size:12px;font-weight:700;color:var(--bad);background:var(--bad-s);padding:0 12px;min-height:34px;border-radius:8px;flex:none}
 .row{display:flex;gap:8px}
 .in{width:100%;height:40px;border:1px solid var(--line);border-radius:11px;background:var(--soft);padding:0 12px}
 .row .in{flex:1}
@@ -107,7 +109,7 @@ main{padding-top:16px;display:grid;gap:14px}
 .otab.on{background:var(--soap);border-color:var(--soap);color:#fff}
 .otitle{font-size:11.5px;font-weight:700;color:var(--mute)}
 .subcopy{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:4px;border-top:1px dashed var(--line)}
-.btn-xs{height:28px;padding:0 10px;border-radius:8px;font-size:11.5px;font-weight:700;background:var(--card);border:1px solid var(--line);color:var(--soap)}
+.btn-xs{height:34px;padding:0 10px;border-radius:8px;font-size:11.5px;font-weight:700;background:var(--card);border:1px solid var(--line);color:var(--soap)}
 .btn-xs:hover{background:var(--soap-s)}
 .recover-box{background:var(--soft);border:1px dashed var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:6px}
 .recover-item{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px}
@@ -126,7 +128,7 @@ main{padding-top:16px;display:grid;gap:14px}
 .prow{display:grid;grid-template-columns:112px 1fr;gap:8px;align-items:center}.prow>label{font-size:12px;font-weight:700;color:var(--mute);line-height:1.3}.prow small{display:block;font-weight:500}.prow .in{height:38px;font-size:13px}
 .in.out{border-color:var(--warn);background:var(--warn-s)}.f label small{display:block;font-weight:500;color:var(--mute)}
 #list.tiles{grid-template-columns:1fr 1fr}.tile{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;text-align:left;display:grid;gap:6px;align-content:start;box-shadow:0 2px 10px rgba(0,0,0,.05);min-width:0;transition:transform .12s}.tile:active{transform:scale(.97)}.tile .tt{display:flex;align-items:center;gap:8px;min-width:0}.tile .av{width:38px;height:38px;font-size:20px}.tile .tn{font-size:16px;font-weight:800;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tile .td{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
-.tapb{float:right;height:26px;margin-left:6px;color:var(--brand)}
+.tapb{float:right;height:34px;margin-left:6px;color:var(--brand)}
 .tappad{width:100%;height:220px;border-radius:24px;background:var(--brand);color:#fff;display:grid;place-content:center;gap:2px;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
 .tappad b{font-size:64px;line-height:1;font-weight:800}.tappad small{font-size:14px;opacity:.9}
 .tappad:active{filter:brightness(.88)}.tappad.done{background:var(--soap)}
@@ -157,7 +159,7 @@ main{padding-top:16px;display:grid;gap:14px}
       <div class="sync" id="sync"><span class="dot"></span><span id="syncTxt">실시간 동기화 중</span></div></div>
     <button class="ib" data-act="theme" id="themeBtn" aria-label="화면 모드 전환">🌙</button>
     <button class="ib" data-act="shareweb" aria-label="웹 공유 및 링크 복사">🔗</button>
-    <button class="ib" data-act="mjopen" aria-label="사전 문진 보기">📋</button>
+    <button class="ib" id="mjBtn" data-act="mjopen" aria-label="사전 문진 보기">📋</button>
   </div>
   <div class="tabs" id="tabs">
     <button class="tab on" data-r="care" data-act="room"><span>🏥</span>환축 케어</button>
@@ -313,6 +315,9 @@ function bicarb(n,bw,h){const t=25,r=x=>Math.round(x*10)/10;if(h>=t)return `[중
 const D=bw*.3*(t-h),d=r(D),tot=r(D*5),ns=r(D*4),fr=r(D*5/6);return `[중탄산처치]\nCalculate the sodium bicarbonate requirement\n= BW x 0.3 x (desired-measured HCO3)\n= ${bw}*0.3*(${t}-${h})\n= ${d}ml\n\n5배 희석 : 총 부피 ${tot}ml = N/S ${ns}ml + NaHCO3 ${d}ml\n6시간 CRI, FR= ${fr}ml/hr`}
 
 const MJF=["식욕","음수량","활동성","대변","소변"];
+const mjSeen=()=>{try{return new Set(JSON.parse(localStorage.getItem("mjseen")||"[]"))}catch(e){return new Set()}};
+const mjMark=ks=>{try{localStorage.setItem("mjseen",JSON.stringify(ks.slice(-300)))}catch(e){}};
+async function mjPoll(){if(document.hidden)return;try{const r=await fetch(base()+"/munjin.json?shallow=true");const o=await r.json()||{},seen=mjSeen(),c=Object.keys(o).filter(k=>!seen.has(k)).length,b=$("#mjBtn");if(b)b.innerHTML="📋"+(c?`<span class="bdg">${c}</span>`:"")}catch(e){}}
 function mjText(d){const t=x=>String(x==null?"":x).replace(/\s+/g," ").trim(),L=[`[사전 문진 #${d.no}]`],h=[d.name,d.sp,d.br,d.age,d.sx,d.bw?d.bw+"kg":""].map(t).filter(Boolean);
  L.push(h.join(" / "));
  if((d.sym||[]).length)L.push("- 방문 이유: "+d.sym.join(", "));if(t(d.det))L.push("- 경과: "+t(d.det));
@@ -325,7 +330,7 @@ const mjUrl=()=>base()+"/munjin";
 async function mjLoad(){const box=$("#mjList");box.innerHTML='<div class="meta">불러오는 중...</div>';
  try{const r=await fetch(mjUrl()+".json");const o=await r.json()||{},now=Date.now(),arr=[];
   for(const k of Object.keys(o)){const d=o[k];if(!d||now-(d.t||0)>7*864e5){fetch(`${mjUrl()}/${k}.json`,{method:"DELETE"});continue}arr.push([k,d])}
-  arr.sort((x,y)=>y[1].t-x[1].t);S.mj=Object.fromEntries(arr);
+  arr.sort((x,y)=>y[1].t-x[1].t);S.mj=Object.fromEntries(arr);mjMark(arr.map(a=>a[0]));{const b=$("#mjBtn");if(b)b.textContent="📋"}
   if(!arr.length){box.innerHTML='<div class="meta" style="padding:14px 0">아직 제출된 문진이 없어요</div>';return}
   const pts=(S.p.care||[]);
   box.innerHTML=arr.map(([k,d])=>{const tm=new Date(d.t).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});
@@ -401,7 +406,7 @@ function dup(c){return(S.p.care||[]).some(e=>nz(e.name)===nz(c.name)&&((nz(c.roo
 /* ---- Firebase Realtime Database Sync ---- */
 const base=()=>(S.db||DB0).trim().replace(/\/+$/,"");
 const url=k=>`${base()}/rooms/${encodeURIComponent(S.code)}/${k}.json`;
-function badge(ok){const s=$("#sync");if(!s)return;s.classList.toggle("off",!ok);$("#syncTxt").textContent=ok?"실시간 동기화 중":"오프라인 · 이 기기에만 저장"}
+function badge(ok){const s=$("#sync");if(!s)return;s.classList.toggle("off",!ok);$("#syncTxt").textContent=ok?"실시간 동기화 중":(S.cached&&Object.values(S.cached).some(Boolean)?"오프라인 · 마지막 동기화 "+hm(S.cachedAt)+" · 보기 전용":typeof DIRTY!=="undefined"&&DIRTY.size?"전송 대기 중 · 앱을 닫지 마세요":"오프라인 · 이 기기에만 저장")}
 const toList=d=>!d?[]:Array.isArray(d)?d.filter(Boolean):Object.values(d).filter(Boolean);
 
 /* 실시간 수신(SSE): 처음 한 번 전체를 받고 이후엔 바뀐 부분만 전달됩니다 */
@@ -419,7 +424,10 @@ function applyEv(st,d,patch){
 function softRender(){clearTimeout(RT);RT=setTimeout(()=>{if(typing()){softRender();return}render()},typing()?700:120)}
 function flush(key,fn){const w=(QT[key]||0)-Date.now();if(w>0){clearTimeout(FT[key]);FT[key]=setTimeout(()=>flush(key,fn),w+60);return}if(!ST[key]||!ST[key].got)return;fn(ST[key].v)}
 function onRoom(r){return v=>{ingest(r,v,r==="care");if(S.room===r)softRender()}}
-const onDis=v=>{ingest("dis",v,false);if(S.room==="care")softRender()};
+const onDis=v=>{ingest("dis",v,false);pruneDis();if(S.room==="care")softRender()};
+const DAY=864e5;
+function pruneDis(){const n=Date.now();let ch=false;S.dis=S.dis.filter(d=>{if(!d.dischargedTs){d.dischargedTs=n;ch=true;return true}if(n-d.dischargedTs>DAY){ch=true;return false}return true});if(ch)saveDis()}
+setInterval(()=>{if(S.room==="care"&&!document.hidden&&S.live&&S.live.dis)pruneDis()},600000);
 function watch(key,fn){
  if(ES[key]){ES[key].close();delete ES[key]}
  const st=ST[key]={v:null};
@@ -430,7 +438,8 @@ function watch(key,fn){
   es.addEventListener("put",h(false));es.addEventListener("patch",h(true));
   es.onopen=()=>badge(true);es.onerror=()=>badge(false)})}
 function stopAll(){Object.keys(ES).forEach(k=>{ES[k].close();delete ES[k]})}
-async function load(r){stopAll();if(r==="calc"){await watch(PATHS.care,onRoom("care"));watch(PATHS.lab_fluid,onRoom("lab_fluid"));return}const pr=watch(PATHS[r],onRoom(r));if(r==="care")watch("discharged_patients",onDis);if(r==="lab_fluid")watch(PATHS.care,onRoom("care"));await pr}
+async function load(r){const _l=await load0(r);useCache(r==="care"?["care","dis"]:[r]);return _l}
+async function load0(r){stopAll();if(r==="calc"){await watch(PATHS.care,onRoom("care"));watch(PATHS.lab_fluid,onRoom("lab_fluid"));return}const pr=watch(PATHS[r],onRoom(r));if(r==="care")watch("discharged_patients",onDis);if(r==="lab_fluid")watch(PATHS.care,onRoom("care"));await pr}
 async function loadDis(){}
 function startPoll(){}
 document.addEventListener("visibilitychange",()=>{if(document.hidden)stopAll();else load(S.room)});
@@ -457,19 +466,27 @@ function applyPath(o,path,val){const ks=path.split("/");let t=o;for(let i=0;i<ks
 const PK={care:PATHS.care,checkup:PATHS.checkup,lab_fluid:PATHS.lab_fluid,dis:"discharged_patients"};
 const getL=n=>n==="dis"?S.dis:(S.p[n]||[]),setL=(n,a)=>{if(n==="dis")S.dis=a;else S.p[n]=a};
 /* 서버에서 받은 목록을 반영하되, 아직 저장되지 않은 내 수정은 항목 단위로 유지합니다 */
+const CK=n=>"cc:"+S.code+":"+n;
+function cacheSave(n,list){try{localStorage.setItem(CK(n),JSON.stringify({t:Date.now(),d:list}))}catch(e){}}
+function cacheLoad(n){try{const x=JSON.parse(localStorage.getItem(CK(n))||"null");return x&&Array.isArray(x.d)?x:null}catch(e){return null}}
+const hm=t=>new Date(t).toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"});
+function useCache(names){let any=false;S.live=S.live||{};S.cached=S.cached||{};
+ names.forEach(n=>{const st=ST[PK[n]];if(S.live[n]||(st&&st.got))return;const c=cacheLoad(n);if(!c)return;S.cached[n]=true;S.cachedAt=c.t;setL(n,c.d.map(clone));SO[n]={};any=true});
+ if(any){const s=$("#sync");if(s){s.classList.add("off");$("#syncTxt").textContent="오프라인 · 마지막 동기화 "+hm(S.cachedAt)+" · 보기 전용"}render()}}
 function ingest(n,v,enrich){
+ S.live=S.live||{};S.cached=S.cached||{};const fc=S.cached[n];S.cached[n]=false;S.live[n]=true;
  const incoming=toList(v).map(i=>clone(enrich?{...i,category:cat(i)}:i));
- const loc=new Map(getL(n).map(p=>[p.id,p])),old=SO[n]||{},pd=PD[n]||(PD[n]=new Set()),out=[],seen=new Set();
+ const loc=new Map((fc?[]:getL(n)).map(p=>[p.id,p])),old=SO[n]||{},pd=PD[n]||(PD[n]=new Set()),out=[],seen=new Set();
  incoming.forEach(i=>{seen.add(i.id);if(pd.has(i.id))return;
   const l=loc.get(i.id),b=old[i.id];
   if(l&&b&&sj(l)!==sj(b)){const m=clone(i),d={};dfs(l,b,"",d);Object.entries(d).forEach(([k,v])=>applyPath(m,k,v));out.push(m)}
   else out.push(clone(i))});
  loc.forEach((l,id)=>{if(!seen.has(id)&&!old[id])out.push(l)});
  pd.forEach(id=>{if(!seen.has(id))pd.delete(id)});
- const so={};incoming.forEach(i=>{so[i.id]=i});SO[n]=so;setL(n,out)}
+ const so={};incoming.forEach(i=>{so[i.id]=i});SO[n]=so;setL(n,out);cacheSave(n,incoming)}
 const save=r=>Promise.all((r==="lab_fluid"?[r,"care"]:[r]).map(sync));
 const saveDis=()=>sync("dis");
-function sync(n){return WQ[n]=(WQ[n]||Promise.resolve()).then(()=>syncNow(n),()=>syncNow(n))}
+function sync(n){if(S.cached&&S.cached[n]){toast("오프라인(보기 전용)이라 저장되지 않았어요");return Promise.resolve()}return WQ[n]=(WQ[n]||Promise.resolve()).then(()=>syncNow(n),()=>syncNow(n))}
 async function syncNow(n){
  const key=PK[n],cur=getL(n),old=SO[n]||(SO[n]={}),pd=PD[n]||(PD[n]=new Set()),ops=[],ids=new Set(cur.map(p=>p.id));
  pd.forEach(id=>{if(ids.has(id))pd.delete(id)});
@@ -499,7 +516,7 @@ function render(){
  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.r===S.room));
  const all=rowsOf(S.room),id=S.sel[S.room],cur=id&&all.find(p=>p.id===id);if(id&&!cur)S.sel[S.room]=null;
  const L=$("#list"),sb=document.querySelector(".searchbar"),fab=document.querySelector(".fab");
- if(fab)fab.style.display=S.room==="calc"?"none":"";
+ if(fab)fab.style.display=(S.room==="calc"||cur)?"none":"";
  if(S.room==="calc"){$("#dash").innerHTML="";$("#dis").innerHTML="";sb.style.display="none";L.className="";L.innerHTML=calcView();calcUpdate();return}
  if(cur){$("#dash").innerHTML="";$("#dis").innerHTML="";sb.style.display="none";L.className="";
   L.innerHTML=`<div><button class="btn-s" data-act="back">← 목록으로</button></div>`+card(cur);if(S.room==="lab_fluid")labFill(cur);return}
@@ -522,7 +539,7 @@ function head(p,r){
  const lc=r!=="care"&&isCareP(p.id),b=(r==="care"||lc)?`<span class="badge ${cat(p)==="호텔"?"h":""}">${cat(p)}${dayN(p)}</span>`:"";
  const d=r==="care"?`<button class="btn-s bad" data-act="discharge" data-id="${p.id}">퇴원</button>`:"";
  return `<div class="top"><div class="av">${p.species==="cat"?"🐱":"🐶"}</div><div class="sp"><div class="nm">${esc(p.name)}</div>
- <div class="meta">${b}<span class="badge n">${esc(p.room)}</span>${esc(p.breed||"")}${r==="care"?`<span id="dxm-${p.id}">${p.dx?" · 병명 "+esc(p.dx):""}</span>`:(p.owner?" · 보호자 "+esc(p.owner):"")}</div></div>
+ <div class="meta">${b}<span class="badge n">${esc(p.room)}</span>${esc(p.breed||"")}${r==="care"?"":(p.owner?" · 보호자 "+esc(p.owner):"")}</div>${r==="care"?`<div class="meta" id="dxm-${p.id}">${p.dx?"병명 "+esc(p.dx):""}</div>`:""}</div>
  <div class="act">${d}${lc?"":`<button class="btn-s" data-act="remove" data-id="${p.id}" aria-label="삭제">✕</button>`}</div></div>`}
 
 function soapList(raw){
@@ -580,8 +597,8 @@ function card(p){const r=S.room;let body="";
  return `<article class="card" data-r="${r}">${head(p,r)}<div style="display:grid;gap:12px;border-top:1px solid var(--line);padding-top:12px">${body}</div></article>`}
 
 function renderDis(){const el=$("#dis");if(S.room!=="care"){el.innerHTML="";return}
- el.innerHTML=`<div class="sec">퇴원 명단 ${S.dis.length}마리 · 잘못 퇴원했다면 바로 되돌릴 수 있어요</div>`+
- (S.dis.length?S.dis.map(d=>`<div class="dis"><div class="sp"><b>${esc(d.name)}</b> <span class="meta">${d.species==="cat"?"🐱":"🐶"} ${esc(d.room||"")}${d.dx?" · "+esc(d.dx):""}<br>퇴원 ${esc(d.dischargedAt||"-")}</span></div><button class="btn-s" style="background:var(--brand);color:#fff" data-act="restore" data-id="${d.id}">복원</button></div>`).join(""):`<div class="meta" style="padding:0 4px">퇴원 처리된 환축이 없습니다.</div>`)}
+ el.innerHTML=`<div class="sec">퇴원 명단 ${S.dis.length}마리 · 24시간 뒤 자동 삭제 · 잘못 퇴원했다면 그 안에 복원하세요</div>`+
+ (S.dis.length?S.dis.map(d=>`<div class="dis"><div class="sp"><b>${esc(d.name)}</b> <span class="meta">${d.species==="cat"?"🐱":"🐶"} ${esc(d.room||"")}${d.dx?" · "+esc(d.dx):""}<br>퇴원 ${esc(d.dischargedAt||"-")}${d.dischargedTs?" · 약 "+Math.max(1,Math.ceil((DAY-(Date.now()-d.dischargedTs))/36e5))+"시간 뒤 삭제":""}</span></div><button class="btn-s" style="background:var(--brand);color:#fff" data-act="restore" data-id="${d.id}">복원</button></div>`).join(""):`<div class="meta" style="padding:0 4px">퇴원 처리된 환축이 없습니다.</div>`)}
 
 /* ---- Actions & Handlers ---- */
 const isCareP=id=>(S.p.care||[]).some(p=>p.id===id);
@@ -682,7 +699,7 @@ function careBody(p){const id=p.id,dr=getDraft(id),f=dr.f,ct=p.species==="cat",
  <div class="f"><label>구토/특이사항</label><input class="in" type="text" data-dr="vomit" data-id="${id}" value="${esc(f.vomit||"")}" placeholder="구토 없음 / 식욕 저하 등"></div>
  <div class="draft-box"><div class="draft-top"><span>기록될 내용 미리보기 ('추가'를 누르면 한 줄로 등록)</span><button class="btn-xs" data-act="clearDraft" data-id="${id}">비우기</button></div>
  <div class="pre" id="dpv-${id}" style="padding:8px 10px;font-size:12px">${esc(drPv(id)||"값을 입력하거나 선택하면 여기에 한 줄로 정리됩니다.")}</div></div>
- <div class="row"><input class="in" id="note-${id}" data-draftmemo="${id}" value="${esc(dr.memo||"")}" placeholder="메모 입력 또는 음성"><button class="btn gh" data-act="voice" data-id="${id}">🎤</button><button class="btn" data-act="note" data-id="${id}">추가</button></div>
+ <div class="row stk"><input class="in" id="note-${id}" data-draftmemo="${id}" value="${esc(dr.memo||"")}" placeholder="메모 입력 또는 음성"><button class="btn gh" data-act="voice" data-id="${id}">🎤</button><button class="btn" data-act="note" data-id="${id}">추가</button></div>
  <div class="log">${logHtml(p)}</div>
  <div class="row" style="flex-wrap:wrap"><button class="btn" style="flex:2;min-width:130px" data-act="copycare" data-m="new" data-id="${id}">📋 새 기록만 복사</button><button class="btn dk" style="flex:1;width:auto;min-width:90px" data-act="copycare" data-m="today" data-id="${id}">오늘</button><button class="btn gh" style="flex:1;min-width:70px" data-act="copycare" data-m="all" data-id="${id}">전체</button></div>
  <div class="meta" id="cpm-${id}">${p.cpAt?"마지막 복사 "+fmtDT(p.cpAt):"아직 복사한 적 없어요 · 'IntoVet 차트'에 붙여넣기용"}</div>`}
@@ -707,8 +724,8 @@ function copyOsub(id,catName){const p=find("checkup",id),c=OSC.find(x=>x.t===cat
  const ex=splitItems((p.soap||{}).o,ALLO).filter(v=>(c.x||[]).includes(v));
  copy(`[${p.name}]\n`+(catBlock(c,p,ex)||"-"),`${catName} 소견을 복사했어요`)}
 
-function discharge(id){const l=S.p.care,i=l.findIndex(p=>p.id===id);if(i<0)return;const[x]=l.splice(i,1);S.dis.unshift({...x,category:cat(x),dischargedAt:nowDT()});render();save("care");saveDis();toast(`${x.name} 퇴원 처리 · 아래 명단에서 복원할 수 있어요`)}
-function restore(id){const i=S.dis.findIndex(p=>p.id===id);if(i<0)return;const[x]=S.dis.splice(i,1);delete x.dischargedAt;if(dup(x)){x.adm=x.adm||admOf(x);x.id="p-care-"+Date.now()}S.p.care.unshift({...x,category:cat(x)});render();save("care");saveDis();toast(`${x.name} 케어 룸으로 복원했어요`)}
+function discharge(id){const l=S.p.care,i=l.findIndex(p=>p.id===id);if(i<0)return;const[x]=l.splice(i,1);S.dis.unshift({...x,category:cat(x),dischargedAt:nowDT(),dischargedTs:Date.now()});render();save("care");saveDis();toast(`${x.name} 퇴원 처리 · 아래 명단에서 복원할 수 있어요`)}
+function restore(id){const i=S.dis.findIndex(p=>p.id===id);if(i<0)return;const[x]=S.dis.splice(i,1);delete x.dischargedAt;delete x.dischargedTs;if(dup(x)){x.adm=x.adm||admOf(x);x.id="p-care-"+Date.now()}S.p.care.unshift({...x,category:cat(x)});render();save("care");saveDis();toast(`${x.name} 케어 룸으로 복원했어요`)}
 function setRoom(r){S.room=r;S.filter="ALL";S.sel[r]=null;render();load(r);if(r==="care")loadDis()}
 
 async function labOcr(id,inp){const f=inp.files&&inp.files[0];if(!f)return;const p=find("lab_fluid",id);if(!p)return;p.lab=p.lab||{bw:0,hco3:0,ocrText:"",result:""};toast("검사지를 읽는 중…");
@@ -1156,7 +1173,7 @@ document.addEventListener("change",e=>{const t=e.target;
  else if(t.id==="fRoom"){catW();$("#ocrBox").style.display=t.value==="care"?"grid":"none"}});
 
 document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.dataset.pe)return;const p=find("checkup",t.dataset.id);if(!p)return;p.pe=p.pe||{};p.pe[t.dataset.pe]=t.value.trim();save("checkup");updPv(p)});
-document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.dataset.dx)return;const p=find("care",t.dataset.dx);if(!p)return;p.dx=t.value.trim();save("care");const m=$("#dxm-"+p.id);if(m)m.textContent=p.dx?" · 병명 "+p.dx:"";toast("병명을 저장했어요")});
+document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.dataset.dx)return;const p=find("care",t.dataset.dx);if(!p)return;p.dx=t.value.trim();save("care");const m=$("#dxm-"+p.id);if(m)m.textContent=p.dx?"병명 "+p.dx:"";toast("병명을 저장했어요")});
 const pn=$("#ocrPanel");
 pn.addEventListener("input",e=>{const t=e.target,i=+t.dataset.ci,f=t.dataset.cf;if(isNaN(i)||!f||f==="on")return;S.cands[i][f]=t.value});
 pn.addEventListener("change",e=>{const t=e.target,i=+t.dataset.ci;if(isNaN(i)||t.dataset.cf!=="on")return;S.cands[i].on=t.checked;updCount()});
@@ -1168,7 +1185,7 @@ document.querySelectorAll(".mask").forEach(m=>m.addEventListener("click",e=>{if(
 function toggleTheme(){const r=document.documentElement,dk=r.dataset.theme!=="dark";r.dataset.theme=dk?"dark":"light";$("#themeBtn").textContent=dk?"☀️":"🌙"}
 if(matchMedia("(prefers-color-scheme:dark)").matches)toggleTheme();
 
-render();load("care");loadDis();startPoll();
+render();load("care");loadDis();startPoll();mjPoll();setInterval(mjPoll,90000);
 </script>
 </body>
 </html>
