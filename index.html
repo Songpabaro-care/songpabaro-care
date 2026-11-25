@@ -313,10 +313,14 @@ function bicarb(n,bw,h){const t=25,r=x=>Math.round(x*10)/10;if(h>=t)return `[중
 const D=bw*.3*(t-h),d=r(D),tot=r(D*5),ns=r(D*4),fr=r(D*5/6);return `[중탄산처치]\nCalculate the sodium bicarbonate requirement\n= BW x 0.3 x (desired-measured HCO3)\n= ${bw}*0.3*(${t}-${h})\n= ${d}ml\n\n5배 희석 : 총 부피 ${tot}ml = N/S ${ns}ml + NaHCO3 ${d}ml\n6시간 CRI, FR= ${fr}ml/hr`}
 
 const MJF=["식욕","음수량","활동성","대변","소변"];
-function mjText(d){const L=[`[사전 문진 #${d.no}] ${d.name} (${[d.sp,d.br,d.age,d.sx,d.bw?d.bw+"kg":""].filter(Boolean).join(" · ")})`];
- if((d.sym||[]).length)L.push("• 방문 이유: "+d.sym.join(", "));if(d.det)L.push("• 경과: "+d.det);
- const st=MJF.filter(k=>d["s_"+k]).map(k=>k+" "+d["s_"+k]);if(st.length)L.push("• 상태: "+st.join(" / "));
- if(d.med)L.push("• 복용약: "+d.med);if(d.hx)L.push("• 병력/알레르기: "+d.hx);if(d.food)L.push("• 사료·간식: "+d.food);if(d.vac)L.push("• 예방접종·구충: "+d.vac);if(d.etc)L.push("• 기타: "+d.etc);return L.join("\n")}
+function mjText(d){const t=x=>String(x==null?"":x).replace(/\s+/g," ").trim(),L=[`[사전 문진 #${d.no}]`],h=[d.name,d.sp,d.br,d.age,d.sx,d.bw?d.bw+"kg":""].map(t).filter(Boolean);
+ L.push(h.join(" / "));
+ if((d.sym||[]).length)L.push("- 방문 이유: "+d.sym.join(", "));if(t(d.det))L.push("- 경과: "+t(d.det));
+ const st=["식욕","음수량","활동성","대변","소변"].filter(k=>d["s_"+k]).map(k=>k+" "+d["s_"+k]);if(st.length)L.push("- 상태: "+st.join(" · "));
+ if(t(d.med))L.push("- 복용약: "+t(d.med));if(t(d.hx))L.push("- 병력/알레르기: "+t(d.hx));if(t(d.food))L.push("- 사료·간식: "+t(d.food));
+ const pv=[["접종",d.p_vac],["내부구충",d.p_in],["외부구충",d.p_out],["사상충",d.p_hw]].filter(x=>x[1]).map(x=>x[0]+" "+x[1]);
+ if(pv.length||t(d.vac))L.push("- 예방: "+(pv.join(" · ")||"")+(t(d.vac)?(pv.length?" (마지막 "+t(d.vac)+")":t(d.vac)):""));
+ if(t(d.etc))L.push("- 기타: "+t(d.etc));return L.join("\n")}
 const mjUrl=()=>base()+"/munjin";
 async function mjLoad(){const box=$("#mjList");box.innerHTML='<div class="meta">불러오는 중...</div>';
  try{const r=await fetch(mjUrl()+".json");const o=await r.json()||{},now=Date.now(),arr=[];
@@ -325,10 +329,10 @@ async function mjLoad(){const box=$("#mjList");box.innerHTML='<div class="meta">
   if(!arr.length){box.innerHTML='<div class="meta" style="padding:14px 0">아직 제출된 문진이 없어요</div>';return}
   const pts=(S.p.care||[]);
   box.innerHTML=arr.map(([k,d])=>{const tm=new Date(d.t).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});
-   const m=pts.find(p=>nz(p.name)===nz(d.name));
-   return `<div class="card" style="margin:8px 0"><div><b>#${esc(d.no)}</b> ${esc(d.name)} <span class="meta">${esc(d.sp)} · ${tm}</span></div><div class="pre" style="white-space:pre-wrap;margin:6px 0;font-size:13px">${esc(mjText(d))}</div>
+   const sm=pts.filter(p=>nz(p.name)===nz(d.name)),spc=d.sp==="고양이"?"cat":d.sp==="강아지"?"dog":"",bys=spc?sm.filter(p=>p.species===spc):[],m=sm.length===1?sm[0]:bys.length===1?bys[0]:null;
+   return `<div class="card" style="margin:8px 0"><div><b>#${esc(d.no)}</b> ${esc(d.name)} <span class="meta">${esc(d.sp)} · ${tm}</span>${sm.length>1?` <span style="color:var(--warn,#b4531a);font-size:12px;font-weight:700">⚠ 동명 환축 ${sm.length}마리 · 확인 후 선택</span>`:""}</div><div class="pre" style="white-space:pre-wrap;margin:6px 0;font-size:13px">${esc(mjText(d))}</div>
    <div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn gh" data-act="mjcopy" data-k="${esc(k)}">복사</button>
-   ${pts.length?`<select class="in" id="mjs-${esc(k)}" style="flex:1;min-width:120px">${pts.map(p=>`<option value="${p.id}" ${m&&m.id===p.id?"selected":""}>${esc(p.name)} · ${esc(p.room||"")}</option>`).join("")}</select><button class="btn" data-act="mjadd" data-k="${esc(k)}">케어 기록에 추가</button>`:""}
+   ${pts.length?`<select class="in" id="mjs-${esc(k)}" style="flex:1;min-width:120px"><option value="" ${m?"":"selected"}>환축을 선택하세요</option>${pts.map(p=>`<option value="${p.id}" ${m&&m.id===p.id?"selected":""}>${p.species==="cat"?"🐱":"🐶"} ${esc(p.name)} · ${esc(p.room||"")}</option>`).join("")}</select><button class="btn" data-act="mjadd" data-k="${esc(k)}">케어 기록에 추가</button>`:""}
    <button class="btn gh" data-act="mjdel" data-k="${esc(k)}">삭제</button></div></div>`}).join("")}
  catch(e){box.innerHTML='<div class="meta">불러오지 못했어요</div>'}}
 
@@ -1084,7 +1088,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
  mjopen:()=>{$("#mj").classList.add("open");mjLoad()},mjclose:()=>$("#mj").classList.remove("open"),
  mjlink:()=>{const u=location.href.replace(/[#?].*$/,"").replace(/[^\/]*$/,"")+"munjin.html";if(u.startsWith("file:")){toast("웹에 올라간 주소에서 눌러 주세요");return}copy(u,"문진 링크를 복사했어요")},
  mjcopy:()=>{const x=(S.mj||{})[d.k];if(x)copy(mjText(x),"문진 내용을 복사했어요")},
- mjadd:()=>{const x=(S.mj||{})[d.k],sel=$("#mjs-"+d.k),p=sel&&find("care",sel.value);if(!x||!p)return;p.logs=p.logs||[];p.logs.unshift({id:`l${Date.now()}`,time:now(),d:todayStr(),text:mjText(x).replace(/\n/g," / ")});save("care");render();toast(`${p.name} 케어 기록에 추가했어요`)},
+ mjadd:()=>{const x=(S.mj||{})[d.k],sel=$("#mjs-"+d.k),p=sel&&sel.value&&find("care",sel.value);if(!x)return;if(!p){toast("환축을 먼저 선택해 주세요");return}p.logs=p.logs||[];p.logs.unshift({id:`l${Date.now()}`,time:now(),d:todayStr(),text:mjText(x).replace("\n"," ").replace(/\n- /g," / ")});save("care");render();toast(`${p.name} 케어 기록에 추가했어요`)},
  mjdel:async()=>{if(!confirm("이 문진을 삭제할까요?"))return;await fetch(`${mjUrl()}/${d.k}.json`,{method:"DELETE"});mjLoad()},
  dbopen:()=>{$("#dbUrl").value=S.db;$("#dm").classList.add("open")},dclose:()=>$("#dm").classList.remove("open"),
  dreset:()=>{S.db=DB0;$("#dbUrl").value=DB0;toast("기본 주소로 되돌렸어요")},
