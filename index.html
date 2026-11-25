@@ -31,11 +31,11 @@ header{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px
 .sync.off .dot{background:var(--warn)}
 .hd .sp{flex:1;min-width:0}
 .ib{height:38px;min-width:38px;padding:0 12px;border-radius:11px;border:1px solid var(--line);background:var(--soft);font-weight:700;font-size:12.5px}
-.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;background:var(--soft);border:1px solid var(--line);border-radius:14px;margin:12px 0 12px}
-.tab{padding:10px 4px;border-radius:10px;font-weight:700;color:var(--mute);display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12.5px;transition:background .15s,color .15s}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;padding:4px;background:var(--soft);border:1px solid var(--line);border-radius:14px;margin:12px 0 12px}
+.tab{padding:9px 2px;border-radius:10px;font-weight:700;color:var(--mute);display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11.5px;letter-spacing:-.4px;white-space:nowrap;transition:background .15s,color .15s}
 .tab span{font-size:18px}
 .tab.on{background:var(--card);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.12)}
-.tab.on[data-r=care]{color:var(--brand)}.tab.on[data-r=checkup]{color:var(--soap)}.tab.on[data-r=lab_fluid]{color:var(--lab)}
+.tab.on[data-r=care]{color:var(--brand)}.tab.on[data-r=checkup]{color:var(--soap)}.tab.on[data-r=lab_fluid]{color:var(--lab)}.tab.on[data-r=calc]{color:var(--lab)}
 .roombar{display:none!important;align-items:center;gap:8px;padding:10px 0 12px;font-size:12px;color:var(--mute)}
 .roombar input{flex:1;max-width:190px;height:32px;border:1px solid var(--line);border-radius:9px;background:var(--soft);padding:0 10px;font-family:ui-monospace,monospace;font-size:12px}
 .roombar button{height:32px;padding:0 12px;border-radius:9px;background:var(--ink);color:var(--card);font-weight:700;font-size:12px}
@@ -72,6 +72,10 @@ main{padding-top:16px;display:grid;gap:14px}
 .dt{cursor:pointer}.dt path{fill:#fff;stroke:#9aa7a6;stroke-width:1.1}.dt text{font-size:7.4px;font-weight:700;fill:#5f6e6d;text-anchor:middle;pointer-events:none}
 .dt.fx path{fill:#e5484d;stroke:#c92a2f}.dt.fx text{fill:#fff}.dt.ms path{stroke:#f59f00;stroke-width:2.6}.dt.ms:not(.fx) path{fill:#fff3d6}.dt.ms:not(.fx) text{fill:#8a5a00}
 .dml{stroke:#c9d2d1;stroke-dasharray:3 3}.dlb{font-size:8px;fill:#8a9695;font-weight:700}.dmode{display:flex;gap:6px;margin-top:6px}
+.ccard{display:grid;gap:10px;padding:14px}.cres{display:grid;gap:4px;border-top:1px dashed var(--line);padding-top:10px}
+.crow{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:baseline;padding:7px 10px;border-radius:10px;background:var(--soft);font-size:13px}.crow small{grid-column:1/-1;color:var(--mute);font-size:11.5px}.crow b{font-size:15px}.crow.em{background:var(--brand-s)}.crow.em b{font-size:18px;color:var(--brand-d)}
+.chd{font-size:12px;font-weight:800;color:var(--lab);margin-top:8px}.cnote{font-size:12px;color:var(--mute);line-height:1.5;padding:2px 4px}.cdet{font-size:12.5px}.cdet summary{cursor:pointer;font-weight:700;padding:6px 0}
+.bwbig{font-size:20px;font-weight:800}.lres{display:grid;gap:8px}
 .chip.sel{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:700;box-shadow:0 2px 8px rgba(11,122,117,.35)}
 .card[data-r=checkup] .chip:hover{border-color:var(--soap);background:var(--soap-s)}
 .card[data-r=checkup] .chip.sel{background:var(--soap);border-color:var(--soap);color:#fff;font-weight:700}
@@ -156,8 +160,9 @@ main{padding-top:16px;display:grid;gap:14px}
   </div>
   <div class="tabs" id="tabs">
     <button class="tab on" data-r="care" data-act="room"><span>🏥</span>환축 케어</button>
-    <button class="tab" data-r="checkup" data-act="room"><span>🩺</span>건강검진 SOAP</button>
+    <button class="tab" data-r="checkup" data-act="room"><span>🩺</span>건강검진</button>
     <button class="tab" data-r="lab_fluid" data-act="room"><span>🔬</span>검사·수액</button>
+    <button class="tab" data-r="calc" data-act="room"><span>🧮</span>약물계산</button>
   </div>
   <div class="roombar">방 코드
     <input id="roomCode" value="songpa-baro-care" autocapitalize="off" aria-label="방 코드">
@@ -331,11 +336,12 @@ op("aus","Cardiac rhythm / thrill",["Heart arrhythmia","Heart thrill"],1),
  z:{skin:"normal",alop:"none",coat:"normal",prur:"none",lnmd:"normal",lnps:"normal",lnax:"normal",lnin:"normal",lnpo:"normal"}},
 {t:"XR Thorax",n:"X-ray · Thorax",r:[nm("vhs","VHS",p=>p.species==="cat"?"cat 7.5~8.5":"dog 8.5~10.5"),nm("vlas","VLAS","<2.3"),
  op("xcs","Cardiac silhouette",["normal","LA enlargement","LV enlargement","RA/RV enlargement","generalized cardiomegaly"],1),
- op("xtr","Trachea",["normal","dorsal elevation","collapse susp"],1),
+ op("xtr","Trachea",["normal","dorsal elevation"],1),
+ {...op("xtc","Tracheal collapse grade",["None","Grade 1","Grade 2","Grade 3","Grade 4"]),d:{"None":"허탈 없음","Grade 1":"기관 내강 약 25% 감소 · 연골 거의 정상, 배측 막이 약간 늘어짐","Grade 2":"내강 약 50% 감소 · 연골 약간 납작, 배측 막 늘어짐","Grade 3":"내강 약 75% 감소 · 연골 거의 납작, 배측 막 크게 늘어짐","Grade 4":"내강 90% 이상 감소 · 연골 완전히 납작/함입, 배측 막이 복측 연골에 닿음"}},
  op("xlp","Lung pattern",["normal","bronchial","interstitial","alveolar","vascular","pulmonary edema"],1),
  op("xt","Pleural space",["normal","pleural effusion","pneumothorax"],1),
  tx("xtm","Thoracic mass / nodule","location / size")],
- z:{xcs:"normal",xtr:"normal",xlp:"normal",xt:"normal"}},
+ z:{xcs:"normal",xtr:"normal",xtc:"None",xlp:"normal",xt:"normal"}},
 {t:"XR Abd",n:"X-ray · Abdomen",r:[
  op("xliv","Liver",["normal","hepatomegaly","microhepatia"],1),
  op("xsp","Spleen",["normal","splenomegaly"],1),
@@ -396,7 +402,7 @@ function watch(key,fn){
   es.addEventListener("put",h(false));es.addEventListener("patch",h(true));
   es.onopen=()=>badge(true);es.onerror=()=>badge(false)})}
 function stopAll(){Object.keys(ES).forEach(k=>{ES[k].close();delete ES[k]})}
-async function load(r){stopAll();const pr=watch(PATHS[r],onRoom(r));if(r==="care")watch("discharged_patients",onDis);if(r==="lab_fluid")watch(PATHS.care,onRoom("care"));await pr}
+async function load(r){stopAll();if(r==="calc"){await watch(PATHS.care,onRoom("care"));watch(PATHS.lab_fluid,onRoom("lab_fluid"));return}const pr=watch(PATHS[r],onRoom(r));if(r==="care")watch("discharged_patients",onDis);if(r==="lab_fluid")watch(PATHS.care,onRoom("care"));await pr}
 async function loadDis(){}
 function startPoll(){}
 document.addEventListener("visibilitychange",()=>{if(document.hidden)stopAll();else load(S.room)});
@@ -421,9 +427,11 @@ function tile(p){const cr=S.room==="care",lg=(p.logs||[])[0],
 function render(){
  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.r===S.room));
  const all=rowsOf(S.room),id=S.sel[S.room],cur=id&&all.find(p=>p.id===id);if(id&&!cur)S.sel[S.room]=null;
- const L=$("#list"),sb=document.querySelector(".searchbar");
+ const L=$("#list"),sb=document.querySelector(".searchbar"),fab=document.querySelector(".fab");
+ if(fab)fab.style.display=S.room==="calc"?"none":"";
+ if(S.room==="calc"){$("#dash").innerHTML="";$("#dis").innerHTML="";sb.style.display="none";L.className="";L.innerHTML=calcView();calcUpdate();return}
  if(cur){$("#dash").innerHTML="";$("#dis").innerHTML="";sb.style.display="none";L.className="";
-  L.innerHTML=`<div><button class="btn-s" data-act="back">← 목록으로</button></div>`+card(cur);return}
+  L.innerHTML=`<div><button class="btn-s" data-act="back">← 목록으로</button></div>`+card(cur);if(S.room==="lab_fluid")labFill(cur);return}
  sb.style.display="";L.className="tiles";renderDash();
  let list=all;
  if(S.room==="care"&&S.filter!=="ALL")list=list.filter(p=>{const c=cat(p),sp=p.species==="cat"?"cat":"dog";return S.filter===c||S.filter===sp});
@@ -496,16 +504,7 @@ function card(p){const r=S.room;let body="";
   recoverSectionHtml("checkup",p.id)+
   `<button class="btn ind w" data-act="copy" data-id="${p.id}">IntoVet SOAP 차트 전체 복사</button>`;
  }else{
-  const l=p.lab||{bw:0,hco3:0,ocrText:"",result:""};
-  body=`<div class="row" style="align-items:center;justify-content:space-between"><span class="meta">혈액가스·전해질 검사지에서 HCO3-를 읽어옵니다</span>
-  <label class="btn sky" style="display:grid;place-items:center;cursor:pointer;height:36px;font-size:12.5px">검사지 촬영<input type="file" accept="image/*" capture="environment" hidden data-labocr="${p.id}"></label></div>
-  ${l.ocrText?`<div class="pre" style="max-height:90px;overflow:auto;font-size:11.5px">${esc(l.ocrText)}</div>`:""}
-  <div class="g2"><div class="f"><label>체중 (kg)</label><input class="in" type="number" step="0.1" id="bw-${p.id}" value="${l.bw||""}" placeholder=""></div>
-  <div class="f"><label>측정 HCO3- (mEq/L)</label><input class="in" type="number" step="0.1" id="hc-${p.id}" value="${l.hco3||""}" placeholder=""></div></div>
-  <div class="meta">공식: 체중 × 0.3 × (24 − HCO3-) · 1차 50% 투여</div>
-  <div class="row"><button class="btn w" style="flex:1" data-act="calc" data-id="${p.id}">중탄산 교정량 계산</button><button type="button" class="btn gh" data-act="clearLab" data-id="${p.id}">기록 지우기</button></div>
-  ${l.result?`<div class="pre res">${esc(l.result)}</div><button class="btn dk" data-act="copy" data-id="${p.id}">계산 결과 복사</button>`:""}`+
-  labExtra(p)+recoverSectionHtml("lab_fluid",p.id);
+  body=labCard(p)+recoverSectionHtml("lab_fluid",p.id);
  }
  return `<article class="card" data-r="${r}">${head(p,r)}<div style="display:grid;gap:12px;border-top:1px solid var(--line);padding-top:12px">${body}</div></article>`}
 
@@ -549,8 +548,8 @@ function clearSoapField(id,lk){
 
 function clearLabRecord(id){
  const p=find("lab_fluid",id);if(!p)return;
- const l=p.lab||{bw:0,hco3:0,ocrText:"",result:""};
- if(!l.bw&&!l.hco3&&!l.ocrText&&!l.result)return;
+ const l=p.lab||{};
+ if(!Object.keys(l).some(k=>l[k]))return;
  pushDeleted("lab_fluid",{patientId:id,type:"lab",value:{...l},label:`검사·수액 기록 (BW ${l.bw||0}kg, HCO3- ${l.hco3||0})`});
  p.lab={bw:0,hco3:0,ocrText:"",result:""};
  render();save("lab_fluid");toast("검사·수액 기록을 지웠어요 · 복구 가능");
@@ -894,6 +893,173 @@ function copyCare(p,mode){const rows=careRows(p,mode),nm={today:"오늘 기록",
  p.cpAt=Date.now();save("care");const m=$("#cpm-"+p.id);if(m)m.textContent="마지막 복사 "+fmtDT(p.cpAt)}
 document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.classList&&e.target.classList.contains("tile"))e.target.click()});
 
+/* ---- 약물계산 탭 (엑셀 계산기 이식) ---- */
+const num=v=>{const x=parseFloat(v);return isNaN(x)?0:x};
+const fm=(v,d=2)=>{if(!isFinite(v))return"-";const a=Math.abs(v);return String(+v.toFixed(a>=1000?0:a>=10?1:d))};
+S.cw={bw:"",sp:"dog",pid:""};S.cv={};S.ck="drug";S.ctext="";
+const cvv=(k,d)=>S.cv[k]!==undefined?S.cv[k]:(d===undefined?"":d),cn=(k,d)=>num(cvv(k,d));
+const cin=(k,label,def,unit,step)=>`<div class="f"><label>${label}${unit?` <small>(${unit})</small>`:""}</label><input class="in" type="number" inputmode="decimal" step="${step||"any"}" data-cin="${k}" value="${esc(cvv(k,def))}"></div>`;
+const cbw=()=>num(S.cw.bw),csp=()=>S.cw.sp==="cat"?"cat":"dog",NB=["체중을 위에서 먼저 입력해 주세요"];
+const ccard=(chips,act,cur)=>`<div class="chips" style="margin-bottom:4px">${chips.map(([k,t])=>`<button type="button" class="chip ${cur===k?"sel":""}" data-act="${act}" data-k="${k}">${t}</button>`).join("")}</div>`;
+function resHtml(L){return L.map(l=>typeof l==="string"?(l.startsWith("## ")?`<div class="chd">${esc(l.slice(3))}</div>`:`<div class="cnote">${esc(l)}</div>`):`<div class="crow${l[3]?" em":""}"><span>${esc(l[0])}</span><b>${esc(l[1])}</b><small>${esc(l[2]||"")}</small></div>`).join("")}
+function resText(t,L){return `[${t}]\n`+L.map(l=>typeof l==="string"?(l.startsWith("## ")?"▸ "+l.slice(3):l):`• ${l[0]}: ${l[1]}${l[2]?" "+l[2]:""}`).join("\n")}
+/* 향정·약물 mg→ml */
+const DRUGS=[["butorphanol",1,"ml"],["diazepam",5,"ml"],["propofol",10,"ml"],["ketamine",50,"ml"],["phenobarbital 주사",100,"ml"],["phenobarbital 정(30mg)",30,"정"]];
+/* 단일 약물 CRI: 시간당 약량 = 용량 × 체중 × k */
+const CRIS=[
+ {id:"dob",n:"Dobutamine",c:50,cu:"mg/ml",u:"ug/kg/min",k:1/16.67,r:"5~20 ug/kg/min"},
+ {id:"fur",n:"Furosemide",c:10,cu:"mg/ml",u:"mg/kg/hr",k:1,r:"0.1~2 mg/kg/hr"},
+ {id:"meto",n:"Metoclopramide",c:5,cu:"mg/ml",u:"mg/kg/day",k:1/24,r:"1~2 mg/kg/day"},
+ {id:"lido",n:"Lidocaine 2%",c:20,cu:"mg/ml",u:"ug/kg/min",k:1/16.67,r:"25~50 ug/kg/min (고양이 최대 25)"},
+ {id:"ca",n:"Calcium gluconate 10%",c:100,cu:"mg/ml",u:"mg/kg/hr",k:1,r:"1~3 mg/kg/hr"},
+ {id:"dil",n:"Diltiazem",c:5,cu:"mg/ml",u:"ug/kg/min",k:.06,r:"1~5 ug/kg/min"},
+ {id:"nit",n:"Nitroprusside",c:25,cu:"mg/ml",u:"ug/kg/min",k:.06,r:"1~2 ug/kg/min"},
+ {id:"vaso",n:"Vasopressin",c:20,cu:"IU/ml",u:"mU/kg/min",k:.06,r:"0.5~2 mU/kg/min · 0.04 U/min 넘지 않게"},
+ {id:"hc",n:"Hydrocortisone",c:20,cu:"mg/ml",u:"mg/kg/hr",k:1,r:"0.08 mg/kg/hr"},
+ {id:"prop",n:"Propofol 1%",c:10,cu:"mg/ml",u:"mg/kg/min",k:60,r:"0.1~0.8 mg/kg/min",nb:1}];
+/* CRI 혼합 프리셋 */
+const MIX={
+ FLK:{n:"Fentanyl / Lidocaine / Ketamine",bag:950,rate:15,d:[["Fentanyl",.0036,"mg/kg/hr",.05,"mg"],["Lidocaine",1.5,"mg/kg/hr",20,"mg"],["Ketamine",.15,"mg/kg/hr",50,"mg"]],
+  rg:["Fentanyl 0.0012~0.0048 mg/kg/hr (개 일반진통 최대 0.008)","Lidocaine 1.5~3 mg/kg/hr · 개 최대 3.0 / 고양이 최대 1.5","Ketamine 0.12~1.2 mg/kg/hr"],
+  ld:[["Fentanyl 0.002 mg/kg IM/IV",bw=>bw*.002/.05],["Lidocaine 0.25 mg/kg (고양이 한도)",bw=>bw/20*.25],["Lidocaine 1.0 mg/kg (개 기본)",bw=>bw/20],["Ketamine 0.25 mg/kg",bw=>bw*.25/50],["Ketamine 0.5 mg/kg",bw=>bw*.5/50]]},
+ MLK:{n:"Morphine / Lidocaine / Ketamine",bag:500,rate:18,d:[["Morphine",.36,"mg/kg/hr",1,"mg"],["Lidocaine",1.5,"mg/kg/hr",20,"mg"],["Ketamine",.15,"mg/kg/hr",50,"mg"]],
+  rg:["Morphine 0.12~0.36 mg/kg/hr","Lidocaine 0.6~3.0 mg/kg/hr · 개 최대 3.0 / 고양이 최대 1.5","Ketamine 0.12~1.2 mg/kg/hr"],
+  ld:[["Morphine 0.5 mg/kg IM (또는 아주 천천히 IV)",bw=>bw*.5],["Lidocaine 0.5 mg/kg (고양이 한도)",bw=>bw/20*.5],["Lidocaine 1.0 mg/kg (개 기본)",bw=>bw/20],["Ketamine 0.25 mg/kg",bw=>bw*.25/50],["Ketamine 0.5 mg/kg",bw=>bw*.5/50]]},
+ TLK:{n:"Tramadol / Butorphanol / Lidocaine / Ketamine / Medetomidine",bag:100,rate:10,d:[["Tramadol",1.3,"mg/kg/hr",50,"mg"],["Butorphanol",.2,"mg/kg/hr",1,"mg"],["Lidocaine",1.5,"mg/kg/hr",20,"mg"],["Ketamine",.6,"mg/kg/hr",50,"mg"],["Medetomidine",1,"ug/kg/hr",1000,"ug"]],
+  rg:["Tramadol 1.3~2.6 mg/kg/hr","Butorphanol 0.1~0.4 mg/kg/hr · Medetomidine 1~3 ug/kg/hr","Lidocaine 0.6~1.5 mg/kg/hr · 개 최대 3.0 / 고양이 최대 1.5","Ketamine 0.12~1.2 mg/kg/hr"],
+  ld:[["Tramadol 1.5 mg/kg 아주 천천히 (또는 Butorphanol 0.1 mg/kg IV)",bw=>bw*1.5/50],["Lidocaine 0.25 mg/kg (고양이 한도)",bw=>bw/20*.25],["Lidocaine 1.0 mg/kg (개 기본)",bw=>bw/20],["Ketamine 0.25 mg/kg",bw=>bw*.25/50],["Ketamine 0.5 mg/kg",bw=>bw*.5/50],["Medetomidine 1 ug/kg IV (1 mg/ml 기준)",bw=>bw/1000]]}};
+/* 혈액가스 정상 범위 */
+const BGAR={dog:{pH:[7.35,7.44],pCO2:[33.6,41.2],HCO3:[20.8,24.2]},cat:{pH:[7.28,7.41],pCO2:[32.7,44.7],HCO3:[18,23.2]}};
+const BGAK=[["pH","pH",""],["pCO2","pCO2","mmHg"],["HCO3","HCO3","mEq/L"],["AnGap","AnGap","",[12,25]],["BE","BEecf","",[-4,4]],["Na","Na","mEq/L",[141,151]],["K","K","mEq/L",[3.8,5]],["Cl","Cl","mEq/L",[102,117]]];
+const AGT=[["높은 음이온차이 산증",[["고질소혈증·요독증","진행된 신부전 · 신장 배출부전으로 유기산 축적"],["젖산산증","쇼크, 저혈량증, 조직 관류 불량 · 젖산 축적"],["케톤산증","당뇨병성 케톤산증 · 케톤산 생산 증가"],["비케톤 고삼투증","당뇨병 · 나트륨 등 양이온 축적, 혈량 위축 시 젖산산증 동반"],["중독","Ethylene glycol, aspirin, methanol, paraldehyde 등 · 산성 대사물 축적"]]],
+ ["정상 음이온차이(고염소혈) 산증",[["설사","다수의 위장관 질병 · HCO3- 소실"],["초기 신부전","암모니아 배출 감소로 H+ 축적, HCO3- 재생 부전"],["신세뇨관 산증","원위(Fanconi) 또는 근위 · 신장의 산 처리 부전"],["탄산탈수효소 억제제","H2CO3가 HCO3-로 전환되는 효소 억제"],["산성 물질 · 고영양 · 빠른 정맥 재수화","외인성 산 부하 / 아미노산 대사 산 부하 / 혈장 중탄산 희석"],["케톤산증(신장 케톤 소실 동반)","당뇨병 · AG 상승을 막을 정도로 케톤산이 신장으로 배출"]]],
+ ["낮은 음이온차이 (대사성 산증 없이도 종종 발생)",[["비-나트륨 양이온 존속","양이온 증가 → 나트륨 감소 → 계산된 AG 낮아짐"],["종양 관련 고단백혈증 · 고칼슘혈증 · 고마그네슘혈증 · 리튬 중독","양이온 증가"],["저알부민혈증, 희석","미측정 음이온 감소를 보상해 측정 음이온 증가"]]]];
+const CALCS=[
+{k:"drug",t:"약물 mg→ml",title:"약물 환산",
+ form:()=>`<div class="meta">차트 용량(mg)을 넣으면 투여할 ml가, 사용한 ml를 넣으면 mg와 mg/kg이 나옵니다.</div><div class="g2">${cin("d_mg","챠트 용량","","mg")}${cin("d_ml","사용량","","ml · 정은 개수")}</div>`,
+ res:()=>{const mg=cn("d_mg"),ml=cn("d_ml"),bw=cbw(),L=[];
+  if(mg>0){L.push(`## 챠트 ${fm(mg)} mg → 투여량`);DRUGS.forEach(([n,c,u])=>L.push([n,fm(mg/c,3),u,1]))}
+  if(ml>0){L.push(`## 사용 ${fm(ml)} → 투여 약량`);DRUGS.forEach(([n,c,u])=>{const a=ml*c;L.push([n,fm(a)+" mg"+(bw>0?` (${fm(a/bw,3)} mg/kg)`:""),"",0])});if(!bw)L.push("mg/kg은 체중을 입력하면 같이 나옵니다")}
+  return L.length?L:null}},
+{k:"kitty",t:"Kitty Magic",title:"Kitty Magic IM",
+ form:()=>`<div class="meta">고양이 IM 혼합 · 용량(mg/kg)을 바꾸면 ml가 바로 나옵니다.</div>${cin("kt_k","Ketamine (50 mg/ml) · 1~7","2","mg/kg")}${cin("kt_m","Medetomidine (1 mg/ml) · 0.01~0.02","0.01","mg/kg")}${cin("kt_b","Butorphanol (1 mg/ml) · 0.2","0.2","mg/kg")}`,
+ res:()=>{const bw=cbw();if(!bw)return NB;const a=cn("kt_k",2)*bw/50,b=cn("kt_m",.01)*bw/1,c=cn("kt_b",.2)*bw/1;
+  return [["Ketamine",fm(a,3),"ml",1],["Medetomidine",fm(b,3),"ml",1],["Butorphanol",fm(c,3),"ml",1],["합계",fm(a+b+c,3),"ml"]]}},
+{k:"cri",t:"단일 CRI",title:"CRI 계산",
+ form:()=>{const d=CRIS.find(x=>x.id===cvv("cr_id","dob"))||CRIS[0];return ccard(CRIS.map(x=>[x.id,x.n.replace(/ \d+%| 10%/,"")]),"ccri",d.id)+`<div class="meta">${d.n} (${d.c} ${d.cu}) · 권장 ${d.r}</div>${cin("cr_dose","용량","",d.u)}${d.nb?"":`<div class="g2">${cin("cr_bag","수액 총량","100","ml")}${cin("cr_rate","CRI 속도","","ml/hr")}</div>`}`},
+ res:()=>{const bw=cbw();if(!bw)return NB;const d=CRIS.find(x=>x.id===cvv("cr_id","dob"))||CRIS[0],dose=cn("cr_dose");if(dose<=0)return null;
+  const hr=dose*bw*d.k,L=[];
+  if(d.nb){L.push([d.n+" 원액 펌프 속도",fm(hr/d.c),"ml/hr",1]);return L}
+  const bag=cn("cr_bag",100),rate=cn("cr_rate");if(rate<=0||bag<=0)return null;const tot=hr/rate*bag,vol=tot/d.c;
+  L.push([`수액 ${fm(bag)} ml에 ${d.n}`,fm(vol,3),"ml 넣기",1],["CRI 속도",fm(rate),"ml/hr",1],["제조: 수액 "+fm(bag-vol)+" ml + 약 "+fm(vol,3)+" ml","총 "+fm(bag),"ml"],["시간당 약량",fm(hr,3),d.cu.startsWith("IU")?"IU/hr":"mg/hr"]);
+  if(d.id==="vaso"&&hr>2.4)L.push("⚠ 0.04 U/min(2.4 U/hr)을 넘습니다");
+  return L}},
+{k:"mix",t:"CRI 혼합",title:"CRI 혼합",
+ form:()=>{const s=cvv("mx_set","FLK"),m=MIX[s]||MIX.FLK;return ccard(Object.keys(MIX).map(x=>[x,x]),"cmix",s)+`<div class="meta">${m.n}</div><div class="g2">${cin("mx_bag","수액 백 크기",m.bag,"ml")}${cin("mx_rate","수액 속도",m.rate,"ml/hr")}</div>`+m.d.map((d,i)=>cin("mx_d"+i,d[0]+` <small>· 농도 ${d[3]} ${d[4]}/ml</small>`,d[1],d[2])).join("")},
+ res:()=>{const bw=cbw();if(!bw)return NB;const s=cvv("mx_set","FLK"),m=MIX[s]||MIX.FLK,bag=cn("mx_bag",m.bag),rate=cn("mx_rate",m.rate);if(rate<=0||bag<=0)return null;
+  const L=[["수액 속도",fm(rate/bw),"ml/kg/hr"],"## "+bag+" ml 백에 넣을 약"];
+  m.d.forEach((d,i)=>{const dose=cn("mx_d"+i,d[1]),per=dose/(rate/bw),tot=per*bag,vol=tot/d[3];L.push([d[0],fm(vol,3),"ml (총 "+fm(tot,3)+" "+d[4]+")",1])});
+  L.push("## 로딩 용량 (환자 체중 기준)");m.ld.forEach(x=>L.push([x[0],fm(x[1](bw),3),"ml"]));
+  L.push("## 용량 범위");m.rg.forEach(x=>L.push(x));return L}},
+{k:"fluid",t:"수액 속도",title:"수액 속도",
+ form:()=>`<div class="meta">유지 60 mL/kg/day 기준 · 방울 간격(초/방울)까지 나옵니다.</div><div class="g2">${cin("fl_h","탈수 교정 시간","4","hr")}${cin("fl_p","직접 입력 탈수율","","%")}</div>`,
+ res:()=>{const bw=cbw();if(!bw)return NB;const m=bw*60/24,h=cn("fl_h",4)||4,L=[],row=(n,r)=>L.push([n,fm(r),"ml/hr · 60방울 "+fm(60/r,1)+"초 · 15방울 "+fm(240/r,1)+"초 · 20방울 "+fm(180/r,1)+"초 /방울",n==="유지"]);
+  row("유지",m);[2,3,4].forEach(x=>row("유지 ×"+x,m*x));
+  const def=p=>(bw*1000*p/100)/h+m;[5,10].forEach(p=>row("탈수 "+p+"% ("+h+"hr 교정 포함)",def(p)));const cp=cn("fl_p");if(cp>0)row("탈수 "+cp+"% ("+h+"hr 교정 포함)",def(cp));return L}},
+{k:"trans",t:"수혈",title:"수혈 계산",
+ form:()=>`<div class="meta">필요 혈액량 = 계수 × 체중 × (목표−현재) ÷ 공혈 PCV</div><div class="g2">${cin("tr_d","공혈 PCV","","%")}${cin("tr_c","현재 PCV","","%")}</div><div class="g2">${cin("tr_t","목표 PCV","","%")}${cin("tr_f","혈액량 계수",csp()==="cat"?60:80,csp()==="cat"?"고양이":"엑셀 기준 80")}</div>${cin("tr_ns","생리식염수 혼합량 (선택)","","ml")}`,
+ res:()=>{const bw=cbw();if(!bw)return NB;const d=cn("tr_d"),c=cn("tr_c"),t=cn("tr_t"),f=cn("tr_f",csp()==="cat"?60:80);if(d<=0||c<=0||t<=0)return null;if(t<=c)return["목표 PCV가 현재 PCV보다 커야 합니다"];
+  const v=f*bw*(t-c)/d,ns=cn("tr_ns"),tot=v+ns,L=[["필요 혈액량",fm(v),"ml ("+fm(v/bw,1)+" ml/kg)",1]];
+  if(v/bw>20)L.push("⚠ 20 mL/kg 초과: 분할 수혈 또는 용량 재검토");
+  if(ns>0)L.push(["총 제조량 (혈액+NS)",fm(tot),"ml"]);
+  L.push(["첫 30분","1분에 1방울","점적하며 부작용 확인"],["이후 (20방울 세트, 4시간 내 완료)",fm(60/((tot/4)/3),1),"초에 1방울",1]);return L}},
+{k:"tmon",t:"수혈 모니터링",title:"수혈 모니터링 시각",
+ form:()=>`<div class="meta">시작 시각을 넣으면 확인 시각이 나옵니다 (BT·HR·RR·소양·구토·떨림·부종·혈뇨 확인)</div><div class="f"><label>수혈 시작 시각</label><input class="in" type="time" data-cin="tm_t" value="${esc(cvv("tm_t",""))}"></div>`,
+ res:()=>{const v=cvv("tm_t","");if(!v)return null;const[h,m]=v.split(":").map(Number),b=h*60+m,P=[[0,"T=0"],[5,"T=5min"],[10,"T=10min"],[20,"T=20min"],[30,"T=30min"],[60,"T=1hr"],[120,"T=2hr"],[180,"T=3hr"],[240,"T=4hr"]],z=n=>String(n).padStart(2,"0");
+  return P.map(([a,l])=>{const t=(b+a)%1440;return[l,z(Math.floor(t/60))+":"+z(t%60),"BT HR RR 확인",a===0]})}},
+{k:"metro",t:"Metronidazole",title:"Metronidazole 희석",
+ form:()=>`<div class="g2">${cin("mt_d","용량","10","mg/kg")}${cin("mt_n","횟수","2","회/일")}</div><div class="g2">${cin("mt_b","희석할 수액팩","950","ml")}${cin("mt_r","수액 속도","15","ml/hr")}</div>${cin("mt_c","Metronidazole 농도","5","mg/ml")}`,
+ res:()=>{const bw=cbw();if(!bw)return NB;const d=cn("mt_d",10),n=cn("mt_n",2),b=cn("mt_b",950),r=cn("mt_r",15),c=cn("mt_c",5);if(r<=0||c<=0)return null;const day=r*24;
+  return [["수액팩에 섞을 Metronidazole",fm(d*n*bw*b/day/c,3),"ml",1],["하루 수액량",fm(day),"ml"],["하루 약량",fm(d*n*bw),"mg"]]}},
+{k:"ppn",t:"PPN 수액량",title:"PPN 수액량",
+ form:()=>`${cin("pp_f","Illness factor","1.5","")}<div class="meta">엑셀의 ideal formula와 My clinic 농도 두 가지를 같이 계산합니다.</div>`,
+ res:()=>{const bw=cbw();if(!bw)return NB;const f=cn("pp_f",1.5),rer=(bw>=2&&bw<=35)?30*bw+70:70*Math.pow(bw,.75),ier=Math.floor(rer*f),per=Math.floor(ier*.5);
+  const fr=bw<10?[.25,.25,.5]:bw<=25?[.33,.33,.33]:[.5,.25,.25],kc=fr.map(x=>per*x),idl=[.17,.34,2],cl=[.17,.34,1];
+  const iv=kc.map((k,i)=>k/idl[i]),cv=kc.map((k,i)=>k/cl[i]),vit=.5*bw/5,it=iv.reduce((a,b)=>a+b,0)+vit*2,ct=cv.reduce((a,b)=>a+b,0)+vit*2;
+  const L=[["RER",fm(rer),"kcal/day"],["IER",ier,"kcal/day"],["PER (50%)",per,"kcal/day"],"## Ideal formula (ml/day)"];
+  [["Dextrose",0],["Amino acid",1],["Lipid",2]].forEach(([n,i])=>L.push([n,fm(iv[i]),"ml"]));
+  L.push(["Multivitamins",fm(vit),"ml"],["Trace elements",fm(vit),"ml"],["총량",fm(it),"ml/day · "+fm(it/24)+" ml/hr",1],"## My clinic 농도 (ml/day)");
+  [["Dextrose",0],["Amino acid",1],["Lipid",2]].forEach(([n,i])=>L.push([n,fm(cv[i]),"ml"]));
+  L.push(["Multivitamins + Trace",fm(vit*2),"ml"]);
+  if(ct-it>it/6.7)L.push("⚠ Error: My clinic 총량이 ideal 대비 너무 큽니다");else L.push(["총량",fm(ct),"ml/day",1],["추가할 생리식염수",fm(Math.max(0,it-ct)),"ml",1]);
+  const hr=it/24;L.push("## 속도",["60방울 세트",fm(hr),"방울/분 · "+fm(60/hr,1)+"초/방울"],["15방울 세트",fm(hr*15/60),"방울/분 · "+fm(60/(hr*15/60),1)+"초/방울"]);return L}},
+{k:"nut",t:"RER·DER",title:"RER/DER",
+ form:()=>`<div class="g2">${cin("nu_k","사료 에너지","","kcal/kg")}${cin("nu_f","DER factor","","배수")}</div><div class="meta">RER = 체중 × 30 + 70</div>`,
+ res:()=>{const bw=cbw();if(!bw)return NB;const rer=bw*30+70,k=cn("nu_k"),f=cn("nu_f"),L=[["RER",fm(rer),"kcal/day",1]];if(k>0)L.push(["RER 급여량",fm(rer*1000/k),"g/day"]);if(f>0){const d=rer*f;L.push(["DER",fm(d),"kcal/day",1]);if(k>0)L.push(["DER 급여량",fm(d*1000/k),"g/day"])}return L}},
+{k:"ecc",t:"크레아티닌 청소율",title:"Endogenous Creatinine Clearance",
+ form:()=>`<div class="meta">ECC = Urine Cr × Urine Vol ÷ (Serum Cr × Time × 체중) · Serum Cr은 채뇨 시간의 중간에 채혈</div><div class="g2">${cin("ec_u","Urine Cr","","mg/dl")}${cin("ec_v","Urine Vol","","ml")}</div><div class="g2">${cin("ec_s","Serum Cr","","mg/dl")}${cin("ec_t","Time","","min")}</div>`,
+ res:()=>{const bw=cbw();if(!bw)return NB;const u=cn("ec_u"),v=cn("ec_v"),s=cn("ec_s"),t=cn("ec_t");if(u<=0||v<=0||s<=0||t<=0)return null;const e=u*v/(s*t*bw),r=csp()==="cat"?[1.9,5]:[2.4,5];
+  return [["ECC",fm(e,2),"ml/kg/min",1],["참고 범위 ("+(csp()==="cat"?"고양이":"개")+")",r[0]+"~"+r[1],"ml/kg/min"],["판정",e<r[0]?"감소":e>r[1]?"증가":"정상",""]]}},
+{k:"bga",t:"혈액가스",title:"혈액가스 판독",
+ form:()=>`<div class="meta">${csp()==="cat"?"고양이":"개"} 기준 · 아는 값만 넣으세요</div><div class="g2">${BGAK.map(([k,l,u])=>cin("bg_"+k,l,"",u)).join("")}</div>`+`<details class="cdet"><summary>음이온차(AG) 해석표</summary>${AGT.map(([h,rs])=>`<div class="chd">${h}</div>`+rs.map(r=>`<div class="cnote"><b>${r[0]}</b> · ${r[1]}</div>`).join("")).join("")}</details>`,
+ res:()=>{const sp=csp(),rg=BGAR[sp],val={},st={},L=[];let any=0;
+  BGAK.forEach(([k,l,u,r])=>{const x=cvv("bg_"+k,"");if(x==="")return;const v=num(x);any=1;const [a,b]=r||rg[k];val[k]=v;st[k]=v>=a&&v<=b?"정상":v>b?"증가":"감소";L.push([l,fm(v,2),a+"~"+b+(u?" "+u:"")+" → "+st[k],st[k]!=="정상"])});
+  if(!any)return null;const P=st.pH,pc=st.pCO2,hc=st.HCO3;let j="";
+  if(P==="정상")j="정상";else if(P==="감소"){j=pc==="증가"?"호흡성 산증":hc==="감소"?"대사성 산증":pc==="감소"?"호흡성 알칼리증":hc==="증가"?"대사성 알칼리증":"정상"}
+  else if(P==="증가"){j=pc==="감소"?"호흡성 알칼리증":hc==="증가"?"대사성 알칼리증":"정상"}
+  if(P){let comp="보상반응 없음";if(j==="호흡성 산증"&&hc==="증가")comp="대사성 알칼리증 동반";else if(j==="호흡성 알칼리증"&&hc==="감소")comp="대사성 산증 동반";else if(j==="대사성 산증"&&pc==="감소")comp="호흡성 알칼리증 보상";else if(j==="대사성 알칼리증"&&pc==="증가")comp="호흡성 산증 보상";
+   L.push("## 판정",["산/염기",j||"-","",1]);if(j!=="정상")L.push(["보상반응",comp,""]);
+   if(j==="대사성 산증"&&st.AnGap)L.push(["AG",st.AnGap==="증가"?"유기산 축적 가능성":st.AnGap==="정상"?"원발성 HCO3 감소":"낮은 음이온차",""])}
+  const bw=cbw();if(val.pH&&val.HCO3!==undefined&&val.pCO2!==undefined&&val.pH<=7.1&&val.HCO3<=12&&val.pCO2<=40)L.push("## HCO3 투여 고려");
+  if(bw>0&&val.HCO3!==undefined){L.push("## HCO3 투여량 참고",["투여량1 = 0.5 × 체중 × (정상 하한 − 측정)",fm(Math.max(0,.5*bw*(rg.HCO3[0]-val.HCO3))),"mEq"]);if(val.pCO2!==undefined)L.push(["투여량2 = 0.5 × 체중 × (24 × pCO2/63 − 측정)",fm(Math.max(0,.5*bw*(24*val.pCO2/63-val.HCO3))),"mEq"])}
+  return L}},
+{k:"bsa",t:"체표면적",title:"체표면적 · 체지방",
+ form:()=>`<div class="meta">BSA(m²) = (체중 g)^(2/3) ÷ 10000 × C · 개 10.1 / 고양이 10.0</div><div class="g2">${cin("bs_hs","HS (뒷발목~슬개인대)","","cm")}${cin("bs_pc","PC (옆구리 둘레)","","cm")}</div><div class="f"><label>성별</label><select class="in" data-cin="bs_sx"><option value="m" ${cvv("bs_sx","m")==="m"?"selected":""}>수컷</option><option value="f" ${cvv("bs_sx","m")==="f"?"selected":""}>암컷</option></select></div>`,
+ res:()=>{const bw=cbw();if(!bw)return NB;const c=csp()==="cat"?10:10.1,b=Math.pow(bw*1000,2/3)/10000*c,L=[["체표면적",fm(b,3),"m²",1]],hs=cn("bs_hs"),pc=cn("bs_pc");
+  if(hs>0&&pc>0){const m=cvv("bs_sx","m")==="m",bf=m?-1.4*hs+.77*pc+4:-1.7*hs+.93*pc+5;L.push(["체지방률",fm(bf,1),"%"],["제지방량",fm(bw*(100-bf)/100,2),"kg"])}return L}},
+{k:"kclb",t:"KCl·중탄산",title:"KCl · Bicarbonate",
+ form:()=>`<div class="meta">KCl 2 mEq/ml · Bicarbonate 1 mEq/ml</div><div class="g2">${cin("kc_c","KCl 목표 농도","20","mEq/L")}${cin("kc_b","수액 총량","","ml")}</div>${cin("kc_be","BE (결핍량, 양수로)","","mEq/L")}`,
+ res:()=>{const bw=cbw(),c=cn("kc_c",20),b=cn("kc_b"),be=cn("kc_be"),L=[];
+  if(c>0&&b>0)L.push("## KCl",["KCl 첨가량",fm(c*b/1000/2,3),"ml ("+fm(c*b/1000,2)+" mEq)",1]);
+  if(c>0&&bw>0){L.push(["이 농도의 최대 속도 (0.5 mEq/kg/hr)",fm(.5*bw*1000/c),"ml/hr 이하"])}
+  if(be>0&&bw>0){const m=.3*be*bw;L.push("## Bicarbonate",["요구량 = 0.3 × BE × 체중",fm(m),"mEq (=ml)",1],["1/2 ~ 1/8",fm(m/2)+" ~ "+fm(m/8),"ml · 2~4시간에 나누어"])}
+  return L.length?L:null}}];
+function calcView(){const cw=S.cw,cs=(S.p.care||[]).concat((S.p.lab_fluid||[]).filter(p=>!isCareP(p.id))),cur=CALCS.find(c=>c.k===S.ck)||CALCS[0];
+ return `<div class="card ccard"><div class="soapk" style="color:var(--lab)">공통 입력 · 모든 계산기가 같이 씁니다</div>
+ <div class="f"><label>환축 선택 (선택사항)</label><select class="in" data-cw="pid"><option value="">직접 입력</option>${cs.map(p=>`<option value="${p.id}" ${cw.pid===p.id?"selected":""}>${esc(p.name)} · ${esc(p.room||"")}</option>`).join("")}</select></div>
+ <div class="g2"><div class="f"><label>체중 (kg)</label><input class="in bwbig" type="number" step="0.01" inputmode="decimal" data-cw="bw" value="${esc(cw.bw)}"></div>
+ <div class="f"><label>종</label><div class="row" style="gap:6px"><button type="button" class="chip ${cw.sp==="dog"?"sel":""}" data-act="cspec" data-s="dog">🐶 개</button><button type="button" class="chip ${cw.sp==="cat"?"sel":""}" data-act="cspec" data-s="cat">🐱 고양이</button></div></div></div></div>
+ ${ccard(CALCS.map(c=>[c.k,c.t]),"cchip",cur.k)}
+ <div class="card ccard"><div class="soapk">${cur.t}</div>${cur.form()}<div id="cres" class="cres"></div></div>`}
+function calcUpdate(){const el=$("#cres");if(!el)return;const cur=CALCS.find(c=>c.k===S.ck)||CALCS[0];let L=null;try{L=cur.res()}catch(e){L=["계산 중 오류: "+e.message]}
+ S.ctext=L?resText(cur.title,L):"";if(!L){el.innerHTML=`<div class="cnote">값을 입력하면 결과가 바로 나옵니다</div>`;return}
+ const canLog=S.cw.pid&&isCareP(S.cw.pid);el.innerHTML=resHtml(L)+`<div class="row" style="margin-top:8px"><button class="btn dk" style="flex:1" data-act="ccopy">결과 복사</button>${canLog?`<button class="btn" style="flex:1" data-act="clog">케어 기록에 추가</button>`:""}</div>`}
+function calcPick(id){const p=(S.p.care||[]).concat(S.p.lab_fluid||[]).find(x=>x.id===id);S.cw.pid=id;if(p){S.cw.sp=p.species==="cat"?"cat":"dog";const w=p.lab&&num(p.lab.bw);if(w>0)S.cw.bw=String(w)}render()}
+
+/* ---- 검사·수액 카드: 체중 상단 고정 + 입력하면 결과가 바로 나옴 ---- */
+function labCard(p){const l=p.lab||{},id=p.id,cat=p.species==="cat";
+ const fi=(f,lab,u,def)=>`<div class="f"><label>${lab}${u?` <small>(${u})</small>`:""}</label><input class="in${f==="bw"?" bwbig":""}" type="number" inputmode="decimal" step="any" data-lab="${f}" data-id="${id}" ${f==="bw"?`id="bw-${id}"`:""} value="${l[f]||def||""}"></div>`;
+ const sec=(t,c)=>`<div style="display:grid;gap:10px;border-top:1px dashed var(--line);padding-top:12px"><div class="soapk" style="color:var(--lab)">${t}</div>${c}</div>`;
+ const res=(f,key)=>`<div id="lr-${key}-${id}" class="lres" style="display:none"><div class="pre res"></div><button class="btn dk" data-act="copylab" data-id="${id}" data-f="${f}">계산 결과 복사</button></div>`;
+ return `<div style="display:grid;gap:10px"><div class="row" style="align-items:flex-end;gap:10px"><div style="flex:1">${fi("bw","체중","kg")}</div>
+  <label class="btn sky" style="display:grid;place-items:center;cursor:pointer;height:44px;font-size:12.5px;padding:0 12px">검사지 촬영<input type="file" accept="image/*" capture="environment" hidden data-labocr="${id}"></label></div>
+  <div class="meta">체중은 아래 모든 계산에 같이 쓰입니다 · 수치를 입력하면 결과가 바로 나옵니다</div>
+  ${l.ocrText?`<div class="pre" style="max-height:90px;overflow:auto;font-size:11.5px">${esc(l.ocrText)}</div>`:""}</div>`+
+ sec("🧪 중탄산(HCO3-) 교정",fi("hco3","측정 HCO3-","mEq/L")+`<div class="meta">공식: 체중 × 0.3 × (24 − HCO3-) · 1차 50% 투여</div>`+res("result","bic"))+
+ sec("🧪 칼륨(K+) 교정",fi("k","측정 K+","mEq/L")+res("kres","k"))+
+ sec("🩸 수혈",`<div class="meta">${cat?"고양이":"강아지"} 기준 · 총량 = ${cat?60:90} × 체중 × (목표−현재 PCV) ÷ 공혈 PCV</div><div class="g2">${fi("pcv","현재 PCV","%")}${fi("tpcv","목표 PCV","%",cat?20:25)}</div>${fi("prod","공혈 PCV (수혈할 혈액)","%")}`+res("txres","tx"))+
+ sec("❤️ LVIDDN 계산",`<div class="meta">LVIDDN = LVIDd ÷ 체중<sup>0.294</sup> · 기준 1.7</div>${fi("lvd","LVIDd","cm")}`+res("lvres","lv"))+
+ `<div class="row"><button type="button" class="btn gh" data-act="clearLab" data-id="${id}">기록 지우기</button></div>`}
+function labCalc(p){const l=p.lab||{},bw=num(l.bw),sp=p.species==="cat"?"cat":"dog",n=p.name,o={};
+ o.result=bw>0&&num(l.hco3)>0?bicarb(n,bw,num(l.hco3)):"";
+ o.kres=bw>0&&num(l.k)>0?kcl(n,bw,num(l.k)):"";
+ const tg=num(l.tpcv)||(sp==="cat"?20:25);
+ o.txres=bw>0&&num(l.pcv)>0&&num(l.prod)>0?txf(n,sp,bw,num(l.pcv),tg,num(l.prod)):"";
+ o.lvres=bw>0&&num(l.lvd)>0?lvd(n,bw,num(l.lvd)):"";return o}
+const LRK={result:"bic",kres:"k",txres:"tx",lvres:"lv"};
+function labFill(p){const o=labCalc(p);p.lab=p.lab||{};Object.keys(o).forEach(f=>{p.lab[f]=o[f];const b=$("#lr-"+LRK[f]+"-"+p.id);if(!b)return;b.style.display=o[f]?"grid":"none";const pre=b.querySelector(".pre");if(pre)pre.textContent=o[f]})}
+function labLive(t){const p=find("lab_fluid",t.dataset.id);if(!p)return;p.lab=p.lab||{};p.lab[t.dataset.lab]=t.value===""?"":parseFloat(t.value);labFill(p);clearTimeout(S.lt);S.lt=setTimeout(()=>save("lab_fluid"),800)}
+
 /* ---- Global Event Listeners ---- */
 document.addEventListener("click",e=>{const b=e.target.closest('[data-act="remove"]');if(!b)return;const p=find(S.room,b.dataset.id);
  if(!confirm(`${p?p.name:"이 환축"} 카드를 삭제할까요?`)){e.stopPropagation();e.preventDefault()}},true);
@@ -909,7 +1075,11 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
  discharge:()=>discharge(id),restore:()=>restore(id),
  remove:()=>{const target=find(S.room,id);S.p[S.room]=(S.p[S.room]||[]).filter(p=>p.id!==id);delete S.drafts[id];render();save(S.room);toast(`${target?target.name+" 카드를 ":"환축 카드를 "}삭제했어요`)},
  copy:()=>{const p=find(S.room,id);if(p)copy(chartText(p),`${p.name} 차트를 복사했어요`)},
- osub:()=>{S.oCat=d.c;render()},dmode:()=>{S.dm=d.m;render()},tooth:()=>{const p=find("checkup",id);if(!p)return;p.pe=p.pe||{};const k=S.dm||"tfx",a=tList(p.pe[k]),i=a.indexOf(d.n);if(i>=0)a.splice(i,1);else a.push(d.n);a.sort((x,y)=>x-y);p.pe[k]=a.join(", ");render();save("checkup")},soapvoice:()=>soapVoice(id,d.k),copyosub:()=>copyOsub(id,d.c),
+ osub:()=>{S.oCat=d.c;render()},cchip:()=>{S.ck=d.k;render()},cspec:()=>{S.cw.sp=d.s;render()},
+ ccri:()=>{S.cv.cr_id=d.k;S.cv.cr_dose="";S.cv.cr_rate="";render()},cmix:()=>{S.cv.mx_set=d.k;["mx_bag","mx_rate","mx_d0","mx_d1","mx_d2","mx_d3","mx_d4"].forEach(k=>delete S.cv[k]);render()},
+ ccopy:()=>{if(S.ctext)copy(S.ctext,"계산 결과를 복사했어요")},
+ clog:()=>{const p=find("care",S.cw.pid);if(!p||!S.ctext)return;p.logs=p.logs||[];p.logs.unshift({id:`l${Date.now()}`,time:now(),d:todayStr(),text:S.ctext.replace(/\n/g," / ")});save("care");toast(`${p.name} 케어 기록에 추가했어요`)},
+ dmode:()=>{S.dm=d.m;render()},tooth:()=>{const p=find("checkup",id);if(!p)return;p.pe=p.pe||{};const k=S.dm||"tfx",a=tList(p.pe[k]),i=a.indexOf(d.n);if(i>=0)a.splice(i,1);else a.push(d.n);a.sort((x,y)=>x-y);p.pe[k]=a.join(", ");render();save("checkup")},soapvoice:()=>soapVoice(id,d.k),copyosub:()=>copyOsub(id,d.c),
  soap:()=>toggleSoapChip(id,d.k,d.v),
  clearSoap:()=>clearSoapField(id,d.k),
  clearLab:()=>clearLabRecord(id),
@@ -940,6 +1110,11 @@ document.addEventListener("input",e=>{const t=e.target;if(!t.dataset)return;
   const v=$("#dpv-"+id);if(v)v.textContent=drPv(id)||"값을 입력하거나 선택하면 여기에 한 줄로 정리됩니다."}
 });
 
+document.addEventListener("input",e=>{const t=e.target;if(!t.dataset)return;
+ if(t.dataset.cin!==undefined){S.cv[t.dataset.cin]=t.value;calcUpdate()}
+ else if(t.dataset.cw==="bw"){S.cw.bw=t.value;calcUpdate()}
+ else if(t.dataset.lab)labLive(t)});
+document.addEventListener("change",e=>{const t=e.target;if(t.dataset&&t.dataset.cw==="pid")calcPick(t.value)});
 document.addEventListener("change",e=>{const t=e.target;
  if(t.dataset.soap){const p=find("checkup",t.dataset.id);if(!p)return;p.soap=p.soap||{};p.soap[t.dataset.soap]=t.value;save("checkup")}
  else if(t.dataset.labocr)labOcr(t.dataset.labocr,t);
