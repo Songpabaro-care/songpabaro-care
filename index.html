@@ -309,8 +309,9 @@ const OSC=[
  z:{menace:"+",plr:"+",pupil:"normal",dazzle:"+",palp:"+",fluo:"-",ulcer:"-",eros:"-",perf:"-",conj:"-",scl:"-",cat:"normal"}},
 {t:"Ear",n:"Ear",s:["LT","RT"],r:[["yw","Yellow earwax"],["br","Brown earwax"],["er","Erythema"],["ed","Edema"],["di","Ear discharge"],["bl","Bleeding"],["ma","Mass"]].map(([k,l])=>lr(k,l,PM)),
  x:OX("Ophthalmic · Otic").filter(v=>EARRE.test(v)),z:{yw:"-",br:"-",er:"-",ed:"-",di:"-",bl:"-",ma:"-"}},
-{t:"Dent/Ortho",n:"Dent/Ortho",s:["LT","RT"],r:[tx("dent","Dent","CI=1/3"),lr("mpl","Orthopedic MPL",["-","G1","G2","G3","G4"]),tx("msk","Musculoskeletal","")],
- x:[...OX("Oral · Dental"),...OX("Skin · Musculoskeletal · Abd").filter(v=>/^(ROM|MPL|Lameness)/.test(v))]},
+{t:"Dent",n:"Dent",r:[tx("dent","Dental grade","CI=1/3")],x:OX("Oral · Dental")},
+{t:"Ortho",n:"Ortho",s:["LT","RT"],r:[lr("mpl","Patellar luxation (MPL)",["-","G1","G2","G3","G4"]),tx("msk","Musculoskeletal","")],
+ x:OX("Skin · Musculoskeletal · Abd").filter(v=>/^(ROM|MPL|Lameness)/.test(v))},
 {t:"Neuro",n:"Neuro",s:["LT","RT"],h:"0 normal · 1 delayed · 2 absent",r:[["knuck","Knuckling"],["wb","Wheelbarrow"],["hop","Hopping"],["plv","Placing (visual)"],["plt","Placing (tactile)"],["ept","Extensor postural thrust"],["hemi","Hemiwalking"]].map(([k,l])=>lr(k,l,G3)),
  z:{knuck:"0",wb:"0",hop:"0",plv:"0",plt:"0",ept:"0",hemi:"0"}},
 {t:"Skin/LN",n:"Skin/LN",r:[op("skin","Skin",["normal","dry","greasy","scaly","lesion","lump","alopecia"],1),op("ln","Lymph node",["Mandibular LN enlargement","Prescapular LN enlargement","Axillary LN enlargement","Inguinal LN enlargement","Popliteal LN enlargement"],1)],
@@ -745,12 +746,13 @@ const ALLO=Object.values(SOAP.O).flat();
 const OLBL={bt:"BT",bp:"BP (sys)",hr:"HR",rr:"RR"},OUNIT={bt:"°C",bp:"mmHg",hr:"bpm",rr:"/min",iop:"mmHg",schir:"mm/min"};
 function splitItems(txt,list){const L=[...list].sort((x,y)=>y.length-x.length);let t=String(txt||"");L.forEach((k,i)=>{t=t.split(k).join(`\u0001${i}\u0001`)});
  return t.split(/,\s*/).map(x=>x.replace(/\u0001(\d+)\u0001/g,(m,i)=>L[i]).trim()).filter(Boolean)}
-function catBlock(c,p,extra){const pe=p.pe||{},uni=c.r.every(r=>r.lr),ln=[];
+function catBlock(c,p,extra){const pe=p.pe||{},ln=[];
  c.r.forEach(r=>{const sd=r.s||c.s,nmv=OLBL[r.k]||r.l,u=OUNIT[r.k]?" "+OUNIT[r.k]:"";
-  if(r.lr){const a=pe[r.k+"_a"],b=pe[r.k+"_b"];if(!a&&!b)return;ln.push(`- ${uni?nmv:`${nmv} (${sd[0]}/${sd[1]})`}: ${a||"NA"} / ${b||"NA"}${u}`)}
+  if(r.lr){const a=pe[r.k+"_a"],b=pe[r.k+"_b"];if(!a&&!b)return;
+   const t=[a?`${sd[0]} ${a}`:"",b?`${sd[1]} ${b}`:""].filter(Boolean).join(" / ");ln.push(`- ${nmv}: ${t}${u}`)}
   else if(pe[r.k])ln.push(`- ${nmv}: ${pe[r.k]}${u}`)});
- (extra||[]).forEach(x=>ln.push(`- ${x}`));
- return ln.length?`[${c.n}]${uni&&c.s?` ${c.s[0]} / ${c.s[1]}`:""}\n${ln.join("\n")}`:""}
+ if((extra||[]).length){ln.push("- Findings:");extra.forEach(x=>ln.push(`   · ${x}`))}
+ return ln.length?`[${c.n}]\n${ln.join("\n")}`:""}
 function oText(p){const items=splitItems((p.soap||{}).o,ALLO),used=new Set(),bl=[];
  OSC.forEach(c=>{const ex=items.filter(v=>(c.x||[]).includes(v));ex.forEach(v=>used.add(v));const b=catBlock(c,p,ex);if(b)bl.push(b)});
  const rest=items.filter(v=>!used.has(v));if(rest.length)bl.push(`[Others]\n${rest.map(v=>`- ${v}`).join("\n")}`);
