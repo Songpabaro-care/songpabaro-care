@@ -303,8 +303,8 @@ const SOAPN={S:"Subjective (S)",O:"Objective (O)",A:"Assessment (A)",P:"Plan (P)
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
-function bicarb(n,bw,h){const t=24;if(h>=t)return `[중탄산(NaHCO3) 교정 판정]\n• 체중 ${bw} kg · 측정 HCO3- ${h} mEq/L (목표 ${t})\n• 목표치 이상이라 별도 교정이 필요하지 않습니다.`;
-const d=bw*.3*(t-h),f=d*.5;return `[중탄산(NaHCO3) 수액 교정 계산]\n• 환자: ${n} (${bw} kg) · k = 0.3\n• HCO3- ${h} → 목표 ${t} mEq/L\n• 총 부족량: ${d.toFixed(1)} mEq\n• 1차 투여(50%): ${f.toFixed(1)} mEq (8.4% NaHCO3 ${f.toFixed(1)} mL)\n• 1차분을 희석해 30~60분 투여 후 재평가`}
+function bicarb(n,bw,h){const t=25,r=x=>Math.round(x*10)/10;if(h>=t)return `[중탄산처치]\n• 체중 ${bw} kg · 측정 HCO3- ${h} mEq/L (목표 ${t})\n• 목표치 이상이라 별도 교정이 필요하지 않습니다.`;
+const D=bw*.3*(t-h),d=r(D),tot=r(D*5),ns=r(D*4),fr=r(D*5/6);return `[중탄산처치]\nCalculate the sodium bicarbonate requirement\n= BW x 0.3 x (desired-measured HCO3)\n= ${bw}*0.3*(${t}-${h})\n= ${d}ml\n\n5배 희석 : 총 부피 ${tot}ml = N/S ${ns}ml + NaHCO3 ${d}ml\n6시간 CRI, FR= ${fr}ml/hr`}
 
 function seed(){return{care:[],checkup:[],lab_fluid:[]}}
 
@@ -977,9 +977,7 @@ const CALCS=[
   if(ct-it>it/6.7)L.push("⚠ Error: My clinic 총량이 ideal 대비 너무 큽니다");else L.push(["총량",fm(ct),"ml/day",1],["추가할 생리식염수",fm(Math.max(0,it-ct)),"ml",1]);
   const hr=it/24;L.push("## 속도",["수액 속도",fm(hr),"ml/hr",1]);return L}},
 {k:"nut",t:"RER·DER",title:"RER/DER",
- form:()=>`<div class="g2">${cin("nu_k","사료 에너지","","kcal/kg")}${cin("nu_f","DER factor","","배수")}</div><div class="meta">RER = 체중 × 30 + 70 · DER = RER × factor</div><details class="cdet" open><summary>DER factor 입력 예시</summary>
-<div class="cnote"><b>개</b> · 중성화 성견 1.6 · 비중성화 성견 1.8 · 비만 경향 1.4 · 체중 감량 1.0 · 성장기(4개월 이후) 2.0 · 어린 강아지(4개월 미만) 3.0 · 활동량 많은 개 2~5</div>
-<div class="cnote"><b>고양이</b> · 중성화 성묘 1.2 · 비중성화 성묘 1.4 · 비만 경향 1.0 · 체중 감량 0.8 · 성장기 2.5</div>
+ form:()=>`<div class="g2">${cin("nu_k","사료 에너지","","kcal/kg")}${cin("nu_f","DER factor","","배수")}</div><div class="meta">RER = 체중 × 30 + 70 · DER = RER × factor</div><details class="cdet" open><summary>DER factor 입력 예시</summary>${csp()==="cat"?`<div class="cnote"><b>고양이</b> · 중성화 성묘 1.2 · 비중성화 성묘 1.4 · 비만 경향 1.0 · 체중 감량 0.8 · 성장기 2.5</div>`:`<div class="cnote"><b>개</b> · 중성화 성견 1.6 · 비중성화 성견 1.8 · 비만 경향 1.4 · 체중 감량 1.0 · 성장기(4개월 이후) 2.0 · 어린 강아지(4개월 미만) 3.0 · 활동량 많은 개 2~5</div>`}
 <div class="cnote"><b>입원·회복기 환자</b> · 보통 RER ×1.0~1.5 (질병 계수) · 급여량을 천천히 올리며 확인</div>
 <div class="cnote">위 값은 일반 권장 범위이며 개체 상태에 맞게 조정하세요.</div></details>`,
  res:()=>{const bw=cbw();if(!bw)return NB;const rer=bw*30+70,k=cn("nu_k"),f=cn("nu_f"),L=[["RER",fm(rer),"kcal/day",1]];if(k>0)L.push(["RER 급여량",fm(rer*1000/k),"g/day"]);if(f>0){const d=rer*f;L.push(["DER",fm(d),"kcal/day",1]);if(k>0)L.push(["DER 급여량",fm(d*1000/k),"g/day"])}return L}},];
@@ -1004,7 +1002,7 @@ function labCard(p){const l=p.lab||{},id=p.id,cat=p.species==="cat";
   <label class="btn sky" style="display:grid;place-items:center;cursor:pointer;height:44px;font-size:12.5px;padding:0 12px">검사지 촬영<input type="file" accept="image/*" capture="environment" hidden data-labocr="${id}"></label></div>
   <div class="meta">체중은 아래 모든 계산에 같이 쓰입니다 · 수치를 입력하면 결과가 바로 나옵니다</div>
   ${l.ocrText?`<div class="pre" style="max-height:90px;overflow:auto;font-size:11.5px">${esc(l.ocrText)}</div>`:""}</div>`+
- sec("🧪 중탄산(HCO3-) 교정",fi("hco3","측정 HCO3-","mEq/L")+`<div class="meta">공식: 체중 × 0.3 × (24 − HCO3-) · 1차 50% 투여</div>`+res("result","bic"))+
+ sec("🧪 중탄산(HCO3-) 교정",fi("hco3","측정 HCO3-","mEq/L")+`<div class="meta">공식: 체중 × 0.3 × (25 − HCO3-) · 5배 희석 · 6시간 CRI (우리병원 방법)</div>`+res("result","bic"))+
  sec("🧪 칼륨(K+) 교정",fi("k","측정 K+","mEq/L")+res("kres","k"))+
  sec("🩸 수혈",`<div class="meta">${cat?"고양이":"강아지"} 기준 · 총량 = ${cat?60:90} × 체중 × (목표−현재 PCV) ÷ 공혈 PCV</div><div class="g2">${fi("pcv","현재 PCV","%")}${fi("tpcv","목표 PCV","%",cat?20:25)}</div>${fi("prod","공혈 PCV (수혈할 혈액)","%")}`+res("txres","tx"))+
  sec("❤️ LVIDDN 계산",`<div class="meta">LVIDDN = LVIDd ÷ 체중<sup>0.294</sup> · 기준 1.7</div>${fi("lvd","LVIDd","cm")}`+res("lvres","lv"))+
