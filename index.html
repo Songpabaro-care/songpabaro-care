@@ -68,11 +68,10 @@ main{padding-top:16px;display:grid;gap:14px}
 .chip:hover{border-color:var(--brand);background:var(--brand-s)}
 .chip:active{transform:scale(.96)}
 .chip.gd{border-radius:14px;text-align:left;flex:1 1 46%;min-width:140px}.chip small.cd{display:block;font-size:10.5px;font-weight:400;opacity:.85;line-height:1.3;margin-top:2px}.chip.sel small.cd{opacity:.95}
-.trow{display:flex;align-items:center;gap:6px;margin:4px 0}.tq{font-size:10px;font-weight:800;color:var(--mute);width:38px;flex:none}.tteeth{display:flex;gap:3px;flex:1}
-.tooth{flex:1;min-width:0;min-height:40px;padding:0;border:1px solid var(--line);background:#fff;font-size:9.5px;font-weight:700;color:var(--mute);border-radius:6px 6px 12px 12px}
-.tooth.ti{flex:.9;min-height:34px;font-size:8px;letter-spacing:-.5px}.tooth.tc{flex:1.1;min-height:46px;border-radius:50% 50% 12px 12px}.tooth.tp{min-height:42px}.tooth.tm{flex:1.3;min-height:40px;border-radius:6px}
-.tooth.fx{background:#e5484d;border-color:#e5484d;color:#fff}.tooth.ms{box-shadow:0 0 0 2.5px #f59f00;border-color:#f59f00}.tooth.ms:not(.fx){background:#fff3d6;color:#8a5a00}
-.tmid{height:1px;background:var(--line);margin:6px 0 6px 44px}.dmode{display:flex;gap:6px;margin-top:6px}
+.dsvg{width:100%;height:auto;display:block;background:var(--soft);border-radius:14px;margin-top:4px;touch-action:manipulation}
+.dt{cursor:pointer}.dt path{fill:#fff;stroke:#9aa7a6;stroke-width:1.1}.dt text{font-size:7.4px;font-weight:700;fill:#5f6e6d;text-anchor:middle;pointer-events:none}
+.dt.fx path{fill:#e5484d;stroke:#c92a2f}.dt.fx text{fill:#fff}.dt.ms path{stroke:#f59f00;stroke-width:2.6}.dt.ms:not(.fx) path{fill:#fff3d6}.dt.ms:not(.fx) text{fill:#8a5a00}
+.dml{stroke:#c9d2d1;stroke-dasharray:3 3}.dlb{font-size:8px;fill:#8a9695;font-weight:700}.dmode{display:flex;gap:6px;margin-top:6px}
 .chip.sel{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:700;box-shadow:0 2px 8px rgba(11,122,117,.35)}
 .card[data-r=checkup] .chip:hover{border-color:var(--soap);background:var(--soap-s)}
 .card[data-r=checkup] .chip.sel{background:var(--soap);border-color:var(--soap);color:#fff;font-weight:700}
@@ -801,13 +800,36 @@ function teethOf(sp,q){const up=q===1||q===2,cat=sp==="cat",a=[];
  n.forEach(i=>a.push(q*100+i));return a}
 const toothType=n=>{const i=n%100;return i<=3?"i":i===4?"c":i<=8?"p":"m"};
 const tList=v=>String(v||"").split(/[\s,]+/).filter(Boolean);
+const DPOLY=[[0,0],[38,2],[62,14],[86,40],[100,76],[108,108],[112,142]];
+const DSZ={i:[9,10],c:[12,16],p:[9,10],p4:[17,12],m:[11,12],m2:[9,10],m3:[7,8],lm1:[19,12],lm2:[13,11]};
+function toothSz(n,sp){const q=Math.floor(n/100),i=n%100,up=q<=2;
+ if(i<=3)return["i",...DSZ.i];if(i===4)return["c",...DSZ.c];
+ if(i<=7&&!(up&&i===8)){return["p",...(i===5?[7,8]:DSZ.p)]}
+ if(up){if(i===8)return["p4",...DSZ.p4];return i===9?["m",...DSZ.m]:["m2",...DSZ.m2]}
+ if(i===8)return["p",...DSZ.p];if(i===9)return["m",...DSZ.lm1];return i===10?["m2",...DSZ.lm2]:["m3",...DSZ.m3]}
+function toothPath(t,w,h){const x=w/2,y=h/2;
+ if(t==="c")return `M0,${-y}Q${x},${-y/3} ${x},${y/3}Q${x},${y} 0,${y}Q${-x},${y} ${-x},${y/3}Q${-x},${-y/3} 0,${-y}Z`;
+ if(t==="i")return `M${-x},${y}L${-x},${-y/3}Q${-x},${-y} 0,${-y}Q${x},${-y} ${x},${-y/3}L${x},${y}Z`;
+ const r=t==="m"||t==="m2"||t==="m3"?3.5:3;return `M${-x+r},${-y}H${x-r}Q${x},${-y} ${x},${-y+r}V${y-r}Q${x},${y} ${x-r},${y}H${-x+r}Q${-x},${y} ${-x},${y-r}V${-y+r}Q${-x},${-y} ${-x+r},${-y}Z`}
+function archPos(list,sp){ // list: tooth numbers from midline outward -> [{n,x,y,a,t,w,h}] (right-half local coords)
+ const sz=list.map(n=>toothSz(n,sp)),gap=1.4;
+ const seg=[];let L=0;for(let i=1;i<DPOLY.length;i++){const[x0,y0]=DPOLY[i-1],[x1,y1]=DPOLY[i],l=Math.hypot(x1-x0,y1-y0);seg.push({x0,y0,x1,y1,l,s:L});L+=l}
+ const tot=sz.reduce((a,z)=>a+z[1]+gap,0),f=Math.min(1.95,L*.97/tot);let d=0,out=[];
+ sz.forEach((z,i)=>{const w=z[1]*f,h=z[2]*f,c=d+w/2;d+=w+gap*f;
+  const sg=seg.find(g=>c<=g.s+g.l)||seg[seg.length-1],u=Math.min(1,(c-sg.s)/sg.l),x=sg.x0+(sg.x1-sg.x0)*u,y=sg.y0+(sg.y1-sg.y0)*u,a=Math.atan2(sg.y1-sg.y0,sg.x1-sg.x0)*180/Math.PI;
+  out.push({n:list[i],t:z[0],w,h,x,y,a})});return out}
 function dentChart(p){const pe=p.pe||{},sp=p.species==="cat"?"cat":"dog",mode=S.dm||"tfx",fx=new Set(tList(pe.tfx)),ms=new Set(tList(pe.omloc)),id=p.id;
- const row=([lb,q,rev])=>{let t=teethOf(sp,q);if(!rev)t=t.slice().reverse();
-  return `<div class="trow"><span class="tq">${lb}</span><div class="tteeth">${t.map(n=>`<button type="button" class="tooth t${toothType(n)} ${fx.has(String(n))?"fx":""} ${ms.has(String(n))?"ms":""}" data-act="tooth" data-id="${id}" data-n="${n}" aria-label="치아 ${n}">${n}</button>`).join("")}</div></div>`};
+ const W=340,CX=W/2,UY=22,LY=318;let g="";
+ const draw=(q,up,right)=>{const list=teethOf(sp,q);
+  archPos(list,sp).forEach(o=>{const sx=right?1:-1,X=CX+sx*(o.x+3),Y=up?UY+o.y:LY-o.y,ang=right?(up?o.a:-o.a):(up?180-o.a:o.a-180);
+   const k=`${fx.has(String(o.n))?" fx":""}${ms.has(String(o.n))?" ms":""}`;
+   g+=`<g class="dt${k}" data-act="tooth" data-id="${id}" data-n="${o.n}"><g transform="translate(${X.toFixed(1)} ${Y.toFixed(1)}) rotate(${ang.toFixed(1)})"><path d="${toothPath(o.t,o.w,o.h)}"/></g><text x="${X.toFixed(1)}" y="${(Y+2.6).toFixed(1)}">${o.n}</text></g>`})};
+ // 1: upper right (viewer left), 2: upper left, 4: lower right, 3: lower left
+ draw(1,true,false);draw(2,true,true);draw(4,false,false);draw(3,false,true);
  return `<div class="dchart"><div class="otitle">치아 차트 · ${sp==="cat"?"고양이 30본":"강아지 42본"} (Triadan)</div>
  <div class="dmode"><button type="button" class="chip ${mode==="tfx"?"sel":""}" data-act="dmode" data-m="tfx">Tooth fx</button><button type="button" class="chip ${mode==="omloc"?"sel":""}" data-act="dmode" data-m="omloc">Oral mass 위치</button></div>
- <div class="meta" style="margin:4px 0 6px">${mode==="tfx"?"골절된 치아를 누르세요 (빨강)":"종양 근처 치아를 누르세요 (주황)"} · 다시 누르면 해제</div>
- ${DQ.slice(0,2).map(row).join("")}<div class="tmid"></div>${DQ.slice(2).map(row).join("")}</div>`}
+ <div class="meta" style="margin:4px 0 2px">${mode==="tfx"?"골절된 치아를 누르세요 (빨강)":"종양 근처 치아를 누르세요 (주황)"} · 다시 누르면 해제</div>
+ <svg class="dsvg" viewBox="0 0 ${W} 340" role="group" aria-label="치아 차트"><text class="dlb" x="${CX}" y="10" text-anchor="middle">위턱 · 우측(R) ◀ ▶ 좌측(L)</text><text class="dlb" x="${CX}" y="338" text-anchor="middle">아래턱</text><line class="dml" x1="${CX}" y1="${UY-6}" x2="${CX}" y2="${LY+6}"/>${g}</svg></div>`}
 
 function oBlock(p,s){const cur=OSC.find(c=>c.t===S.oCat)||OSC[0],id=p.id,xs=cur.x||[];
  return `<div class="grp"><div class="soapk">${SOAPN.O}</div>
