@@ -987,9 +987,12 @@ function scrClose(){setTimeout(fcShow,0);Q.view=null;$("#scr").classList.remove(
 const ANZN={NX700:"NX700",BC2800:"BC-2800",AU10V:"AU10V",ISMART:"i-Smart",ANIKO:"AniKo"};
 function qAnOf(t){const chem=new Set(Object.values(CHEM).flat());if(chem.has(t)||t==="혈청화학"||(PANELS.some(p=>p[0]===t)&&!/요검사/.test(t)))return"NX700";if(t==="CBC")return"BC2800";if(["T4","TSH","코르티솔","SDMA","CRP"].includes(t))return"AU10V";if(["전해질","혈액가스"].includes(t))return"ISMART";if(t==="췌장염 키트")return"ANIKO";return null}
 function lisBadge(){const l=ST.lis&&ST.lis.v;if(!l||!l.hb)return"";const age=Date.now()-l.hb,ok=age<180000&&l.st==="ok";return ` · <b style="color:${ok?"#0f8a7e":"#c93a3a"}">LIS 연동 ${ok?"● 정상":age<180000?"● LIS 창 없음":"● 꺼짐"}</b>`}
-function lisOn(){const e=ST.lis&&ST.lis.v&&ST.lis.v.ev;if(Q.lisT===undefined){Q.lisT=e&&e.t||0;return}if(!e||!e.t||e.t<=Q.lisT)return;Q.lisT=e.t;
+Q.notes={};
+function lisAck(t){if(!t)return;fetch(`${base()}/rooms/${encodeURIComponent(S.code)}/lis/acks/${t}.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:"true"}).catch(()=>{})}
+function lisOn(){{const ak=ST.lis&&ST.lis.v&&ST.lis.v.acks||{};Object.keys(Q.notes).forEach(t=>{if(ak[t]){const n=Q.notes[t];delete Q.notes[t];n._sys=true;try{n.close()}catch(x){}}})}
+ const e=ST.lis&&ST.lis.v&&ST.lis.v.ev;if(Q.lisT===undefined){Q.lisT=e&&e.t||0;return}if(!e||!e.t||e.t<=Q.lisT)return;Q.lisT=e.t;
  if(Date.now()-e.t>120000)return;if(qSndPlay("ord"))qBeep(e.kind==="done"?"chat":"ord");toast(`${e.title} · ${e.body}`.slice(0,90));
- if(innerWidth>=761&&window.Notification&&Notification.permission==="granted")try{new Notification(e.title,{body:e.body,icon:"icon-192.png",silent:true,tag:"lis"+e.t})}catch(x){}}
+ if(innerWidth>=761&&window.Notification&&Notification.permission==="granted")try{const n=new Notification(e.title,{body:e.body,icon:"icon-192.png",silent:true,tag:"lis"+e.t,requireInteraction:true}),t=e.t;Q.notes[t]=n;n.onclick=()=>{try{window.focus()}catch(x){}n._sys=true;n.close();delete Q.notes[t];lisAck(t)};n.onclose=()=>{if(n._sys)return;delete Q.notes[t];lisAck(t)}}catch(x){}}
 document.addEventListener("pointerdown",()=>{if(innerWidth>=761&&window.Notification&&Notification.permission==="default")try{Notification.requestPermission()}catch(e){}},{once:true});
 function qRcv(o){const an=o.an||[],rv=o.recv||{},ks=[...new Set([...an,...Object.keys(rv)])];if(!ks.length)return"";return `<div class="qrcv">${ks.map(a=>`<span class="${rv[a]?"ok":""}">${rv[a]?"📥":"⏳"} ${ANZN[a]||a}${rv[a]?" "+hhmm(rv[a]):""}</span>`).join("")}${o.man&&an.length?`<span class="mn">수기 항목 있음</span>`:""}</div>`}
 function qCard(k,o,dp){const p=qParts(o),dps=dp?[dp]:Object.keys(p).sort(),st=dp?p[dp]:null,ing=dp?st&&st.s==="ing":dps.some(d=>p[d].s==="ing");
