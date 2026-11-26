@@ -741,7 +741,8 @@ async function load0(r){stopAll();if(r==="ord"){await watch(PATHS.care,onRoom("c
 async function loadDis(){}
 function startPoll(){}
 const qSmall=()=>innerWidth<761;
-document.addEventListener("visibilitychange",()=>{if(document.hidden){stopAll();if(qSmall())rsClose()}else if(OKD){rsOpen();load(S.room)}});
+/* 폰: 화면을 꺼도 3분은 연결 유지 → 금방 다시 켜면 전체를 다시 받지 않음 */let RSH=null;
+document.addEventListener("visibilitychange",()=>{if(document.hidden){stopAll();clearTimeout(RSH);if(qSmall())RSH=setTimeout(()=>{if(document.hidden)rsClose()},180000)}else{clearTimeout(RSH);if(OKD){rsOpen();load(S.room)}}});
 
 async function put(key,o){
  QT[key]=Date.now()+60000;
