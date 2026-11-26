@@ -219,11 +219,21 @@ function Dump-Lis($w, $names) {
     $out = New-Object System.Collections.Generic.List[string]
     $out.Add("== LIS 화면 글자 (" + (Get-Date) + ") ==")
     $i = 0; foreach ($n in $names) { $i++; if ($i -gt 600) { break }; $out.Add("$i`t$n") }
+    $roots = New-Object System.Collections.Generic.List[string]
     try {
-      $pidv = $w.Current.ProcessId; $exe = (Get-Process -Id $pidv).Path; $ldir = Split-Path $exe
-      $out.Add(""); $out.Add("== LIS 폴더: $ldir =="); 
-      Get-ChildItem -Path $ldir -Recurse -Depth 2 -File -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -gt (Get-Date).AddDays(-1) } | Sort-Object LastWriteTime -Descending | Select-Object -First 30 | ForEach-Object { $out.Add("$($_.LastWriteTime.ToString('HH:mm:ss'))  $($_.Length)  $($_.FullName)") }
-    } catch { $out.Add("폴더 확인 실패: $($_.Exception.Message)") }
+      $pidv = $w.Current.ProcessId
+      $exe = (Get-Process -Id $pidv).Path
+      if (-not $exe) { $exe = (Get-CimInstance Win32_Process -Filter "ProcessId=$pidv").ExecutablePath }
+      if ($exe) { $roots.Add((Split-Path $exe)); $out.Add(""); $out.Add("LIS 프로그램: $exe") } else { $out.Add("LIS 프로그램 위치를 못 찾음") }
+    } catch { $out.Add("LIS 위치 확인 실패: $($_.Exception.Message)") }
+    foreach ($d in 'C', 'D', 'E') { foreach ($n in 'IntoCNS', 'IntoCNS2', 'IntoVet', 'IntoVET_LIS') { $roots.Add("${d}:\$n") } }
+    foreach ($r in ($roots | Select-Object -Unique)) {
+      if (-not (Test-Path $r)) { continue }
+      $out.Add(""); $out.Add("== 최근 바뀐 파일: $r ==")
+      try {
+        Get-ChildItem -Path $r -Recurse -Depth 3 -File -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -gt (Get-Date).AddDays(-1) } | Sort-Object LastWriteTime -Descending | Select-Object -First 25 | ForEach-Object { $out.Add("$($_.LastWriteTime.ToString('HH:mm:ss'))  $($_.Length)B  $($_.FullName)") }
+      } catch { $out.Add("읽기 실패: $($_.Exception.Message)") }
+    }
     $out | Set-Content -Path $f -Encoding UTF8
     Start-Process notepad.exe $f
     Log "[진단] 화면 글자 목록을 저장했어요: $f"
