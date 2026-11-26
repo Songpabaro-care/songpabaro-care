@@ -202,6 +202,21 @@ function Fb([string]$method, [string]$path, $body) {
 }
 function JsonStr([string]$s) { ($s | ConvertTo-Json -Compress) }
 
+# 하루 한 번 케어 노트 전체 백업 (서버 PC · 읽기만 함 · 30일 보관)
+$script:lastBk = [datetime]::MinValue
+function Try-Backup {
+  try {
+    $bd = Join-Path $DIR 'backup'; New-Item -ItemType Directory -Force -Path $bd | Out-Null
+    $f = Join-Path $bd ('care-' + (Get-Date -Format 'yyyy-MM-dd') + '.json')
+    if (Test-Path $f) { return }
+    $tmp = "$f.part"
+    Invoke-WebRequest -UseBasicParsing -Uri "$DB/rooms/$ROOM.json?auth=$(Get-Tok)" -OutFile $tmp
+    if ((Get-Item $tmp).Length -lt 100) { Remove-Item $tmp -Force; return }
+    Move-Item $tmp $f -Force
+    Get-ChildItem $bd -Filter 'care-*.json' | Sort-Object Name -Descending | Select-Object -Skip 30 | Remove-Item -Force
+    Log "💾 케어 노트 백업 저장 · $f ($([Math]::Round((Get-Item $f).Length / 1KB)) KB)"
+  } catch { Log "백업 실패: $($_.Exception.Message)" }
+}
 Get-Tok | Out-Null
 $uid = $script:A.uid
 $code = $uid.Substring([Math]::Max(0, $uid.Length - 6)).ToUpper()
@@ -657,6 +672,7 @@ while ($true) {
     }
     }
     if (((Get-Date) - $lastUp).TotalMinutes -ge 60) { $lastUp = Get-Date; Try-Update }
+    if (((Get-Date) - $script:lastBk).TotalMinutes -ge 30) { $script:lastBk = Get-Date; Try-Backup }
     if (((Get-Date) - $lastHb).TotalSeconds -ge 60) {
       Fb 'Put' "rooms/$ROOM/lis" (@{ hb = @{ '.sv' = 'timestamp' }; st = $st; dev = $code }) | Out-Null
       $lastHb = Get-Date

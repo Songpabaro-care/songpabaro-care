@@ -532,7 +532,9 @@ const MJF=["식욕","음수량","활동성","대변","소변"];
 const mjSeen=()=>{try{return new Set(JSON.parse(localStorage.getItem("mjseen")||"[]"))}catch(e){return new Set()}};
 const mjMark=ks=>{try{localStorage.setItem("mjseen",JSON.stringify(ks.slice(-300)))}catch(e){}};
 /* ---- 문진번호로 환축과 연결 ---- */
-async function mjFetch(){try{const r=await fetch(mjUrl()+".json");if(r.ok)S.mjAll=await r.json()||{}}catch(e){}return S.mjAll||{}}
+const MJKC={k:"",t:0},mjKeys=o=>Object.keys(o||{}).sort().join(",");
+async function mjFetch(){try{const h=await fetch(mjUrl()+".json?shallow=true");if(h.ok){const ks=mjKeys(await h.json());if(S.mjAll&&ks===MJKC.k&&Date.now()-MJKC.t<600000)return S.mjAll}
+ const r=await fetch(mjUrl()+".json");if(r.ok){S.mjAll=await r.json()||{};MJKC.k=mjKeys(S.mjAll);MJKC.t=Date.now()}}catch(e){}return S.mjAll||{}}
 const mjFind=(o,no)=>Object.entries(o||{}).filter(([k,d])=>d&&String(d.no)===String(no)&&!d.linked).sort((a,b)=>(b[1].t||0)-(a[1].t||0))[0];
 const roomOf=p=>(S.p.care||[]).includes(p)?"care":(S.p.checkup||[]).includes(p)?"checkup":"";
 function mjPut(p,r,k,d){const t=mjText(d).replace("\n"," ").replace(/\n- /g," / ");
@@ -572,7 +574,7 @@ function mjText(d){const t=x=>String(x==null?"":x).replace(/\s+/g," ").trim(),L=
 const mjUrl=()=>base()+"/munjin";
 async function mjLoad(){const box=Q.view==="mj"&&$("#mjScr")&&!$("#mj").classList.contains("open")?$("#mjScr"):$("#mjList");if(!box)return;box.innerHTML='<div class="meta">불러오는 중...</div>';
  try{const r=await fetch(mjUrl()+".json");const o=await r.json()||{},now=Date.now(),arr=[];
-  S.mjAll=o;await mjClean(o);for(const k of Object.keys(o)){const d=o[k];if(d)arr.push([k,d])}
+  S.mjAll=o;MJKC.k=mjKeys(o);MJKC.t=Date.now();await mjClean(o);for(const k of Object.keys(o)){const d=o[k];if(d)arr.push([k,d])}
   arr.sort((x,y)=>y[1].t-x[1].t);S.mj=Object.fromEntries(arr);mjMark(arr.map(a=>a[0]));{const b=$("#mjBtn");if(b)b.textContent="📋"}
   if(!arr.length){box.innerHTML='<div class="meta" style="padding:14px 0">아직 제출된 문진이 없어요</div>';return}
   const pts=[...(S.p.care||[]),...(S.p.checkup||[]).filter(c=>!(S.p.care||[]).some(x=>x.id===c.id))],ptN=id=>{const x=pts.find(p=>p.id===id);return x?x.name:"환축"};
@@ -851,7 +853,7 @@ function tile(p){const cr=S.room==="care",lg=(p.logs||[])[0],
 /* ---- PC 차트 보드: 넓은 화면에서 환축을 고르고 인투벳에 붙여넣을 글을 바로 복사 ---- */
 S.pc=false;S.pcSel=null;S.pcCk=[];let PCT;
 const pcNew=p=>careRows(p,"new").length;
-async function pcLoadCk(){try{const r=await fetch(url(PATHS.checkup));if(r.ok){S.pcCk=toList(await r.json());if(S.pc)pcRender()}}catch(e){}}
+async function pcLoadCk(){try{const st=ST[PATHS.checkup];if(st&&st.got){S.pcCk=toList(st.v);if(S.pc)pcRender();return}const r=await fetch(url(PATHS.checkup));if(r.ok){S.pcCk=toList(await r.json());if(S.pc)pcRender()}}catch(e){}}
 function pcItems(){const c=(S.p.care||[]).map(p=>({p,r:"care"})),k=(S.room==="checkup"&&S.live&&S.live.checkup?(S.p.checkup||[]):S.pcCk).map(p=>({p,r:"checkup"}));return[...c,...k]}
 function pcOpen(){if(innerWidth<1000){toast("넓은 화면(PC)에서 쓸 수 있어요");return}S.pc=true;document.body.classList.add("pcmode");$("#pcb").classList.add("open");try{localStorage.setItem("pcboard","1")}catch(e){}pcLoadCk();clearInterval(PCT);PCT=setInterval(()=>{if(!document.hidden)pcLoadCk()},30000);pcRender()}
 function pcClose(){S.pc=false;document.body.classList.remove("pcmode");$("#pcb").classList.remove("open");clearInterval(PCT);if(!S.pcAuto)try{localStorage.setItem("pcboard","0")}catch(e){}S.pcAuto=false}
@@ -969,7 +971,7 @@ Q.urgT={};setInterval(()=>{if(!OKD)return;const n=Date.now();Object.entries(Q.or
 const UPB=document.createElement("div");UPB.id="upBan";UPB.innerHTML='<span>🔄 새 버전이 올라왔어요 · F5(새로고침)를 누르면 적용돼요</span><button type="button">지금 새로고침</button><button type="button" class="x" aria-label="닫기">✕</button>';document.body.appendChild(UPB);
 UPB.querySelector("button").onclick=()=>location.reload();UPB.querySelector(".x").onclick=()=>{UPB.classList.remove("on");UP.snooze=Date.now()};
 const UP={base:null,snooze:0};
-async function upSig(){const r=await fetch(location.pathname+"?v="+Date.now(),{cache:"no-store"});if(!r.ok)return null;const t=await r.text();let h=0;for(let i=0;i<t.length;i+=7)h=(h*31+t.charCodeAt(i))|0;return t.length+":"+h}
+async function upSig(){try{const h=await fetch(location.pathname,{method:"HEAD",cache:"no-store"});if(h.ok){const e=h.headers.get("etag")||h.headers.get("last-modified");if(e)return e}}catch(x){}const r=await fetch(location.pathname+"?v="+Date.now(),{cache:"no-store"});if(!r.ok)return null;const t=await r.text();let h=0;for(let i=0;i<t.length;i+=7)h=(h*31+t.charCodeAt(i))|0;return t.length+":"+h}
 async function upCheck(){if(!/^https?:/.test(location.protocol))return;try{const g=await upSig();if(!g)return;if(UP.base===null){UP.base=g;return}if(g!==UP.base&&Date.now()-UP.snooze>1800000)UPB.classList.add("on")}catch(e){}}
 upCheck();setInterval(()=>{if(!document.hidden)upCheck()},300000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)upCheck()});
 /* 연결 끊김 경고 */
