@@ -36,12 +36,20 @@ if ($JDiag) {
     $gw = $null; foreach ($wj in $wins) { if ($wj.Current.Name -match 'IntoVet') { $gw = $wj; break } }
     if ($gw) {
       $out.Add(""); $out.Add("== 인투벳 화면에서 읽히는 글자: " + $gw.Current.Name + " ==")
-      $i = 0
+      $i = 0; $all = New-Object System.Collections.Generic.List[string]
       foreach ($e in $gw.FindAll($TSj::Descendants, [Windows.Automation.Condition]::TrueCondition)) {
         try { $n = $e.Current.Name; $ct = $e.Current.ControlType.ProgrammaticName -replace 'ControlType\.', ''; $v = ''
           try { $vp = $e.GetCurrentPattern([Windows.Automation.ValuePattern]::Pattern); if ($vp) { $v = $vp.Current.Value } } catch {}
-          if ($n -or $v) { $i++; $out.Add("$i`t$ct`t$n`t$v"); if ($i -ge 700) { break } } } catch {}
+          if ($n -or $v) { $i++; $all.Add("$i`t$ct`t$n`t$v"); if ($i -ge 5000) { break } } } catch {}
       }
+      # 진료대기자 목록(외래 대기 · 입원/호텔) 부분을 맨 위에 따로 모아 보여 줌
+      $k = -1; for ($j = 0; $j -lt $all.Count; $j++) { if ($all[$j] -match '진료대기자|외래 대기|고객번호|접수시간') { $k = $j; break } }
+      if ($k -ge 0) {
+        $out.Add("== [진료대기자 목록 부분] " + $all[$k] + " 부터 =="); 
+        for ($j = [Math]::Max(0, $k - 5); $j -lt [Math]::Min($all.Count, $k + 250); $j++) { $out.Add($all[$j]) }
+        $out.Add(""); $out.Add("== [전체] ==")
+      } else { $out.Add("== [진료대기자 목록]을 못 찾음 · 아래 전체에서 동물 이름을 찾아 주세요 ==") }
+      foreach ($x in $all) { $out.Add($x) }
     } else { $out.Add("IntoVet 창을 못 찾음 (인투벳을 켠 상태에서 실행해 주세요)") }
   } catch { $out.Add("화면 읽기 실패: $($_.Exception.Message)") }
   foreach ($ld in 'C:\IntoCNS\log', 'D:\IntoCNS\log', 'E:\IntoCNS\log') {
