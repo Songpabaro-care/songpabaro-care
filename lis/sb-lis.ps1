@@ -45,7 +45,8 @@ function Try-Update {
     Copy-Item $tmp $SELF -Force
     Log '새 버전을 받았어요 · 다시 시작합니다'
     try { $script:MTX.ReleaseMutex() } catch {}
-    Start-Process powershell -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Minimized', '-File', ('"' + $SELF + '"'))
+    $args2 = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ('"' + $SELF + '"')); if ($Diag) { $args2 += '-Diag' } else { $args2 = @('-WindowStyle', 'Minimized') + $args2 }
+    Start-Process powershell -ArgumentList $args2
     exit
   } catch { Log "업데이트 확인 실패: $($_.Exception.Message)" }
 }
@@ -101,8 +102,31 @@ function Find-Lis {
   foreach ($w in $AE::RootElement.FindAll($TS::Children, $c)) { if ($w.Current.Name -like 'IntoVET_LIS*') { return $w } }
   return $null
 }
+# 윈도우 기본 방식(WM_GETTEXT)으로 자식 창 글자 읽기 · UI Automation이 글자를 잘라 읽는 경우 대비
+Add-Type -TypeDefinition @"
+using System; using System.Text; using System.Collections.Generic; using System.Runtime.InteropServices;
+public static class SbW32 {
+  public delegate bool EP(IntPtr h, IntPtr l);
+  [DllImport("user32.dll")] static extern bool EnumChildWindows(IntPtr p, EP f, IntPtr l);
+  [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern IntPtr SendMessageTimeout(IntPtr h, uint m, IntPtr w, StringBuilder l, uint f, uint t, out IntPtr r);
+  [DllImport("user32.dll")] static extern IntPtr SendMessageTimeout(IntPtr h, uint m, IntPtr w, IntPtr l, uint f, uint t, out IntPtr r);
+  public static List<string> Texts(IntPtr top) {
+    var res = new List<string>();
+    EP cb = (h, l) => {
+      IntPtr n; SendMessageTimeout(h, 0x000E, IntPtr.Zero, IntPtr.Zero, 2, 200, out n);
+      int len = (int)n;
+      if (len > 0 && len < 4000) { var sb = new StringBuilder(len + 2); IntPtr r2; SendMessageTimeout(h, 0x000D, (IntPtr)(len + 1), sb, 2, 200, out r2); res.Add(sb.ToString()); }
+      return true;
+    };
+    EnumChildWindows(top, cb, IntPtr.Zero); GC.KeepAlive(cb);
+    return res;
+  }
+}
+"@
 function Read-Status($w) {
   $t = New-Object System.Collections.Generic.List[string]
+  try { foreach ($x in [SbW32]::Texts([IntPtr]$w.Current.NativeWindowHandle)) { if ($x -match '자료\s*수신') { $t.Add($x) } } } catch {}
+  if ($t.Count -and (($t -join ' ') -match 'ID\[\d+\]')) { return ($t -join ' | ') }
   try {
     $c = New-Object Windows.Automation.PropertyCondition($AE::ControlTypeProperty, [Windows.Automation.ControlType]::StatusBar)
     $sb = $w.FindFirst($TS::Descendants, $c)
@@ -167,6 +191,44 @@ function PetName([string]$id) {
   return $null
 }
 $UN = @{ NX700 = 'NX700 혈청화학'; BC2800 = 'BC-2800 CBC'; AU10V = 'AU10V 면역'; ISMART = 'i-Smart 전해질·가스'; ANIKO = 'AniKo 키트' }
+# LIS 목록에서 "기계 · 날짜 · 시간 · ID[번호]" 줄 찾기
+function Get-Names($w) {
+  $l = New-Object System.Collections.Generic.List[string]
+  try { foreach ($e in $w.FindAll($TS::Descendants, [Windows.Automation.Condition]::TrueCondition)) { try { $n = $e.Current.Name; if ($n) { $l.Add($n) } } catch {} } } catch {}
+  return $l
+}
+$URX = '^(FDC|BC-|TTAni|i-Smart|I-Smart|IMMUNO)'
+function Get-Rows($names) {
+  $rows = @(); $cur = $null
+  foreach ($n in $names) {
+    $full = [regex]::Match($n, '(?<u>(FDC[_ ][^\s]+|BC-\S+|TTAni\S+|[iI]-Smart\S+|FDC IMMUNO \S+)).*?(?<d>\d{4}-\d{2}-\d{2}).*?(?<tm>\d{1,2}:\d{2}:\d{2}).*?ID\[(?<id>\d+)\]')
+    if ($full.Success) { $rows += [pscustomobject]@{ u = $full.Groups['u'].Value; d = $full.Groups['d'].Value; tm = $full.Groups['tm'].Value; id = $full.Groups['id'].Value }; $cur = $null; continue }
+    if ($n -match $URX -and $n.Length -lt 40) { if ($cur -and $cur.id) { $rows += $cur }; $cur = [pscustomobject]@{ u = $n.Trim(); d = ''; tm = ''; id = '' }; continue }
+    if ($cur) {
+      if (-not $cur.d -and $n -match '^\s*(\d{4}-\d{2}-\d{2})\s*$') { $cur.d = $Matches[1]; continue }
+      if (-not $cur.tm -and $n -match '^\s*(\d{1,2}:\d{2}:\d{2})\s*$') { $cur.tm = $Matches[1]; continue }
+      if (-not $cur.id -and $n -match 'ID\[(\d+)\]') { $cur.id = $Matches[1]; $rows += $cur; $cur = $null; continue }
+    }
+  }
+  if ($cur -and $cur.id) { $rows += $cur }
+  return $rows
+}
+function Dump-Lis($w, $names) {
+  try {
+    $f = Join-Path $DIR 'dump.txt'
+    $out = New-Object System.Collections.Generic.List[string]
+    $out.Add("== LIS 화면 글자 (" + (Get-Date) + ") ==")
+    $i = 0; foreach ($n in $names) { $i++; if ($i -gt 600) { break }; $out.Add("$i`t$n") }
+    try {
+      $pidv = $w.Current.ProcessId; $exe = (Get-Process -Id $pidv).Path; $ldir = Split-Path $exe
+      $out.Add(""); $out.Add("== LIS 폴더: $ldir =="); 
+      Get-ChildItem -Path $ldir -Recurse -Depth 2 -File -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -gt (Get-Date).AddDays(-1) } | Sort-Object LastWriteTime -Descending | Select-Object -First 30 | ForEach-Object { $out.Add("$($_.LastWriteTime.ToString('HH:mm:ss'))  $($_.Length)  $($_.FullName)") }
+    } catch { $out.Add("폴더 확인 실패: $($_.Exception.Message)") }
+    $out | Set-Content -Path $f -Encoding UTF8
+    Start-Process notepad.exe $f
+    Log "[진단] 화면 글자 목록을 저장했어요: $f"
+  } catch { Log "진단 저장 실패: $($_.Exception.Message)" }
+}
 $RX = '자료\s*수신\s*Unit\[(?<u>[^\]]+)\].*?Date\[(?<d>[^\]]*)\](?:\[(?<tm>[^\]]*)\])?.*?ID\[(?<id>\d+)\]'
 
 function Handle([string]$unit, [string]$id) {
@@ -210,6 +272,7 @@ function Handle([string]$unit, [string]$id) {
 Try-Update
 $lastUp = Get-Date
 if ($script:startToast) { Toast "송파바로 LIS 연동 시작" "검사 결과가 들어오면 이 자리에 알림이 떠요" }
+$script:lastScan = [datetime]::MinValue; $script:dumped = $false
 $seen = @{}; $first = $true; $lastHb = [datetime]::MinValue; $st = 'nolis'; $lastTxt = ''
 while ($true) {
   try {
@@ -218,13 +281,30 @@ while ($true) {
     else {
       $st = 'ok'
       $txt = Read-Status $w
-      if ($Diag -and $txt -ne $lastTxt) { Log "[진단] 읽은 글자: $txt"; $lastTxt = $txt }
+      $chg = $txt -ne $lastTxt
+      if ($Diag -and $chg) { Log "[진단] 읽은 글자: $txt" }
+      $lastTxt = $txt
       foreach ($m in [regex]::Matches($txt, $RX)) {
         $key = "$($m.Groups['u'].Value)|$($m.Groups['d'].Value)|$($m.Groups['tm'].Value)|$($m.Groups['id'].Value)"
         if ($seen.ContainsKey($key)) { continue }
         $seen[$key] = 1
         if ($first) { continue }   # 시작 전에 이미 떠 있던 줄은 처리하지 않음
         Handle $m.Groups['u'].Value $m.Groups['id'].Value
+      }
+      # 상태줄에 번호가 안 나오는 경우: 목록에서 기계·시간·ID 줄을 찾아 처리
+      if (-not ([regex]::IsMatch($txt, $RX)) -and ($chg -or $first -or ((Get-Date) - $script:lastScan).TotalSeconds -ge 15)) {
+        $script:lastScan = Get-Date
+        $names = Get-Names $w
+        if ($Diag -and -not $script:dumped) { $script:dumped = $true; Dump-Lis $w $names }
+        $today = Get-Date -Format 'yyyy-MM-dd'
+        foreach ($r in (Get-Rows $names)) {
+          if ($r.d -and $r.d -ne $today) { continue }
+          $key = "$($r.u)|$($r.d)|$($r.tm)|$($r.id)"
+          if ($seen.ContainsKey($key)) { continue }
+          $seen[$key] = 1
+          if ($first) { continue }
+          Handle $r.u $r.id
+        }
       }
       $first = $false
     }
