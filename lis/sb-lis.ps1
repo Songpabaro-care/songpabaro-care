@@ -432,8 +432,7 @@ if ($Reception) {
     $id = "p-care-$(NowMs)"; $today = Get-Date -Format 'yyyy-MM-dd'; $tm = Get-Date -Format 'HH:mm'
     $sp = if ($g.sp -eq 'Feline') { 'cat' } else { 'dog' }
     $info = (@($g.sex, $(if ($g.bw) { "$($g.bw)kg" }), $g.birth) | Where-Object { $_ }) -join ' · '
-    $p = [ordered]@{ id = $id; name = $(if ($g.name) { $g.name } else { "#$($g.no)" }); room = ''; chartNo = $g.no; species = $sp; breed = $g.breed; owner = ''; dx = ''; category = '외래'; adm = $today; auto = 'intovet'; sex = $g.sex; bw = $g.bw
-      logs = @([ordered]@{ id = "l$(NowMs)"; time = $tm; d = $today; text = "🏥 인투벳 외래 접수 자동 등록 · $info" }) }
+    $p = [ordered]@{ id = $id; name = $(if ($g.name) { $g.name } else { "#$($g.no)" }); room = ''; chartNo = $g.no; species = $sp; breed = $g.breed; owner = ''; dx = ''; category = '외래'; adm = $today; auto = 'intovet'; sex = $g.sex; bw = $g.bw; birth = $g.birth }
     Fb 'Put' "rooms/$ROOM/care_patients/$id" $p | Out-Null
     Log "✅ 외래 등록 · #$($g.no) $($p.name) ($($g.breed), $info)"
   }
