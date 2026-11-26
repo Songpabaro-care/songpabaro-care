@@ -557,12 +557,32 @@ if ($Reception) {
     $script:CI.Remove($g.no); $script:DONE.Remove("$($g.no)|R")
     Log "🧾 $($g.st) · 외래 정리 · #$($g.no) $($x.name)"
   }
+  # PC 부담 줄이기: 처음 한 번만 화면 전체를 훑고, 환축 정보가 있는 칸만 기억해 그 부분만 읽음
+  $script:GEC = $null; $script:GECt = [datetime]::MinValue
+  function Read-GE($w) {
+    if ($script:GEC -and ((Get-Date) - $script:GECt).TotalMinutes -lt 10) {
+      try { $g = Parse-GE (Get-Names $script:GEC); if ($g) { return $g } } catch {}
+      $script:GEC = $null
+    }
+    $nm = New-Object System.Collections.Generic.List[string]; $kg = $null
+    try { foreach ($e in $w.FindAll($TS::Descendants, [Windows.Automation.Condition]::TrueCondition)) { try { $n = $e.Current.Name; if ($n) { $nm.Add($n); if (-not $kg -and $n -match '^\s*\d+(\.\d+)?\s*kg') { $kg = $e } } } catch {} } } catch {}
+    $g = Parse-GE $nm
+    if ($g -and $kg) {
+      $wk = [Windows.Automation.TreeWalker]::RawViewWalker; $p = $kg
+      for ($i = 0; $i -lt 8; $i++) {
+        try { $p = $wk.GetParent($p) } catch { break }
+        if (-not $p) { break }
+        try { $g2 = Parse-GE (Get-Names $p); if ($g2 -and $g2.no -eq $g.no -and $g2.st -eq $g.st -and $g2.name -eq $g.name -and $g2.sex -eq $g.sex) { $script:GEC = $p; $script:GECt = Get-Date; break } } catch {}
+      }
+    }
+    return $g
+  }
   $last = ''
   while ($true) {
     try {
       $w = Find-GE
       if ($w) {
-        $g = Parse-GE (Get-Names $w)
+        $g = Read-GE $w
         if ($g) {
           $key = "$($g.no)|$($g.st)"
           if ($key -ne $last) {
@@ -574,13 +594,14 @@ if ($Reception) {
         }
       }
       if (((Get-Date) - $lastUp).TotalMinutes -ge 60) { $lastUp = Get-Date; Try-Update }
-    } catch { Log "오류: $($_.Exception.Message)"; Start-Sleep -Seconds 7 }
-    Start-Sleep -Seconds 4
+    } catch { Log "오류: $($_.Exception.Message)"; $script:GEC = $null; Start-Sleep -Seconds 7 }
+    if ($script:GEC) { Start-Sleep -Milliseconds 1500 } else { Start-Sleep -Seconds 4 }
   }
 }
 if ($script:startToast) { Toast "송파바로 LIS 연동 시작" "검사 결과가 들어오면 이 자리에 알림이 떠요" }
 $script:lastScan = [datetime]::MinValue; $script:dumped = $false
 Tail-Logs -init | Out-Null
+$script:lastUia = [datetime]::MinValue
 $seen = @{}; $first = $true; $lastHb = [datetime]::MinValue; $st = 'nolis'; $lastTxt = ''
 while ($true) {
   try {
@@ -591,6 +612,8 @@ while ($true) {
       $seen[$key] = 1
       Handle $r.u $r.id
     }
+    if (((Get-Date) - $script:lastUia).TotalSeconds -ge 8) {
+    $script:lastUia = Get-Date
     $w = Find-Lis
     if (-not $w) { $st = 'nolis'; $script:SE = $null }
     else {
@@ -623,6 +646,7 @@ while ($true) {
       }
       $first = $false
     }
+    }
     if (((Get-Date) - $lastUp).TotalMinutes -ge 60) { $lastUp = Get-Date; Try-Update }
     if (((Get-Date) - $lastHb).TotalSeconds -ge 60) {
       Fb 'Put' "rooms/$ROOM/lis" (@{ hb = @{ '.sv' = 'timestamp' }; st = $st; dev = $code }) | Out-Null
@@ -632,5 +656,5 @@ while ($true) {
     Log "오류: $($_.Exception.Message) · 10초 후 다시 시도"
     Start-Sleep -Seconds 7
   }
-  Start-Sleep -Seconds 3
+  Start-Sleep -Milliseconds 1500
 }
