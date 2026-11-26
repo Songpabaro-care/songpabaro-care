@@ -2,7 +2,7 @@
 # 하는 일: IntoVET_LIS 창 아래 상태줄의 "자료 수신 Unit[..] ID[동물번호]" 글자만 읽어서
 #          케어 노트 검사 오더에 "결과 도착"을 표시하고, 필요한 기계 결과가 다 오면 검사실 완료로 바꿉니다.
 # 인투벳·LIS 프로그램과 그 DB에는 아무것도 쓰지 않습니다. (화면 글자 읽기만)
-param([switch]$Diag)
+param([switch]$Diag, [switch]$JDiag)
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -22,6 +22,39 @@ function Log([string]$m) {
   try { Add-Content -Path $LOGF -Value $l -Encoding UTF8 } catch {}
 }
 function NowMs { [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() }
+
+# ---------- 접수실 진단 (읽기만 · 케어 노트에 아무것도 보내지 않음) ----------
+if ($JDiag) {
+  $out = New-Object System.Collections.Generic.List[string]
+  $out.Add("== 접수실 진단 (" + (Get-Date) + ") ==")
+  try {
+    Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
+    $AEj = [Windows.Automation.AutomationElement]; $TSj = [Windows.Automation.TreeScope]
+    $cj = New-Object Windows.Automation.PropertyCondition($AEj::ControlTypeProperty, [Windows.Automation.ControlType]::Window)
+    $wins = $AEj::RootElement.FindAll($TSj::Children, $cj)
+    foreach ($wj in $wins) { $out.Add("창: " + $wj.Current.Name) }
+    $gw = $null; foreach ($wj in $wins) { if ($wj.Current.Name -match 'IntoVet') { $gw = $wj; break } }
+    if ($gw) {
+      $out.Add(""); $out.Add("== 인투벳 화면에서 읽히는 글자: " + $gw.Current.Name + " ==")
+      $i = 0
+      foreach ($e in $gw.FindAll($TSj::Descendants, [Windows.Automation.Condition]::TrueCondition)) {
+        try { $n = $e.Current.Name; $ct = $e.Current.ControlType.ProgrammaticName -replace 'ControlType\.', ''; $v = ''
+          try { $vp = $e.GetCurrentPattern([Windows.Automation.ValuePattern]::Pattern); if ($vp) { $v = $vp.Current.Value } } catch {}
+          if ($n -or $v) { $i++; $out.Add("$i`t$ct`t$n`t$v"); if ($i -ge 700) { break } } } catch {}
+      }
+    } else { $out.Add("IntoVet 창을 못 찾음 (인투벳을 켠 상태에서 실행해 주세요)") }
+  } catch { $out.Add("화면 읽기 실패: $($_.Exception.Message)") }
+  foreach ($ld in 'C:\IntoCNS\log', 'D:\IntoCNS\log', 'E:\IntoCNS\log') {
+    if (-not (Test-Path $ld)) { continue }
+    $out.Add(""); $out.Add("== 오늘 기록 파일: $ld ==")
+    Get-ChildItem $ld -File | Where-Object { $_.LastWriteTime -gt (Get-Date).Date } | Sort-Object LastWriteTime -Descending | Select-Object -First 8 | ForEach-Object {
+      $out.Add("-- $($_.Name)  $($_.Length)B  $($_.LastWriteTime.ToString('HH:mm:ss'))")
+      try { $lines = Get-Content $_.FullName -Tail 12 -Encoding Default; foreach ($l in $lines) { $out.Add("   " + ($l -replace '\d{2,3}-\d{3,4}-\d{4}', '***-****-****')) } } catch {}
+    }
+  }
+  $fj = Join-Path $DIR 'jdump.txt'; $out | Set-Content -Path $fj -Encoding UTF8; Start-Process notepad.exe $fj
+  Write-Host "진단 파일을 열었어요: $fj"; Start-Sleep -Seconds 3; exit
+}
 
 # ---------- 자동 업데이트: 저장소에 새 버전이 올라오면 스스로 바꾸고 다시 시작 ----------
 $SELF = $PSCommandPath
