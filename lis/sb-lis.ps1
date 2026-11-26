@@ -241,8 +241,55 @@ function Dump-Lis($w, $names) {
 }
 $RX = '자료\s*수신\s*Unit\[(?<u>[^\]]+)\].*?Date\[(?<d>[^\]]*)\](?:\[(?<tm>[^\]]*)\])?.*?ID\[(?<id>\d+)\]'
 
+# ---------- LIS 기록 파일(C:\IntoCNS\INTOVET_LIS\Logs\일.Log) 이어 읽기 ----------
+$LOGDIRS = @('C:\IntoCNS\INTOVET_LIS\Logs', 'D:\IntoCNS\INTOVET_LIS\Logs', 'E:\IntoCNS\INTOVET_LIS\Logs')
+$script:LPOS = @{}
+$LRX = 'Unit\[(?<u>[^\]]+)\][^\r\n]*?(?:Date\[(?<d>[^\]]*)\])?(?:\[(?<tm>[^\]]*)\])?[^\r\n]*?ID\[(?<id>\d+)\]'
+function Decode([byte[]]$b) {
+  $t = [Text.Encoding]::UTF8.GetString($b)
+  if ($t.Contains([char]0xFFFD)) { try { $t = [Text.Encoding]::GetEncoding(949).GetString($b) } catch {} }
+  return $t
+}
+function LogFiles {
+  $day = (Get-Date).Day.ToString()
+  $fs = @()
+  foreach ($d in $LOGDIRS) { if (Test-Path $d) { foreach ($n in "${day}_Rcv.Log", "$day.Log") { $p = Join-Path $d $n; if (Test-Path $p) { $fs += $p } } } }
+  return $fs
+}
+function Tail-Logs([switch]$init) {
+  $found = @()
+  foreach ($p in (LogFiles)) {
+    try {
+      $len = (Get-Item $p).Length
+      if ($init -or -not $script:LPOS.ContainsKey($p)) {
+        $script:LPOS[$p] = $len
+        if ($Diag) {
+          $fsx = [IO.File]::Open($p, 'Open', 'Read', 'ReadWrite'); $st0 = [Math]::Max(0, $len - 1500); $fsx.Seek($st0, 'Begin') | Out-Null
+          $buf = New-Object byte[] ($len - $st0); [void]$fsx.Read($buf, 0, $buf.Length); $fsx.Close()
+          $lines = (Decode $buf) -split "`r?`n" | Where-Object { $_.Trim() } | Select-Object -Last 4
+          Log "[진단] $p 마지막 줄:"; foreach ($l in $lines) { Log "   $l" }
+        }
+        continue
+      }
+      $pos = $script:LPOS[$p]
+      if ($len -lt $pos) { $pos = 0 }
+      if ($len -eq $pos) { continue }
+      $fs2 = [IO.File]::Open($p, 'Open', 'Read', 'ReadWrite'); $fs2.Seek($pos, 'Begin') | Out-Null
+      $buf = New-Object byte[] ($len - $pos); [void]$fs2.Read($buf, 0, $buf.Length); $fs2.Close()
+      $script:LPOS[$p] = $len
+      $txt = Decode $buf
+      if ($Diag) { foreach ($l in ($txt -split "`r?`n" | Where-Object { $_.Trim() } | Select-Object -First 6)) { Log "[진단] 기록: $l" } }
+      foreach ($m in [regex]::Matches($txt, $LRX)) { $found += [pscustomobject]@{ u = $m.Groups['u'].Value; d = $m.Groups['d'].Value; tm = $m.Groups['tm'].Value; id = $m.Groups['id'].Value } }
+    } catch { Log "기록 파일 읽기 실패: $p · $($_.Exception.Message)" }
+  }
+  return $found
+}
+
 function Handle([string]$unit, [string]$id) {
   $uk = UnitKey $unit
+  $rk = "$uk|$id"; if (-not $script:RECENT) { $script:RECENT = @{} }
+  if ($script:RECENT.ContainsKey($rk) -and ((Get-Date) - $script:RECENT[$rk]).TotalSeconds -lt 180) { return }
+  $script:RECENT[$rk] = Get-Date
   if (-not $uk) { Log "알 수 없는 기계 $unit · ID $id"; Ev "recv" "📥 검사 결과 도착 · #$id" "$unit"; return }
   $ords = Fb 'Get' "rooms/$ROOM/orders" $null
   $hit = 0; $now = NowMs
@@ -283,9 +330,17 @@ Try-Update
 $lastUp = Get-Date
 if ($script:startToast) { Toast "송파바로 LIS 연동 시작" "검사 결과가 들어오면 이 자리에 알림이 떠요" }
 $script:lastScan = [datetime]::MinValue; $script:dumped = $false
+Tail-Logs -init | Out-Null
 $seen = @{}; $first = $true; $lastHb = [datetime]::MinValue; $st = 'nolis'; $lastTxt = ''
 while ($true) {
   try {
+    # 1순위: LIS 기록 파일
+    foreach ($r in (Tail-Logs)) {
+      $key = "$($r.u)|$($r.d)|$($r.tm)|$($r.id)"
+      if ($seen.ContainsKey($key)) { continue }
+      $seen[$key] = 1
+      Handle $r.u $r.id
+    }
     $w = Find-Lis
     if (-not $w) { $st = 'nolis'; $script:SE = $null }
     else {
