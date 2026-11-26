@@ -905,7 +905,7 @@ const QSUB={};Object.values(QTESTS).forEach(a=>a.forEach(([n,d])=>{if(d)QSUB[n]=
 /* 혈청화학: 장기별 낱개 항목 + 묶음 버튼(누르면 해당 항목이 한꺼번에 선택됨) · 후지 NX700 항목 */
 const CHEM={"간":["ALT","AST","ALP","GGT","TBIL","NH3"],"신장":["BUN","CRE","IP","Ca","UA"],"단백":["TP","ALB"],"당·지질":["GLU","TCHO","TG"],"췌장":["v-AMYL","v-LIP"],"근육·기타":["CPK","LDH","Mg","TCO2"]};
 const PANELS=[["기본 6종 🐶",["ALT","ALP","BUN","CRE","ALB","GLU"],"묶음","기본 6종 🐶"],["기본 7종 🐱",["ALT","ALP","BUN","CRE","TP","ALB","GLU"],"묶음","기본 7종 🐱"],["종합 10종",["ALB","ALT","AST","ALP","GGT","BUN","CRE","GLU","Ca","IP"],"묶음","종합 10"],["종합 14종",["ALB","TP","ALT","AST","ALP","GGT","TBIL","BUN","CRE","GLU","Ca","IP","TCHO","TG"],"묶음","14"],["종합 16종",["ALB","TP","ALT","AST","ALP","GGT","TBIL","BUN","CRE","GLU","Ca","IP","TCHO","TG","v-AMYL","v-LIP"],"묶음","16"],
- ["간 4종",["ALT","ALP","GGT","TBIL"],"간","4종"],["간 5종",["ALT","AST","ALP","GGT","TBIL"],"간","5종"],["간 5종+NH3",["ALT","AST","ALP","GGT","TBIL","NH3"],"간","5종+NH3"],
+ ["간 4종",["ALT","AST","ALP","GGT"],"간","4종"],["간 5종",["ALT","AST","ALP","GGT","TBIL"],"간","5종"],["간 5종+NH3",["ALT","AST","ALP","GGT","TBIL","NH3"],"간","5종+NH3"],
  ["신장 4종",["BUN","CRE","IP","Ca"],"신장","4종"],["신장 4종+UA",["BUN","CRE","IP","Ca","UA"],"신장","4종+UA"]];
 PANELS.forEach(([n,a])=>{QSUB[n]=a.join(" · ")+""});
 const URINE={"소변":["요스틱","요비중(USG)","요침사(현미경)","요분석기(기계)","UPC","요배양·감수성"],"분변":["분변 직접도말","분변 부유법","분변 키트"]},UCOL=["방광천자","자연뇨","카테터"];
