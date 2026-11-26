@@ -298,6 +298,7 @@ body.scrpin:not(.scron) #scrBack{display:block}
 .an-tl{font-size:12.5px;border:1px solid var(--line);border-radius:12px;overflow:auto;max-height:260px}.an-tl table{width:100%;border-collapse:collapse}.an-tl th,.an-tl td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}.an-tl th{position:sticky;top:0;background:var(--card);font-size:11.5px;color:var(--mute)}.an-tl td.ev{text-align:left;color:#3a46b0;font-weight:700}.an-tl td.bad{color:#c93a3a;font-weight:800}
 .an-past{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:13px}.an-past .sp{flex:1}
 .hb.an-on{background:#fff1dc;border-color:#e8a33d;color:#8a5200}.hb.an-late{background:#fde3e2;border-color:#e5484d;color:#c93a3a}
+.qrcv{display:flex;flex-wrap:wrap;gap:4px}.qrcv span{font-size:12px;font-weight:700;border-radius:7px;padding:1px 7px;background:var(--soft);color:var(--mute);border:1px dashed var(--line)}.qrcv span.ok{background:#e3f3f1;color:var(--brand);border:1px solid #b9e0da}.qrcv span.mn{background:#fff1dc;color:#8a5200;border:0}
 .chip.qtc{height:auto;min-height:34px;padding:5px 12px;display:inline-flex;flex-direction:column;align-items:flex-start;justify-content:center;line-height:1.25;text-align:left}.chip.qtc small{font-size:10.5px;font-weight:500;opacity:.75;margin-top:1px}
 .qchem{display:grid;gap:5px;margin-top:8px;padding:8px;border:1px dashed var(--line);border-radius:12px}.qcr{display:grid;grid-template-columns:62px minmax(0,1fr);gap:6px;align-items:center}.qcr>span{font-size:12px;font-weight:800;color:var(--mute)}.chip.qmini{height:30px!important;min-height:0!important;padding:0 10px!important;font-size:12.5px;line-height:1}.chip.qpn{border-style:dashed}
 .qpc{height:26px;border-radius:99px;border:1.5px dashed #9aa3e6;background:transparent;color:#4655c9;font-size:11.5px;font-weight:800;padding:0 9px;align-self:center}.qpc.on{background:#eef0fd;border-style:solid}
@@ -946,9 +947,11 @@ function qApply(store,path,data,patch){const ks=path.split("/").filter(Boolean);
  else{let o=store[k]=store[k]||{};for(let i=1;i<ks.length-1;i++)o=o[ks[i]]=o[ks[i]]||{};if(data===null)delete o[ks[ks.length-1]];else o[ks[ks.length-1]]=data}
  return isNew?[k]:[]}
 function qOn(name,path,data,patch){const isO=name==="ord",store=isO?Q.ords:Q.chat;
- const pre={};if(isO&&Q.init.ord)Object.entries(Q.ords).forEach(([k,o])=>{if(o&&o.uid===AU.uid)pre[k]=Object.fromEntries(Object.entries(qParts(o)).map(([d,x])=>[d,x&&x.s]))});
+ const pre={};if(isO&&Q.init.ord)Object.entries(Q.ords).forEach(([k,o])=>{if(o)pre[k]={p:Object.fromEntries(Object.entries(qParts(o)).map(([d,x])=>[d,x&&x.s])),r:Object.keys(o.recv||{})}});
  const nk=qApply(store,path||"/",data,patch),first=!Q.init[name];Q.init[name]=true;
- if(isO&&!first)Object.keys(pre).forEach(k=>{const o=Q.ords[k];if(!o)return;Object.entries(qParts(o)).forEach(([d,x])=>{if(x&&x.s==="done"&&pre[k][d]!=="done"&&x.by!==qMe()){const ts=(o.tests||[]).filter(t=>tDept(t)===d).join(", ");if(qSndPlay("ord"))qBeep("chat");toast(`✅ ${o.pname||""} · ${QDN[d]} 완료${ts?" ("+ts.slice(0,30)+")":""}`);qNotify(`✅ ${o.pname||""} ${QDN[d]} 완료`,ts)}})});
+ if(isO&&!first)Object.keys(pre).forEach(k=>{const o=Q.ords[k];if(!o)return;const mine=o.uid===AU.uid,sc=Q.view||qScreen(),mon=sc==="chat"||sc==="lab";
+  Object.keys(o.recv||{}).filter(a=>!pre[k].r.includes(a)).forEach(a=>{if(mine||mon){toast(`📥 ${o.pname||""} · ${ANZN[a]||a} 결과 도착`);qNotify(`📥 ${o.pname||""} ${ANZN[a]||a} 결과 도착`,"")}});
+  Object.entries(qParts(o)).forEach(([d,x])=>{if(x&&x.s==="done"&&pre[k].p[d]!=="done"&&x.by!==qMe()&&(mine||(x.auto&&mon))){const ts=(o.tests||[]).filter(t=>tDept(t)===d).join(", ");if(qSndPlay("ord"))qBeep("chat");toast(`✅ ${o.pname||""} · ${QDN[d]} ${x.auto?"결과 도착·자동 완료":"완료"}${ts?" ("+ts.slice(0,30)+")":""}`);qNotify(`✅ ${o.pname||""} ${QDN[d]} 완료`,ts)}})});
   if(!first)nk.forEach(k=>{const m=store[k];if(!m||m.uid===AU.uid)return;
    if(isO){Q.fresh.add(k);const sc=Q.view||qScreen(),dp=sc==="lab"?"lab":sc==="xray"?"img":null,hit=!dp||qParts(m)[dp];
     if(hit&&qSndPlay("ord"))qBeep(m.urgent?"urg":"ord");if(!Q.view)toast(`🧪 ${m.urgent?"긴급 ":""}검사 오더 · ${m.pname||""} · ${(m.tests||[]).join(", ")}`);qNotify(`${m.urgent?"🚨 긴급 ":""}검사 오더 · ${m.pname||""}${m.chart?" #"+m.chart:""}`,(m.tests||[]).join(", "))}
@@ -981,6 +984,10 @@ async function qPost(url,m){m.t={".sv":"timestamp"};m.by=qMe();m.uid=AU.uid;cons
 const QTITLE={chat:"💬 채팅 · 검사 오더",lab:"🧪 검사실 오더 (혈액·요·분변·기타)",xray:"🩻 영상실 오더 (X-ray·초음파)"};
 function scrOpen(mode,temp){setTimeout(fcShow,0);Q.view=mode;Q.temp=!!temp;$("#scr").classList.add("open");document.body.classList.add("scron");if(mode==="chat")qls("chatSeen",String(Date.now()));qBadge();qRender()}
 function scrClose(){setTimeout(fcShow,0);Q.view=null;$("#scr").classList.remove("open");document.body.classList.remove("scron");qBadge()}
+const ANZN={NX700:"NX700",BC2800:"BC-2800",AU10V:"AU10V",ISMART:"i-Smart",ANIKO:"AniKo"};
+function qAnOf(t){const chem=new Set(Object.values(CHEM).flat());if(chem.has(t)||t==="혈청화학"||(PANELS.some(p=>p[0]===t)&&!/요검사/.test(t)))return"NX700";if(t==="CBC")return"BC2800";if(["T4","TSH","코르티솔","SDMA","CRP"].includes(t))return"AU10V";if(["전해질","혈액가스"].includes(t))return"ISMART";if(t==="췌장염 키트")return"ANIKO";return null}
+function lisBadge(){const l=ST.lis&&ST.lis.v;if(!l||!l.hb)return"";const age=Date.now()-l.hb,ok=age<180000&&l.st==="ok";return ` · <b style="color:${ok?"#0f8a7e":"#c93a3a"}">LIS 연동 ${ok?"● 정상":age<180000?"● LIS 창 없음":"● 꺼짐"}</b>`}
+function qRcv(o){const an=o.an||[],rv=o.recv||{},ks=[...new Set([...an,...Object.keys(rv)])];if(!ks.length)return"";return `<div class="qrcv">${ks.map(a=>`<span class="${rv[a]?"ok":""}">${rv[a]?"📥":"⏳"} ${ANZN[a]||a}${rv[a]?" "+hhmm(rv[a]):""}</span>`).join("")}${o.man&&an.length?`<span class="mn">수기 항목 있음</span>`:""}</div>`}
 function qCard(k,o,dp){const p=qParts(o),dps=dp?[dp]:Object.keys(p).sort(),st=dp?p[dp]:null,ing=dp?st&&st.s==="ing":dps.some(d=>p[d].s==="ing");
  const tg=d=>(o.tests||[]).filter(x=>tDept(x)===d);
  const tch=x=>`<span${QSUB[x]&&PANELS.some(p=>p[0]===x)?` title="${esc(QSUB[x])}"`:""}>${esc(x)}${PANELS.some(p=>p[0]===x)?`<small style="display:block;font-weight:500;font-size:10.5px;opacity:.8">${esc(QSUB[x])}</small>`:""}</span>`;
@@ -988,8 +995,8 @@ function qCard(k,o,dp){const p=qParts(o),dps=dp?[dp]:Object.keys(p).sort(),st=dp
  const who=x=>x.s==="ing"?`${esc(x.by||"")} 접수 ${hhmm(x.t)}`:x.s==="done"?`✓ ${esc(x.by||"")} ${hhmm(x.t)}`:"";
  const bd=x=>`<span class="qbd ${x.s}">${x.s==="new"?"대기":x.s==="ing"?"진행 중":"완료"}</span>`;
  let body;
- if(dp)body=`<div class="qtests${dp==="img"?" img":""}">${tg(dp).map(tch).join("")||"<span>기타</span>"}</div>${o.memo?`<div class="memo">${esc(o.memo)}</div>`:""}${st.s==="ing"?`<div class="top">${who(st)}</div>`:""}<div class="qact">${ctl(dp,st)}</div>`;
- else body=(o.memo?`<div class="memo">${esc(o.memo)}</div>`:"")+dps.map(d=>`<div class="qdp"><div class="dl">${QDN[d]} ${bd(p[d])}<span class="meta" style="font-weight:500">${who(p[d])}</span></div><div class="qtests${d==="img"?" img":""}">${tg(d).map(tch).join("")||"<span>기타</span>"}</div>${p[d].s!=="done"?`<div class="qact">${ctl(d,p[d])}</div>`:""}</div>`).join("");
+ if(dp)body=`<div class="qtests${dp==="img"?" img":""}">${tg(dp).map(tch).join("")||"<span>기타</span>"}</div>${dp==="lab"?qRcv(o):""}${o.memo?`<div class="memo">${esc(o.memo)}</div>`:""}${st.s==="ing"?`<div class="top">${who(st)}</div>`:""}<div class="qact">${ctl(dp,st)}</div>`;
+ else body=(o.memo?`<div class="memo">${esc(o.memo)}</div>`:"")+dps.map(d=>`<div class="qdp"><div class="dl">${QDN[d]} ${bd(p[d])}<span class="meta" style="font-weight:500">${who(p[d])}</span></div><div class="qtests${d==="img"?" img":""}">${tg(d).map(tch).join("")||"<span>기타</span>"}</div>${d==="lab"?qRcv(o):""}${p[d].s!=="done"?`<div class="qact">${ctl(d,p[d])}</div>`:""}</div>`).join("");
  const el=Math.max(0,Math.floor((Date.now()-(o.t||Date.now()))/60000)),lim=o.urgent?[5,10]:[15,30],lv=el>=lim[1]?2:el>=lim[0]?1:0;
  return `<div class="qoc${o.urgent?" urg":""}${ing?" ing":""}${lv?" late"+lv:""}${Q.fresh.has(k)?" new-in":""}"><div class="top">${o.urgent?'<b style="color:#c93a3a">🚨 긴급</b>':""}${dp?bd(st):""}<span class="sp"></span><b class="qel l${lv}" title="오더 후 경과 시간">${el<1?"방금":el+"분"}</b><span class="qtm">${hhmm(o.t)}<i class="qby" style="font-style:normal"> · ${esc(o.by||"")}</i></span></div>
   <div class="pt">${esc(o.pname||"환축 미지정")}${o.chart?`<small>#${esc(o.chart)}</small>`:""}${o.room?`<small class="qrm">${esc(o.room)}</small>`:""}</div>${body}</div>`}
@@ -1004,7 +1011,7 @@ function qChatHtml(){const arr=Object.entries(Q.chat).filter(([,m])=>m).sort((a,
  return `<div class="qchat"><div class="qmsgs" id="qmsgs">${h||'<div class="meta">아직 메시지가 없어요</div>'}</div><button class="qnew" id="qNew" hidden>↓ 새 메시지</button><div class="qcomp"><textarea id="qtxt" rows="1" placeholder="메시지 입력"></textarea><button class="btn" data-act="qsend">보내기</button></div></div>`}
 function qRender(){if(!Q.view)return;if(Q.drag){Q.pend=true;return}const el=$("#scr"),v=Q.view,on=qMine(null).length;el.classList.remove("fs1","fs2","fs3","fs4","cfs");el.classList.toggle("vchat",v==="chat");if(qFs())el.classList.add("fs"+qFs(),"cfs");
  const keep=$("#qtxt")?$("#qtxt").value:"",foc=document.activeElement&&document.activeElement.id==="qtxt",ms=$("#qmsgs"),stick=!ms||ms.scrollHeight-ms.scrollTop-ms.clientHeight<80,oldTop=ms?ms.scrollTop:0;
- const head=`<div class="qh"><div class="t"><b>${QTITLE[v]}</b><span>${esc(qMe())}${Q.temp?"":" · 이 기기의 기본 화면"}</span></div>
+ const head=`<div class="qh"><div class="t"><b>${QTITLE[v]}</b><span>${esc(qMe())}${Q.temp?"":" · 이 기기의 기본 화면"}${v!=="xray"?lisBadge():""}</span></div>
   <button class="qtg${qSnd("chat")?" on":""}" data-act="qsnd" data-k="chat">🔔 채팅 소리</button><button class="qtg${qSnd("ord")?" on":""}" data-act="qsnd" data-k="ord">🧪 오더 소리</button>
   ${v==="chat"?`<button class="qtg" data-act="qfs">가 채팅 글씨 ${QFSN[qFs()]}</button>`:""}<button class="qtg" data-act="qofs">가 오더 글씨 ${QOFN[qOfs()]}</button><button class="qtg pri" data-act="qord">＋ 검사 오더</button><button class="qtg" data-act="${Q.temp?"scrclose":"scrhide"}">${Q.temp?"닫기":"케어 노트 보기"}</button><button class="qtg" data-act="qset">⚙</button></div>`;
  let body;if(v==="chat")body=`<div class="qbody two ${Q.tab==="ord"?"tab-ord":""}"${innerWidth>760?` style="grid-template-columns:minmax(260px,${qSplit()}%) 9px minmax(0,1fr)"`:""}>${qChatHtml()}<div class="qsplit" title="끌어서 채팅·오더 폭 조절 (두 번 누르면 기본값)"></div>${qBoard(null)}</div>${innerWidth<=760?`<div style="position:fixed;left:0;right:0;bottom:0"></div>`:""}`;
@@ -1033,8 +1040,8 @@ function qTestsHtml(){const grp=(g,a)=>`<div class="qgrp">${g}</div><div class="
  return ent.slice(0,2).map(([g,a])=>grp(g,a)).join("")+chem+oth.map(([g,a])=>grp(g,a)).join("")+uri+etc.map(([g,a])=>grp(g,a)).join("")}
 async function qoSend(){const name=($("#qName").value||"").trim(),tests=qCompress(Q.sel),etc=($("#qEtc").value||"").trim();
  if(!name){toast("환축을 고르거나 이름을 입력해 주세요");return}if(!tests.length&&!etc){toast("검사 항목을 골라 주세요");return}
- const tl=tests.length?tests:["기타"],parts={};tl.forEach(x=>{parts[tDept(x)]={s:"new"}});
- const o={pname:name.slice(0,30),chart:($("#qNo").value||"").trim().slice(0,20),tests:tl,memo:((Q.uc?`채뇨: ${Q.uc}`:"")+(Q.uc&&etc?" · ":"")+etc).slice(0,200),urgent:$("#qUrg").checked,parts,room:(Q.pre&&Q.pre.room)||Q.preRoom||"",pid:(Q.pre&&Q.pre.pid)||Q.prePid||""};
+ const tl=tests.length?tests:["기타"],parts={};tl.forEach(x=>{parts[tDept(x)]={s:"new"}});const labT=tl.filter(x=>tDept(x)==="lab"),anL=[...new Set(labT.map(qAnOf).filter(Boolean))],man=labT.some(x=>!qAnOf(x))||(!!etc&&parts.lab);
+ const o={pname:name.slice(0,30),chart:($("#qNo").value||"").trim().slice(0,20),tests:tl,memo:((Q.uc?`채뇨: ${Q.uc}`:"")+(Q.uc&&etc?" · ":"")+etc).slice(0,200),urgent:$("#qUrg").checked,parts,room:(Q.pre&&Q.pre.room)||Q.preRoom||"",pid:(Q.pre&&Q.pre.pid)||Q.prePid||""};if(anL.length){o.an=anL;if(man)o.man=true}
  try{await qPost(QOR(),o);$("#qom").classList.remove("open");Q.preRoom=Q.prePid="";toast(`${name} 검사 오더를 보냈어요`)}catch(e){toast("보내지 못했어요")}}
 /* ---- 떠 있는 채팅창: 끌어서 옮기고, 📌로 다른 프로그램 위에 항상 띄우기 (크롬·엣지) ---- */
 const FC={pip:null};
