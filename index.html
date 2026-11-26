@@ -296,6 +296,7 @@ body.scrpin:not(.scron) #scrBack{display:block}
 #fchat .fm .b{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:4px 9px;white-space:pre-wrap;word-break:keep-all}#fchat .fm .r.me .b{background:var(--brand);border-color:var(--brand);color:#fff}
 #fchat .fi{display:flex;gap:6px;padding:7px;border-top:1px solid var(--line)}#fchat .fi textarea{flex:1;min-height:34px;max-height:80px;border-radius:9px;border:1px solid var(--line);background:var(--soft);padding:7px 9px;resize:none;font:inherit;color:inherit}
 #fchat .fi button{border:0;border-radius:9px;background:var(--brand);color:#fff;font-weight:800;padding:0 12px;cursor:pointer}
+#fchat:not(.pip) #fcHome{display:none}#fchat .fhint{position:absolute;left:8px;right:8px;top:42px;background:#1f2933;color:#fff;border-radius:9px;padding:7px 10px;font-size:12px;z-index:2}
 #fchat.min .fb{display:none}#fchat.min{width:auto!important;height:auto!important;min-height:0;resize:none}
 #fchat:not(.min):not(.pip)::after{content:"";position:absolute;right:3px;bottom:3px;width:10px;height:10px;border-right:2px solid var(--mute);border-bottom:2px solid var(--mute);opacity:.5;pointer-events:none;border-radius:0 0 3px 0}
 #fchat.pip{position:static;width:auto!important;height:100vh!important;resize:none;max-width:none;max-height:none;border:0;border-radius:0;box-shadow:none;display:flex!important;flex-direction:column}#fchat.pip .fh{cursor:default}#fchat.pip .fb{flex:1;display:flex;flex-direction:column;min-height:0}#fchat.pip .fm{flex:1;height:auto}#fchat.pip #fcMin{display:none}
@@ -398,7 +399,7 @@ body.scrpin:not(.scron) #scrBack{display:block}
   <div class="row" style="justify-content:space-between;align-items:center"><h3 id="tkTitle">⏰ 처치 스케줄</h3><button class="ib" data-act="tkclose" aria-label="닫기">✕</button></div>
   <div id="tkBody"></div>
 </div></div>
-<div id="fchat" style="display:none"><div class="fh" id="fcH"><b>💬 채팅</b><span id="fcU"></span><span class="sp"></span><button id="fcPip" title="다른 프로그램 위에 항상 띄우기">📌</button><button id="fcMin" title="접기">–</button></div>
+<div id="fchat" style="display:none"><div class="fh" id="fcH"><b>💬 채팅</b><span id="fcU"></span><span class="sp"></span><button id="fcHome" title="케어 노트 창을 앞으로">🏠</button><button id="fcPip" title="다른 프로그램 위에 항상 띄우기">📌</button><button id="fcMin" title="접기">–</button></div>
  <div class="fb"><div class="fm" id="fcM"></div><div class="fi"><textarea id="fcT" rows="1" placeholder="메시지 입력 · Enter 보내기"></textarea><button id="fcS">보내기</button></div></div></div>
 <div id="scr"></div>
 <button id="scrBack" data-act="scrback">🧪 오더 화면으로</button>
@@ -701,7 +702,8 @@ async function load(r){const _l=await load0(r);useCache(r==="care"?["care","dis"
 async function load0(r){stopAll();if(r==="ord"){await watch(PATHS.care,onRoom("care"));return}if(r==="calc"){await watch(PATHS.care,onRoom("care"));watch(PATHS.lab_fluid,onRoom("lab_fluid"));return}const pr=watch(PATHS[r],onRoom(r));if(r==="care")watch("discharged_patients",onDis);if(r==="lab_fluid")watch(PATHS.care,onRoom("care"));await pr}
 async function loadDis(){}
 function startPoll(){}
-document.addEventListener("visibilitychange",()=>{if(document.hidden)stopAll();else if(OKD)load(S.room)});
+const qSmall=()=>innerWidth<761;
+document.addEventListener("visibilitychange",()=>{if(document.hidden){stopAll();if(qSmall()&&Q.es)Object.keys(Q.es).forEach(k=>{try{Q.es[k].close()}catch(e){}delete Q.es[k]})}else if(OKD){load(S.room);if(Q.es&&!Q.es.chat){qListen("chat");qListen("ord")}}});
 
 async function put(key,o){
  QT[key]=Date.now()+60000;
@@ -996,6 +998,8 @@ function fcInit(){const el=$("#fchat"),h=$("#fcH");
  $("#fcS").onclick=fcSend;$("#fcT").onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();fcSend()}};
  $("#fcT").onfocus=()=>{qls("chatSeen",String(Date.now()));qBadge();fcRender()};
  $("#fcMin").onclick=e=>{e.stopPropagation();qls("fcmin",qls("fcmin")==="1"?"0":"1");fcShow()};
+ $("#fcHome").onclick=e=>{e.stopPropagation();try{window.focus()}catch(x){}if(Q.view&&Q.temp)scrClose();
+  setTimeout(()=>{if(document.hasFocus()||!FC.pip)return;const d=FC.pip.document,hn=d.createElement("div");hn.className="fhint";hn.textContent="창이 안 올라오면 이 작은 창 맨 위의 '탭으로 돌아가기' 아이콘을 누르거나, 작업표시줄에서 케어 노트를 눌러 주세요";el.appendChild(hn);setTimeout(()=>hn.remove(),5000)},600)};
  $("#fcPip").onclick=async e=>{e.stopPropagation();if(FC.pip){FC.pip.close();return}
   if(!window.documentPictureInPicture){toast("이 브라우저는 '항상 위에 띄우기'를 지원하지 않아요 (PC 크롬·엣지에서 가능)");return}
   try{const w=await documentPictureInPicture.requestWindow({width:340,height:440});FC.pip=w;
@@ -1815,7 +1819,8 @@ function openApp(online){$("#gate").classList.remove("open");$("#dvBtn").style.d
  {const m=(location.search.match(/[?&]screen=(\w+)/)||[])[1];if(m&&["auto","clinic","chat","lab","xray","basic"].includes(m)){if(m==="auto")qls("screen",null);else qls("screen",m);history.replaceState(null,"",location.pathname)}}qStart();qScreenApply();clearInterval(MJI);MJI=setInterval(mjPoll,90000)}
 let RCK=0;async function recheck(){if(Date.now()-RCK<15000)return;RCK=Date.now();try{const st=await devState();if(!st.ok){OKD=false;startGate()}}catch(e){}}
 async function devLoad(){const box=$("#dvList");box.innerHTML='<div class="meta">불러오는 중...</div>';
- try{const [dr,ar]=await Promise.all([fetch(`${DBH}/devices.json`),fetch(`${DBH}/admins.json`)]);if(!dr.ok)throw 0;const ds=await dr.json()||{},as=(ar.ok?await ar.json():null)||{};
+ const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),10000);
+ try{const [dr,ar]=await Promise.all([fetch(`${DBH}/devices.json`,{signal:ac.signal}),fetch(`${DBH}/admins.json`,{signal:ac.signal})]);clearTimeout(tm);if(!dr.ok)throw 0;const ds=await dr.json()||{},as=(ar.ok?await ar.json():null)||{};
   const arr=Object.entries(ds).filter(([,v])=>v).sort((a,b)=>(a[1].ok?1:0)-(b[1].ok?1:0)||(b[1].t||0)-(a[1].t||0));
   if(!arr.length){box.innerHTML='<div class="meta">등록된 기기가 없어요</div>';return}
   box.innerHTML=arr.map(([u,v])=>{const seen=v.t?new Date(v.t).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}):"-",me=u===AU.uid,adm=as[u]===true;
@@ -1823,7 +1828,7 @@ async function devLoad(){const box=$("#dvList");box.innerHTML='<div class="meta"
    <div class="meta">코드 <b>${devCode(u)}</b> · 마지막 접속 ${seen} · <span class="st ${v.ok?"ok":"no"}">${v.ok?"승인됨":"승인 대기"}</span></div>
    <div class="row" style="gap:6px;flex-wrap:wrap">${v.ok?(me?"":`<button class="btn gh" data-act="devok" data-u="${esc(u)}" data-v="0">승인 해제</button>`):`<button class="btn" data-act="devok" data-u="${esc(u)}" data-v="1">승인</button>`}
    ${me?"":`<button class="btn gh" data-act="devadm" data-u="${esc(u)}" data-v="${adm?0:1}">${adm?"관리자 해제":"관리자로 지정"}</button><button class="btn gh" data-act="devdel" data-u="${esc(u)}">삭제</button>`}</div></div>`}).join("")}
- catch(e){box.innerHTML='<div class="meta">불러오지 못했어요 (관리자 기기에서만 볼 수 있어요)</div>'}}
+ catch(e){box.innerHTML=e&&e.name==="AbortError"?'<div class="meta">응답이 늦어요. 이 앱이 열린 다른 탭을 닫고 새로고침을 눌러 주세요.</div>':'<div class="meta">불러오지 못했어요 (관리자 기기에서만 볼 수 있어요)</div>'}}
 startGate();
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
