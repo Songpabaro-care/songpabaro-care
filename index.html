@@ -334,7 +334,7 @@ body.scrpin:not(.scron) #scrBack{display:block}
 
 <main class="wrap">
   <section id="dash"></section>
-  <div class="searchbar"><input class="in" id="q" type="search" placeholder="🔍 환축·보호자·병실 검색"></div>
+  <div class="searchbar"><input class="in" id="q" type="search" placeholder="🔍 환축·보호자·번호 검색"></div>
   <section id="list" style="display:grid;gap:12px"></section>
   <section id="dis" style="display:grid;gap:8px"></section>
 </main>
@@ -362,7 +362,7 @@ body.scrpin:not(.scron) #scrBack{display:block}
     <div class="f" id="fCatW"><label>입원/호텔</label><select class="in" id="fCat"><option>입원</option><option>호텔</option></select></div>
     <div class="f"><label>종</label><select class="in" id="fSp"><option value="dog">강아지</option><option value="cat">고양이</option></select></div>
     <div class="f"><label>환축명 *</label><input class="in" id="fName" placeholder="예: 보리"></div>
-    <div class="f"><label>병실/호실 *</label><input class="in" id="fRm" placeholder="예: 입원 2병실"></div>
+    <div class="f"><label>환축 번호 *</label><input class="in" id="fRm" inputmode="numeric" autocomplete="off" placeholder="인투벳 환축번호 · 예: 20231187"></div>
     <div class="f"><label>품종</label><input class="in" id="fBr" placeholder="예: 말티즈"></div>
   </div>
   <div class="f"><label id="fOwL">보호자명</label><input class="in" id="fOw" placeholder="예: 최유진"></div>
@@ -558,7 +558,7 @@ async function mjLoad(){const box=$("#mjList");box.innerHTML='<div class="meta">
    const sm=pts.filter(p=>nz(p.name)===nz(d.name)),spc=d.sp==="고양이"?"cat":d.sp==="강아지"?"dog":"",bys=spc?sm.filter(p=>p.species===spc):[],m=sm.length===1?sm[0]:bys.length===1?bys[0]:null;
    return `<div class="card" style="margin:8px 0"><div><b>#${esc(d.no)}</b> ${esc(d.name)} <span class="meta">${esc(d.sp)} · ${tm}</span>${d.linked?` <span style="color:#1a8f4a;font-size:12px;font-weight:700">🔗 ${esc(ptN(d.linked.pid))} 차트에 연결됨 · 자정 뒤 삭제</span>`:sm.length>1?` <span style="color:var(--warn,#b4531a);font-size:12px;font-weight:700">⚠ 동명 환축 ${sm.length}마리 · 확인 후 선택</span>`:""}</div><div class="pre" style="white-space:pre-wrap;margin:6px 0;font-size:13px">${esc(mjText(d))}</div>
    <div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn gh" data-act="mjcopy" data-k="${esc(k)}">복사</button>
-   ${pts.length&&!d.linked?`<select class="in" id="mjs-${esc(k)}" style="flex:1;min-width:120px"><option value="" ${m?"":"selected"}>환축을 선택하세요</option>${pts.map(p=>`<option value="${p.id}" ${m&&m.id===p.id?"selected":""}>${p.species==="cat"?"🐱":"🐶"} ${esc(p.name)} · ${esc(p.room||"")}</option>`).join("")}</select><button class="btn" data-act="mjadd" data-k="${esc(k)}">차트에 추가</button>`:""}
+   ${pts.length&&!d.linked?`<select class="in" id="mjs-${esc(k)}" style="flex:1;min-width:120px"><option value="" ${m?"":"selected"}>환축을 선택하세요</option>${pts.map(p=>`<option value="${p.id}" ${m&&m.id===p.id?"selected":""}>${p.species==="cat"?"🐱":"🐶"} ${esc(p.name)} · ${esc(pno(p))}</option>`).join("")}</select><button class="btn" data-act="mjadd" data-k="${esc(k)}">차트에 추가</button>`:""}
    ${d.linked?"":`<button class="btn gh" data-act="mjnew" data-k="${esc(k)}">새 환축으로 등록</button>`}<button class="btn gh" data-act="mjdel" data-k="${esc(k)}">삭제</button></div></div>`}).join("")}
  catch(e){box.innerHTML='<div class="meta">불러오지 못했어요</div>'}}
 
@@ -622,6 +622,7 @@ function toast(m,act){const t=$("#toast");if(!t)return;t.textContent=m;t.classLi
  t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show","act"),act?7000:2400)}
 const now=()=>{const d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")};
 const nowDT=()=>{const d=new Date();return d.toISOString().slice(0,10)+" "+now()};
+const pno=p=>p.chartNo||p.room||"";
 const cat=p=>p.category==="입원"||p.category==="호텔"?p.category:(String(p.room||"").includes("호텔")?"호텔":"입원");
 const nz=s=>String(s||"").trim().toLowerCase().replace(/\s+/g,"");
 function dup(c){return(S.p.care||[]).some(e=>nz(e.name)===nz(c.name)&&((nz(c.room)&&nz(e.room)===nz(c.room))||(nz(c.owner)&&nz(e.owner)===nz(c.owner))||(!nz(c.room)&&!nz(e.room))))}
@@ -812,7 +813,7 @@ setInterval(()=>{if(OKD&&!document.hidden)softRender()},60000);
 function tile(p){const cr=S.room==="care",lg=(p.logs||[])[0],
  bd=(cr||isCareP(p.id))?`<span class="badge ${cat(p)==="호텔"?"h":""}">${cat(p)}${dayN(p)}</span>`:"",
  l2=cr?(p.dx?esc(p.dx):"병명 미입력"):esc(p.breed||"")+(p.owner?" · "+esc(p.owner):"");
- return `<div class="tile" role="button" tabindex="0" data-act="sel" data-id="${p.id}"><div class="tt"><div class="av">${p.species==="cat"?"🐱":"🐶"}</div><div class="tn">${esc(p.name)}${p.mjNo?`<span class="mjno${p.mjAt?"":" wait"}">#${esc(p.mjNo)}</span>`:""}</div></div><div class="meta">${bd}<span class="badge n">${esc(p.room)}</span></div><div class="meta td">${l2}</div>${cr?alertRow(p):""}${cr&&tasksOf(p).length?(lateN(p)?`<div class="meta tlate">⏰ 처치 ${lateN(p)}건 지남</div>`:`<div class="meta">⏰ 다음 처치 ${hhmm(tasksOf(p)[0].due)}</div>`):""}${cr&&lg?`<div class="meta">🕒 ${logDate(lg)&&logDate(lg)!==todayStr()?esc(fmtD(logDate(lg)).slice(0,5))+" ":""}${esc(lg.time)} 마지막 기록</div>`:""}${cr&&(p.logs||[]).length?`<button type="button" class="btn-xs" style="justify-self:start" data-act="copycare" data-m="new" data-id="${p.id}">📋 새 기록 복사</button>`:""}</div>`}
+ return `<div class="tile" role="button" tabindex="0" data-act="sel" data-id="${p.id}"><div class="tt"><div class="av">${p.species==="cat"?"🐱":"🐶"}</div><div class="tn">${esc(p.name)}${p.mjNo?`<span class="mjno${p.mjAt?"":" wait"}">#${esc(p.mjNo)}</span>`:""}</div></div><div class="meta">${bd}<span class="badge n">${esc(pno(p))}</span></div><div class="meta td">${l2}</div>${cr?alertRow(p):""}${cr&&tasksOf(p).length?(lateN(p)?`<div class="meta tlate">⏰ 처치 ${lateN(p)}건 지남</div>`:`<div class="meta">⏰ 다음 처치 ${hhmm(tasksOf(p)[0].due)}</div>`):""}${cr&&lg?`<div class="meta">🕒 ${logDate(lg)&&logDate(lg)!==todayStr()?esc(fmtD(logDate(lg)).slice(0,5))+" ":""}${esc(lg.time)} 마지막 기록</div>`:""}${cr&&(p.logs||[]).length?`<button type="button" class="btn-xs" style="justify-self:start" data-act="copycare" data-m="new" data-id="${p.id}">📋 새 기록 복사</button>`:""}</div>`}
 /* ---- PC 차트 보드: 넓은 화면에서 환축을 고르고 인투벳에 붙여넣을 글을 바로 복사 ---- */
 S.pc=false;S.pcSel=null;S.pcCk=[];let PCT;
 const pcNew=p=>careRows(p,"new").length;
@@ -827,12 +828,12 @@ document.addEventListener("click",e=>{if(e.target.closest("details.pcc>summary [
 document.addEventListener("toggle",e=>{const t=e.target;if(t&&t.matches&&t.matches("details.pcc[data-k]"))S.pcExp[t.dataset.k]=t.open},true);
 function pcRender(){const el=$("#pcb");if(!el||!S.pc)return;const its=pcItems();
  if(!its.some(x=>x.p.id===S.pcSel))S.pcSel=(its.find(x=>x.r==="care"&&pcNew(x.p))||its[0]||{p:{}}).p.id||null;
- const cur=its.find(x=>x.p.id===S.pcSel),q=(S.pcQ||"").trim(),fl=its.filter(x=>!q||nz(x.p.name+x.p.room+(x.p.mjNo||"")).includes(nz(q)));
- const row=x=>{const p=x.p,n=x.r==="care"?pcNew(p):0,lt=x.r==="care"?lateN(p):0;return `<button class="pcr ${p.id===S.pcSel?"on":""}" data-act="pcsel" data-id="${p.id}"><span>${p.species==="cat"?"🐱":"🐶"}</span><div class="pmain"><div class="l1"><span class="n">${esc(p.name)}</span>${lt?`<span class="pclate">처치 ${lt}</span>`:""}${n?`<span class="pcnew">새 ${n}</span>`:""}</div><div class="r">${esc(p.room||"")}${x.r==="care"?" · "+cat(p):""}${p.mjNo?`<span class="mjno${p.mjAt?"":" wait"}">#${esc(p.mjNo)}</span>`:""}</div>${x.r==="care"?alertMini(p):""}</div></button>`};
+ const cur=its.find(x=>x.p.id===S.pcSel),q=(S.pcQ||"").trim(),fl=its.filter(x=>!q||nz(x.p.name+x.p.room+(x.p.chartNo||"")+(x.p.mjNo||"")).includes(nz(q)));
+ const row=x=>{const p=x.p,n=x.r==="care"?pcNew(p):0,lt=x.r==="care"?lateN(p):0;return `<button class="pcr ${p.id===S.pcSel?"on":""}" data-act="pcsel" data-id="${p.id}"><span>${p.species==="cat"?"🐱":"🐶"}</span><div class="pmain"><div class="l1"><span class="n">${esc(p.name)}</span>${lt?`<span class="pclate">처치 ${lt}</span>`:""}${n?`<span class="pcnew">새 ${n}</span>`:""}</div><div class="r">${esc(pno(p))}${x.r==="care"?" · "+cat(p):""}${p.mjNo?`<span class="mjno${p.mjAt?"":" wait"}">#${esc(p.mjNo)}</span>`:""}</div>${x.r==="care"?alertMini(p):""}</div></button>`};
  const grp=(t,a)=>a.length?`<div class="pcg">${t} (${a.length})</div>`+a.map(row).join(""):"";
  let mid='<div class="meta" style="padding:40px;text-align:center">왼쪽에서 환축을 고르세요</div>';
  if(cur){const p=cur.p;
-  const hdr=`<div class="pch"><div class="av">${p.species==="cat"?"🐱":"🐶"}</div><div><div class="nm">${esc(p.name)}${p.mjNo?`<span class="mjno${p.mjAt?"":" wait"}">#${esc(p.mjNo)}</span>`:""}</div><div class="meta">${esc(p.room||"")} · ${esc(p.breed||"")}${cur.r==="care"?` · ${cat(p)}${dayN(p)}${p.dx?" · 병명 "+esc(p.dx):""}`:" · 건강검진"}</div>${cur.r==="care"?`<div class="meta">${p.cpAt?"마지막 복사 "+fmtDT(p.cpAt):"아직 복사한 적 없음"}${lateN(p)?` · <span class="tlate">⏰ 처치 ${lateN(p)}건 지남</span>`:""}</div>`+alertRow(p):""}</div></div>`;
+  const hdr=`<div class="pch"><div class="av">${p.species==="cat"?"🐱":"🐶"}</div><div><div class="nm">${esc(p.name)}${p.mjNo?`<span class="mjno${p.mjAt?"":" wait"}">#${esc(p.mjNo)}</span>`:""}</div><div class="meta">${esc(pno(p))} · ${esc(p.breed||"")}${cur.r==="care"?` · ${cat(p)}${dayN(p)}${p.dx?" · 병명 "+esc(p.dx):""}`:" · 건강검진"}</div>${cur.r==="care"?`<div class="meta">${p.cpAt?"마지막 복사 "+fmtDT(p.cpAt):"아직 복사한 적 없음"}${lateN(p)?` · <span class="tlate">⏰ 처치 ${lateN(p)}건 지남</span>`:""}</div>`+alertRow(p):""}</div></div>`;
   if(cur.r==="care"){const nw=careRows(p,"new"),td=careRows(p,"today");
    mid=hdr+pcCard(`새 기록 ${nw.length}건`,"마지막 복사 이후 · 복사하면 '복사함'으로 표시돼요",nw.length?careChart(p,nw):"새 기록이 없어요",{m:"new"},"Enter",!nw.length)
     +pcCard(`오늘 기록 ${td.length}건`,"눌러서 펼치기",td.length?careChart(p,td):"오늘 기록이 없어요",{m:"today",gh:1},"T",!td.length,1)
@@ -854,7 +855,7 @@ function pcCopy(m){const its=pcItems(),cur=its.find(x=>x.p.id===S.pcSel);if(!cur
 const pcPref=()=>{try{return localStorage.getItem("pcboard")}catch(e){return null}};
 addEventListener("resize",()=>{const sc=qScreen();if(["chat","lab","xray"].includes(sc)){if(Q.view)qRender();return}if(S.pc&&innerWidth<1000){S.pcAuto=true;pcClose()}else if(!S.pc&&OKD&&innerWidth>=1000&&sc==="clinic"&&pcPref()!=="0")pcOpen()});
 document.addEventListener("keydown",e=>{if(!S.pc)return;const tg=e.target;if(tg&&tg!==document.body&&!tg.closest("#pcb"))return;if(tg&&(tg.tagName==="INPUT"||tg.tagName==="TEXTAREA"||tg.tagName==="SELECT")){if(e.key==="Escape")tg.blur();return}
- const its=pcItems(),q=(S.pcQ||"").trim(),fl=its.filter(x=>!q||nz(x.p.name+x.p.room+(x.p.mjNo||"")).includes(nz(q))),ord=[...fl.filter(x=>x.r==="care"),...fl.filter(x=>x.r==="checkup")],i=ord.findIndex(x=>x.p.id===S.pcSel);
+ const its=pcItems(),q=(S.pcQ||"").trim(),fl=its.filter(x=>!q||nz(x.p.name+x.p.room+(x.p.chartNo||"")+(x.p.mjNo||"")).includes(nz(q))),ord=[...fl.filter(x=>x.r==="care"),...fl.filter(x=>x.r==="checkup")],i=ord.findIndex(x=>x.p.id===S.pcSel);
  if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();const n=ord[Math.max(0,Math.min(ord.length-1,i+(e.key==="ArrowDown"?1:-1)))];if(n){pcPick(n.p.id);const b=document.querySelector(".pcr.on");if(b)b.scrollIntoView({block:"nearest"})}}
  else if(e.key==="Enter"){e.preventDefault();const c=ord[i];pcCopy(c&&c.r==="checkup"?"soap":"new")}
  else if(e.key==="t"||e.key==="T")pcCopy("today");else if(e.key==="a"||e.key==="A")pcCopy("all");else if(e.key==="Escape")pcClose()});
@@ -888,8 +889,12 @@ const QFSN=["보통","크게","아주 크게"],qFs=()=>{const v=qls("qfs");retur
 const qSnd=k=>qls("snd_"+k)==="1",qSndPlay=k=>qSnd(k)&&!(!(Q.view&&!Q.temp)&&Date.now()-QPEER<10000);
 let QAC=null;
 function qBeep(kind){try{QAC=QAC||new(window.AudioContext||window.webkitAudioContext)();if(QAC.state==="suspended")QAC.resume();
- const seq=kind==="urg"?[[1046,0],[1046,.22],[1046,.44],[1397,.66]]:kind==="ord"?[[880,0],[1175,.16],[1568,.32]]:[[988,0],[1319,.12]];
- seq.forEach(([f,dt])=>{const o=QAC.createOscillator(),g=QAC.createGain();o.type="sine";o.frequency.value=f;o.connect(g);g.connect(QAC.destination);const t=QAC.currentTime+dt;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.25,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+.18);o.start(t);o.stop(t+.2)})}catch(e){}}
+ const A=[[1175,0],[932,.28]],F=[[1568,0],[1319,.24]],seq=kind==="urg"?[...F,...F.map(([f,d])=>[f,d+.75])]:kind==="ord"?F:A;
+ const cp=QAC.createDynamicsCompressor();cp.threshold.value=-10;cp.ratio.value=8;const mg=QAC.createGain();mg.gain.value=1.1;cp.connect(mg);mg.connect(QAC.destination);
+ const H=[[1,1],[2,.7],[3,.5],[4.2,.3],[5.4,.15]];
+ seq.forEach(([f,dt],i)=>{const t=QAC.currentTime+dt,last=i===seq.length-1,dec=last?3.5:4,len=last?1.2:.9;
+  H.forEach(([m,g])=>{const o=QAC.createOscillator(),gn=QAC.createGain();o.type="sine";o.frequency.value=f*m;o.connect(gn);gn.connect(cp);
+   const k=dec+(m-1)*1.2,pk=.32*g;gn.gain.setValueAtTime(0,t);gn.gain.linearRampToValueAtTime(pk,t+.004);gn.gain.setTargetAtTime(0,t+.004,1/k);o.start(t);o.stop(t+len)})})}catch(e){}}
 document.addEventListener("pointerdown",()=>{if(!QAC&&(qSnd("chat")||qSnd("ord")))try{QAC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}},{once:true});
 const QCH=()=>`${base()}/rooms/${encodeURIComponent(S.code)}/chat`,QOR=()=>`${base()}/rooms/${encodeURIComponent(S.code)}/orders`;
 const qMe=()=>S.devName||"이름 없는 기기";
@@ -1066,7 +1071,7 @@ function head(p,r){
  const ln=r==="care"?lateN(p):0,an=(p.alerts||[]).length+(p.cpr?1:0),tn=r==="care"?tasksOf(p).length:0;
  const bar=r==="care"?`<div class="hbar"><button class="hb${an?" on":""}" data-act="alopen" data-id="${p.id}">⚠ 주의${an?`<i>${an}</i>`:""}</button><button class="hb${ln?" late":tn?" on":""}" data-act="tkopen" data-id="${p.id}">⏰ 처치${ln?`<i>${ln} 지남</i>`:tn?`<i>${tn}</i>`:""}</button>${qOrdBtn(p)}<button class="hb bad" data-act="discharge" data-id="${p.id}">퇴원</button></div>`:r==="checkup"?`<div class="hbar">${qOrdBtn(p)}</div>`:"";const d="";
  return `<div class="top"><div class="av">${p.species==="cat"?"🐱":"🐶"}</div><div class="sp"><div class="nm">${esc(p.name)}${r==="care"||r==="checkup"?`<button type="button" class="mjno${p.mjNo?(p.mjAt?"":" wait"):" add"}" data-act="mjnum" data-id="${p.id}" title="${p.mjNo?(p.mjAt?"문진 연결됨 · 눌러서 수정":"문진 도착 전 · 도착하면 자동 연결"):"문진번호 입력"}">${p.mjNo?"#"+esc(p.mjNo)+(p.mjAt?"":" 대기"):"+ 문진번호"}</button>`:""}</div>
- <div class="meta">${b}<span class="badge n">${esc(p.room)}</span>${esc(p.breed||"")}${r==="care"?"":(p.owner?" · 보호자 "+esc(p.owner):"")}</div>${r==="care"?`<div class="meta" id="dxm-${p.id}">${p.dx?"병명 "+esc(p.dx):""}</div>`+alertRow(p):""}</div>
+ <div class="meta">${b}<span class="badge n">${esc(pno(p))}</span>${esc(p.breed||"")}${r==="care"?"":(p.owner?" · 보호자 "+esc(p.owner):"")}</div>${r==="care"?`<div class="meta" id="dxm-${p.id}">${p.dx?"병명 "+esc(p.dx):""}</div>`+alertRow(p):""}</div>
  <div class="act">${d}${lc?"":`<button class="btn-s" data-act="remove" data-id="${p.id}" aria-label="삭제">✕</button>`}</div></div>${bar}`}
 
 function soapList(raw){
@@ -1125,7 +1130,7 @@ function card(p){const r=S.room;let body="";
 
 function renderDis(){const el=$("#dis");if(S.room!=="care"){el.innerHTML="";return}
  el.innerHTML=`<div class="sec">퇴원 명단 ${S.dis.length}마리 · 24시간 뒤 자동 삭제 · 잘못 퇴원했다면 그&nbsp;안에 복원하세요</div>`+
- (S.dis.length?S.dis.map(d=>`<div class="dis"><div class="sp"><b>${esc(d.name)}</b> <span class="meta">${d.species==="cat"?"🐱":"🐶"} ${esc(d.room||"")}${d.dx?" · "+esc(d.dx):""}<br>퇴원 ${esc(d.dischargedAt||"-")}${d.dischargedTs?" · 약 "+Math.max(1,Math.ceil((DAY-(Date.now()-d.dischargedTs))/36e5))+"시간 뒤 삭제":""}</span></div><button class="btn-s" style="background:var(--brand);color:#fff" data-act="restore" data-id="${d.id}">복원</button></div>`).join(""):`<div class="meta" style="padding:0 4px">퇴원 처리된 환축이 없습니다.</div>`)}
+ (S.dis.length?S.dis.map(d=>`<div class="dis"><div class="sp"><b>${esc(d.name)}</b> <span class="meta">${d.species==="cat"?"🐱":"🐶"} ${esc(pno(d))}${d.dx?" · "+esc(d.dx):""}<br>퇴원 ${esc(d.dischargedAt||"-")}${d.dischargedTs?" · 약 "+Math.max(1,Math.ceil((DAY-(Date.now()-d.dischargedTs))/36e5))+"시간 뒤 삭제":""}</span></div><button class="btn-s" style="background:var(--brand);color:#fff" data-act="restore" data-id="${d.id}">복원</button></div>`).join(""):`<div class="meta" style="padding:0 4px">퇴원 처리된 환축이 없습니다.</div>`)}
 
 /* ---- Actions & Handlers ---- */
 const isCareP=id=>(S.p.care||[]).some(p=>p.id===id);
@@ -1135,7 +1140,7 @@ const find=(r,id)=>rowsOf(r).find(p=>p.id===id);
 function chartText(p){
  if(S.room==="care"){
   const L=(p.logs||[]).slice().reverse().map(l=>`- [${l.time}] ${l.text||(l.category?l.category+": "+l.detail:"")}`);
-  return `[IntoVet ${cat(p)}/케어 차트 - ${p.name} (${p.room})]\n구분: ${cat(p)} | ${p.species==="cat"?"고양이":"강아지"} / ${p.breed||"-"}\n병명: ${p.dx||"-"}\n${L.length?L.join("\n"):"- 기록 없음"}`;
+  return `[IntoVet ${cat(p)}/케어 차트 - ${p.name} (${pno(p)})]\n구분: ${cat(p)} | ${p.species==="cat"?"고양이":"강아지"} / ${p.breed||"-"}\n병명: ${p.dx||"-"}\n${L.length?L.join("\n"):"- 기록 없음"}`;
  }
  if(S.room==="checkup")return soapChart(p);
  return(p.lab||{}).result||""}
@@ -1339,7 +1344,7 @@ function parseLines(ls){const out=[],seen={};
   cd.isDup=dup(cd);cd.on=!cd.isDup&&cd.conf>=60;out.push(cd)});
  return out}
 
-function fillForm(c){$("#fRoom").value="care";catW();$("#fCat").value=c.category;$("#fSp").value=c.species;$("#fName").value=c.name;$("#fRm").value=c.room;$("#fBr").value=c.breed;$("#fOw").value=c.owner}
+function fillForm(c){$("#fRoom").value="care";catW();$("#fCat").value=c.category;$("#fSp").value=c.species;$("#fName").value=c.name;$("#fRm").value=/^\d{4,}$/.test(String(c.room||"").replace(/\s/g,""))?c.room:"";S.fRoomTxt=c.room||"";$("#fBr").value=c.breed;$("#fOw").value=c.owner}
 
 async function photoOcr(inp){const f=inp.files&&inp.files[0];if(!f)return;
  const m=$("#ocrMsg");m.style.display="block";m.textContent="사진을 보정하는 중… (1/3)";
@@ -1371,13 +1376,13 @@ function bulk(){const n=S.cands.filter(c=>c.on&&String(c.name).trim()&&!dup(c));
 
 /* ---- Modals ---- */
 const catW=()=>{const c=$("#fRoom").value==="care";$("#fCatW").style.display=c?"block":"none";$("#fOwL").textContent=c?"병명":"보호자명";$("#fOw").placeholder=c?"예: 급성 췌장염":"예: 최유진"};
-function openP(room,cam){S.mjPending=null;S.cands=[];["fName","fRm","fBr","fOw","fMj"].forEach(i=>$("#"+i).value="");$("#fRoom").value=room||S.room;$("#fCat").value="입원";$("#fSp").value="dog";catW();
+function openP(room,cam){S.mjPending=null;S.cands=[];["fName","fRm","fBr","fOw","fMj"].forEach(i=>$("#"+i).value="");S.fRoomTxt="";$("#fRoom").value=room||S.room;$("#fCat").value="입원";$("#fSp").value="dog";catW();
  $("#ocrBox").style.display=$("#fRoom").value==="care"?"grid":"none";$("#ocrMsg").style.display="none";$("#ocrPrev").style.display="none";$("#ocrPanel").style.display="none";$("#pm").classList.add("open");if(cam)setTimeout(()=>$("#ocrFile").click(),150)}
 const closeP=()=>{S.mjPending=null;$("#pm").classList.remove("open")};
-function saveP(){const r=$("#fRoom").value,name=$("#fName").value.trim(),room=$("#fRm").value.trim();if(!name||!room){toast("환축명과 병실을 입력해 주세요");return}
+function saveP(){const r=$("#fRoom").value,name=$("#fName").value.trim(),cno=$("#fRm").value.replace(/\s/g,"").slice(0,20),room=S.fRoomTxt||"";if(!name||!cno){toast("환축명과 환축 번호를 입력해 주세요");return}
  const mj=$("#fMj").value.replace(/\D/g,"");if(mj&&mj.length!==4){toast("문진번호는 4자리 숫자예요");return}
- const owner=$("#fOw").value.trim();if(r==="care"&&dup({name,room,owner:""})){toast(`${name}(${room})은 이미 등록돼 있어요`);return}
- const p={id:`p-${r}-${Date.now()}`,name,room,species:$("#fSp").value,breed:$("#fBr").value.trim(),owner:r==="care"?"":owner,dx:r==="care"?owner:""};
+ const owner=$("#fOw").value.trim();if(r==="care"&&(S.p.care||[]).some(e=>e.chartNo===cno)){toast(`환축 번호 ${cno}은(는) 이미 등록돼 있어요`);return}
+ const p={id:`p-${r}-${Date.now()}`,name,room,chartNo:cno,species:$("#fSp").value,breed:$("#fBr").value.trim(),owner:r==="care"?"":owner,dx:r==="care"?owner:""};
  if(r==="care"){p.category=$("#fCat").value;p.logs=[];p.adm=todayStr()}else if(r==="checkup")p.soap={s:"",o:"",a:"",p:""};else p.lab={bw:0,hco3:0,ocrText:"",result:""};
  if(mj&&r!=="lab_fluid")p.mjNo=mj;else if(r==="care"&&S.mjPending)p.logs.unshift({id:`l${Date.now()}`,time:now(),d:todayStr(),text:S.mjPending});
  (S.p[r]=S.p[r]||[]).unshift(p);closeP();setRoom(r);save(r);toast(`${name} 등록 완료`);if(p.mjNo)mjAttach(p,r,true)}
@@ -1431,7 +1436,7 @@ function oText(p){const items=splitItems((p.soap||{}).o,ALLO),used=new Set(),bl=
  const rest=items.filter(v=>!used.has(v));if(rest.length)bl.push(`[Others]\n${rest.map(v=>`- ${v}`).join("\n")}`);
  return bl.join("\n\n")}
 function soapChart(p){const s=p.soap||{},sec=(h,a)=>`${h}\n${a.length?a.map(x=>`- ${x}`).join("\n"):"-"}`;
- return `[IntoVet 건강검진 SOAP - ${p.name} (${p.room})]\n\n${sec("S)",splitItems(s.s,SOAP.S))}\n\nO)\n${oText(p)||"-"}\n\n${sec("A)",splitItems(s.a,SOAP.A))}\n\n${sec("P)",splitItems(s.p,SOAP.P))}`}
+ return `[IntoVet 건강검진 SOAP - ${p.name} (${pno(p)})]\n\n${sec("S)",splitItems(s.s,SOAP.S))}\n\nO)\n${oText(p)||"-"}\n\n${sec("A)",splitItems(s.a,SOAP.A))}\n\n${sec("P)",splitItems(s.p,SOAP.P))}`}
 function updPv(p){const e=$("#pv-"+p.id);if(e)e.textContent=oText(p)||"입력한 검진 소견이 여기에 정리됩니다"}
 function oRow(p,r,c){const pe=p.pe||{},id=p.id,k=r.k,ref=typeof r.n==="function"?r.n(p):r.n,lab=`${esc(r.l)}${ref?` <small>(${esc(ref)})</small>`:""}`;
  if(r.o&&!r.lr)return `<div class="grp"><label>${lab}</label><div class="chips">${r.o.map(o=>{const on=r.m?soapList(pe[k]).includes(o):pe[k]===o;return `<button class="chip ${on?"sel":""}${r.d?" gd":""}" data-act="peopt" data-id="${id}" data-k="${k}" data-v="${esc(o)}" ${r.m?'data-m="1"':""}>${esc(o)}${r.d&&r.d[o]?`<small class="cd">${esc(r.d[o])}</small>`:""}</button>`}).join("")}</div></div>`;
@@ -1522,7 +1527,7 @@ function logHtml(p){const L=p.logs||[];if(!L.length)return `<div class="empty">�
 function careRows(p,mode){const all=(p.logs||[]).slice().reverse(),td=todayStr(),last=p.cpAt||0;
  return mode==="today"?all.filter(l=>logDate(l)===td):mode==="new"?all.filter(l=>last===0||logTs(l)>last):all}
 function careChart(p,rows){const adm=admOf(p),n=dayNum(p),out=[];
- out.push(`[IntoVet ${cat(p)}/케어 차트 - ${p.name} (${p.room})]`);
+ out.push(`[IntoVet ${cat(p)}/케어 차트 - ${p.name} (${pno(p)})]`);
  out.push(`구분: ${cat(p)} | ${p.species==="cat"?"고양이":"강아지"} / ${p.breed||"-"}`);
  out.push(`병명: ${p.dx||"-"}`);
  if(adm)out.push(`${cat(p)}일: ${fmtD(adm)}${n?` · ${n}일차`:""}`);
@@ -1636,7 +1641,7 @@ const CALCS=[
  res:()=>{const bw=cbw();if(!bw)return NB;const rer=bw*30+70,k=cn("nu_k"),f=cn("nu_f"),L=[["RER",fm(rer),"kcal/day",1]];if(k>0)L.push(["RER 급여량",fm(rer*1000/k),"g/day"]);if(f>0){const d=rer*f;L.push(["DER",fm(d),"kcal/day",1]);if(k>0)L.push(["DER 급여량",fm(d*1000/k),"g/day"])}return L}},];
 function calcView(){const cw=S.cw,cs=(S.p.care||[]).concat((S.p.lab_fluid||[]).filter(p=>!isCareP(p.id))),cur=CALCS.find(c=>c.k===S.ck)||CALCS[0];
  return `<div class="card ccard"><div class="soapk" style="color:var(--lab)">공통 입력 · 모든 계산기가 같이 씁니다</div>
- <div class="f"><label>환축 선택 (선택사항)</label><select class="in" data-cw="pid"><option value="">직접 입력</option>${cs.map(p=>`<option value="${p.id}" ${cw.pid===p.id?"selected":""}>${esc(p.name)} · ${esc(p.room||"")}</option>`).join("")}</select></div>
+ <div class="f"><label>환축 선택 (선택사항)</label><select class="in" data-cw="pid"><option value="">직접 입력</option>${cs.map(p=>`<option value="${p.id}" ${cw.pid===p.id?"selected":""}>${esc(p.name)} · ${esc(pno(p))}</option>`).join("")}</select></div>
  <div class="g2"><div class="f"><label>체중 (kg)</label><input class="in bwbig" type="number" step="0.01" inputmode="decimal" data-cw="bw" value="${esc(cw.bw)}"></div>
  <div class="f"><label>종</label><div class="row" style="gap:6px"><button type="button" class="chip ${cw.sp==="dog"?"sel":""}" data-act="cspec" data-s="dog">🐶 개</button><button type="button" class="chip ${cw.sp==="cat"?"sel":""}" data-act="cspec" data-s="cat">🐱 고양이</button></div></div></div></div>
  ${ccard(CALCS.map(c=>[c.k,c.t]),"cchip",cur.k)}
