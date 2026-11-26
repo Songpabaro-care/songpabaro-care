@@ -1,4 +1,4 @@
-﻿# 송파바로 케어 노트 · 인투벳 LIS 결과 자동 감지 (서버 PC용)
+﻿# 송파바로 케어 노트 · 인투벳 LIS 결과 자동 감지 (서버 PC용)  [SB-LIS]
 # 하는 일: IntoVET_LIS 창 아래 상태줄의 "자료 수신 Unit[..] ID[동물번호]" 글자만 읽어서
 #          케어 노트 검사 오더에 "결과 도착"을 표시하고, 필요한 기계 결과가 다 오면 검사실 완료로 바꿉니다.
 # 인투벳·LIS 프로그램과 그 DB에는 아무것도 쓰지 않습니다. (화면 글자 읽기만)
@@ -6,6 +6,7 @@ param([switch]$Diag)
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+try { $Host.UI.RawUI.WindowTitle = 'SongpaBaro LIS' } catch {}
 $KEY  = 'AIzaSyB7SmDVueDq1ghmIbNTjcHGxMM2vpHSvWw'
 $DB   = 'https://songpabaro-default-rtdb.asia-southeast1.firebasedatabase.app'
 $ROOM = 'songpa-baro-care'
@@ -21,6 +22,33 @@ function Log([string]$m) {
   try { Add-Content -Path $LOGF -Value $l -Encoding UTF8 } catch {}
 }
 function NowMs { [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() }
+
+# ---------- 자동 업데이트: 저장소에 새 버전이 올라오면 스스로 바꾸고 다시 시작 ----------
+$SELF = $PSCommandPath
+$script:MTX = New-Object System.Threading.Mutex($false, 'Global\SongpaBaroLIS')
+$got = $false
+try { $got = $script:MTX.WaitOne(0) } catch [System.Threading.AbandonedMutexException] { $got = $true }
+if (-not $got) {
+  Write-Host '이미 실행 중이에요. 작업표시줄의 SongpaBaro LIS 창을 닫고 다시 실행해 주세요.'
+  Start-Sleep -Seconds 8; exit
+}
+$UPURL = 'https://songpabaro-care.github.io/songpabaro-care/lis/sb-lis.ps1'
+function Try-Update {
+  try {
+    $tmp = Join-Path $env:TEMP 'sb-lis.new.ps1'
+    Invoke-WebRequest -UseBasicParsing -Uri ($UPURL + '?v=' + (NowMs)) -OutFile $tmp
+    $len = (Get-Item $tmp).Length
+    if ($len -lt 3000) { return }
+    $txt = [IO.File]::ReadAllText($tmp, [Text.Encoding]::UTF8)
+    if ($txt -notmatch '\[SB-LIS\]') { return }
+    if ((Get-FileHash $tmp -Algorithm SHA256).Hash -eq (Get-FileHash $SELF -Algorithm SHA256).Hash) { return }
+    Copy-Item $tmp $SELF -Force
+    Log '새 버전을 받았어요 · 다시 시작합니다'
+    try { $script:MTX.ReleaseMutex() } catch {}
+    Start-Process powershell -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Minimized', '-File', ('"' + $SELF + '"'))
+    exit
+  } catch { Log "업데이트 확인 실패: $($_.Exception.Message)" }
+}
 
 # ---------- 로그인 (케어 노트와 같은 기기 승인 방식) ----------
 $script:A = $null; $script:tok = $null; $script:exp = [datetime]::MinValue
@@ -179,6 +207,8 @@ function Handle([string]$unit, [string]$id) {
   }
 }
 
+Try-Update
+$lastUp = Get-Date
 if ($script:startToast) { Toast "송파바로 LIS 연동 시작" "검사 결과가 들어오면 이 자리에 알림이 떠요" }
 $seen = @{}; $first = $true; $lastHb = [datetime]::MinValue; $st = 'nolis'; $lastTxt = ''
 while ($true) {
@@ -198,6 +228,7 @@ while ($true) {
       }
       $first = $false
     }
+    if (((Get-Date) - $lastUp).TotalMinutes -ge 60) { $lastUp = Get-Date; Try-Update }
     if (((Get-Date) - $lastHb).TotalSeconds -ge 60) {
       Fb 'Put' "rooms/$ROOM/lis" (@{ hb = @{ '.sv' = 'timestamp' }; st = $st; dev = $code }) | Out-Null
       $lastHb = Get-Date
