@@ -227,6 +227,8 @@ function Find-Lis {
   foreach ($w in $AE::RootElement.FindAll($TS::Children, $c)) { if ($w.Current.Name -like 'IntoVET_LIS*') { return $w } }
   return $null
 }
+# 다른 프로그램(인투벳 등)보다 항상 뒤로 양보: 낮은 우선순위로 실행
+try { (Get-Process -Id $PID).PriorityClass = 'BelowNormal' } catch {}
 # 윈도우 기본 방식(WM_GETTEXT)으로 자식 창 글자 읽기 · UI Automation이 글자를 잘라 읽는 경우 대비
 Add-Type -TypeDefinition @"
 using System; using System.Text; using System.Collections.Generic; using System.Runtime.InteropServices;
@@ -246,6 +248,9 @@ public static class SbW32 {
     EnumChildWindows(top, cb, IntPtr.Zero); GC.KeepAlive(cb);
     return res;
   }
+  [StructLayout(LayoutKind.Sequential)] struct LII { public uint cb; public uint t; }
+  [DllImport("user32.dll")] static extern bool GetLastInputInfo(ref LII p);
+  public static uint IdleMs() { var x = new LII(); x.cb = (uint)Marshal.SizeOf(x); if (!GetLastInputInfo(ref x)) return 99999; return unchecked((uint)Environment.TickCount - x.t); }
 }
 "@
 function Read-Status($w) {
@@ -558,15 +563,17 @@ if ($Reception) {
     Log "🧾 $($g.st) · 외래 정리 · #$($g.no) $($x.name)"
   }
   # PC 부담 줄이기: 처음 한 번만 화면 전체를 훑고, 환축 정보가 있는 칸만 기억해 그 부분만 읽음
-  $script:GEC = $null; $script:GECt = [datetime]::MinValue
+  $script:GEC = $null; $script:GECt = [datetime]::MinValue; $script:nextFull = [datetime]::MinValue
   function Read-GE($w) {
     if ($script:GEC -and ((Get-Date) - $script:GECt).TotalMinutes -lt 10) {
       try { $g = Parse-GE (Get-Names $script:GEC); if ($g) { return $g } } catch {}
       $script:GEC = $null
     }
+    if ((Get-Date) -lt $script:nextFull) { return $null }   # 환축 정보가 안 보일 땐 전체 읽기를 15초에 한 번만
     $nm = New-Object System.Collections.Generic.List[string]; $kg = $null
     try { foreach ($e in $w.FindAll($TS::Descendants, [Windows.Automation.Condition]::TrueCondition)) { try { $n = $e.Current.Name; if ($n) { $nm.Add($n); if (-not $kg -and $n -match '^\s*\d+(\.\d+)?\s*kg') { $kg = $e } } } catch {} } } catch {}
     $g = Parse-GE $nm
+    if (-not $g) { $script:nextFull = (Get-Date).AddSeconds(15) }
     if ($g -and $kg) {
       $wk = [Windows.Automation.TreeWalker]::RawViewWalker; $p = $kg
       for ($i = 0; $i -lt 8; $i++) {
@@ -580,7 +587,9 @@ if ($Reception) {
   $last = ''
   while ($true) {
     try {
-      $w = Find-GE
+      # 키보드·마우스를 쓰는 중이면(1초 안) 이번 차례는 쉬고 다음에 읽음 → 입력할 때 버벅임 없음
+      $busy = $false; try { $busy = [SbW32]::IdleMs() -lt 1000 } catch {}
+      $w = if ($busy) { $null } else { Find-GE }
       if ($w) {
         $g = Read-GE $w
         if ($g) {
