@@ -61,6 +61,7 @@ while ($true) {
   Start-Sleep -Seconds 10
 }
 Log "승인됨 · LIS 감시를 시작합니다 (코드 $code)"
+$script:startToast = $true
 
 # ---------- LIS 화면 글자 읽기 (윈도우 UI Automation) ----------
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
@@ -100,14 +101,52 @@ function UnitKey([string]$u) {
   if ($u -match 'AniKo') { return 'ANIKO' }
   return $null
 }
+
+# ---------- 윈도우 우측 아래 알림 ----------
+$script:NI = $null
+function Toast([string]$title, [string]$body) {
+  try {
+    [void][Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime]
+    [void][Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime]
+    $t = [Security.SecurityElement]::Escape($title); $b = [Security.SecurityElement]::Escape($body)
+    $x = New-Object Windows.Data.Xml.Dom.XmlDocument
+    $x.LoadXml("<toast duration='long'><visual><binding template='ToastGeneric'><text>$t</text><text>$b</text></binding></visual><audio silent='true'/></toast>")
+    $n = [Windows.UI.Notifications.ToastNotification]::new($x)
+    [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\WindowsPowerShell\v1.0\powershell.exe').Show($n)
+  } catch {
+    try {
+      if (-not $script:NI) {
+        Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+        $script:NI = New-Object System.Windows.Forms.NotifyIcon
+        $script:NI.Icon = [System.Drawing.SystemIcons]::Information
+        $script:NI.Visible = $true
+      }
+      $script:NI.ShowBalloonTip(20000, $title, $body, [System.Windows.Forms.ToolTipIcon]::Info)
+    } catch { Log "알림 표시 실패: $($_.Exception.Message)" }
+  }
+}
+# 케어 노트로 알림 보내기 (모든 PC에 알림 문구, 소리는 소리 켠 PC만)
+function Ev([string]$kind, [string]$title, [string]$body) {
+  try { Fb 'Put' "rooms/$ROOM/lis/ev" (@{ t = @{ '.sv' = 'timestamp' }; kind = $kind; title = $title; body = $body }) | Out-Null } catch { Log "알림 전송 실패: $($_.Exception.Message)" }
+}
+function PetName([string]$id) {
+  foreach ($r in 'care_patients', 'checkup_patients') {
+    try {
+      $ps = Fb 'Get' "rooms/$ROOM/$r" $null
+      if ($ps) { foreach ($p in $ps.PSObject.Properties) { $v = $p.Value; if ($v -and ((("" + $v.chartNo) -replace '\D', '') -eq $id)) { return $v.name } } }
+    } catch {}
+  }
+  return $null
+}
+$UN = @{ NX700 = 'NX700 혈청화학'; BC2800 = 'BC-2800 CBC'; AU10V = 'AU10V 면역'; ISMART = 'i-Smart 전해질·가스'; ANIKO = 'AniKo 키트' }
 $RX = '자료\s*수신\s*Unit\[(?<u>[^\]]+)\].*?Date\[(?<d>[^\]]*)\](?:\[(?<tm>[^\]]*)\])?.*?ID\[(?<id>\d+)\]'
 
 function Handle([string]$unit, [string]$id) {
   $uk = UnitKey $unit
-  if (-not $uk) { Log "알 수 없는 기계 $unit · ID $id (건너뜀)"; return }
+  if (-not $uk) { Log "알 수 없는 기계 $unit · ID $id"; Ev "recv" "📥 검사 결과 도착 · #$id" "$unit"; return }
   $ords = Fb 'Get' "rooms/$ROOM/orders" $null
-  if (-not $ords) { Log "$uk · ID $id 결과 도착 · 진행 중 오더 없음"; return }
   $hit = 0; $now = NowMs
+  if (-not $ords) { $ords = [pscustomobject]@{} }
   foreach ($p in $ords.PSObject.Properties) {
     $k = $p.Name; $o = $p.Value
     if (-not $o) { continue }
@@ -116,6 +155,7 @@ function Handle([string]$unit, [string]$id) {
     if (-not $lab -or $lab.s -eq 'done') { continue }
     if ($o.t -and ($now - [int64]$o.t) -gt 86400000) { continue }
     $hit++
+    if (-not $o.pname) { $o | Add-Member -NotePropertyName pname -NotePropertyValue ((PetName $id) + "") -Force }
     Fb 'Put' "rooms/$ROOM/orders/$k/recv/$uk" '{".sv":"timestamp"}' | Out-Null
     $an = @($o.an | Where-Object { $_ })
     $got = @(); if ($o.recv) { $got = @($o.recv.PSObject.Properties.Name) }; $got += $uk
@@ -123,14 +163,23 @@ function Handle([string]$unit, [string]$id) {
     if ($an.Count -gt 0 -and -not $o.man -and $left.Count -eq 0) {
       Fb 'Put' "rooms/$ROOM/orders/$k/parts/lab" '{"s":"done","by":"LIS 자동","auto":true,"t":{".sv":"timestamp"}}' | Out-Null
       Log "✅ $($o.pname) #$id · $uk 결과 도착 → 검사실 자동 완료"
+      $tests = (@($o.tests) | Where-Object { $_ -notmatch '방사선|초음파' }) -join ', '
+      Ev "done" "✅ 검사 완료 · $($o.pname) #$id" "$tests ($($UN[$uk]) 결과 도착 · 자동 완료)"
     } else {
       $why = if ($o.man) { '수기 항목 있음' } elseif ($left.Count) { "남은 기계: $($left -join ', ')" } else { '기계 정보 없는 오더' }
       Log "📥 $($o.pname) #$id · $uk 결과 도착 표시 ($why)"
+      Ev "recv" "📥 결과 도착 · $($o.pname) #$id" "$($UN[$uk]) 결과 도착 · $why"
     }
   }
-  if (-not $hit) { Log "$uk · ID $id 결과 도착 · 맞는 진행 중 오더 없음" }
+  if (-not $hit) {
+    $nm = PetName $id
+    Log "$uk · ID $id ($nm) 결과 도착 · 맞는 진행 중 오더 없음"
+    $who = if ($nm) { "$nm #$id" } else { "#$id" }
+    Ev "recv" "📥 검사 결과 도착 · $who" "$($UN[$uk]) 결과 도착 (케어 노트 오더 없음)"
+  }
 }
 
+if ($script:startToast) { Toast "송파바로 LIS 연동 시작" "검사 결과가 들어오면 이 자리에 알림이 떠요" }
 $seen = @{}; $first = $true; $lastHb = [datetime]::MinValue; $st = 'nolis'; $lastTxt = ''
 while ($true) {
   try {
