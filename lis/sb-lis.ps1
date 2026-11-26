@@ -315,7 +315,7 @@ function Handle([string]$unit, [string]$id) {
   $rk = "$uk|$id"; if (-not $script:RECENT) { $script:RECENT = @{} }
   if ($script:RECENT.ContainsKey($rk) -and ((Get-Date) - $script:RECENT[$rk]).TotalSeconds -lt 180) { return }
   $script:RECENT[$rk] = Get-Date
-  if (-not $uk) { Log "알 수 없는 기계 $unit · ID $id"; Ev "recv" "📥 검사 결과 도착 · #$id" "$unit"; return }
+  if (-not $uk) { Log "알 수 없는 기계 $unit · ID $id"; $nm0 = PetName $id; Ev "done" "✅ 검사 완료 · $(if ($nm0) { "$nm0 " })#$id" "$unit 결과 도착"; return }
   $ords = Fb 'Get' "rooms/$ROOM/orders" $null
   $hit = 0; $now = NowMs
   if (-not $ords) { $ords = [pscustomobject]@{} }
@@ -347,7 +347,7 @@ function Handle([string]$unit, [string]$id) {
     $nm = PetName $id
     Log "$uk · ID $id ($nm) 결과 도착 · 맞는 진행 중 오더 없음"
     $who = if ($nm) { "$nm #$id" } else { "#$id" }
-    Ev "recv" "📥 검사 결과 도착 · $who" "$($UN[$uk]) 결과 도착 (케어 노트 오더 없음)"
+    Ev "done" "✅ 검사 완료 · $who" "$($UN[$uk]) 결과 도착 (케어 노트 오더 없음)"
   }
 }
 
