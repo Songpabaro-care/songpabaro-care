@@ -951,7 +951,8 @@ function qOn(name,path,data,patch){const isO=name==="ord",store=isO?Q.ords:Q.cha
  const pre={};if(isO&&Q.init.ord)Object.entries(Q.ords).forEach(([k,o])=>{if(o)pre[k]={p:Object.fromEntries(Object.entries(qParts(o)).map(([d,x])=>[d,x&&x.s])),r:Object.keys(o.recv||{})}});
  const nk=qApply(store,path||"/",data,patch),first=!Q.init[name];Q.init[name]=true;
  if(isO&&!first)Object.keys(pre).forEach(k=>{const o=Q.ords[k];if(!o)return;const mine=o.uid===AU.uid,sc=Q.view||qScreen(),mon=sc==="chat"||sc==="lab";
-  Object.entries(qParts(o)).forEach(([d,x])=>{if(x&&x.s==="done"&&pre[k].p[d]!=="done"&&x.by!==qMe()&&!x.auto&&mine){const ts=(o.tests||[]).filter(t=>tDept(t)===d).join(", ");if(qSndPlay("ord"))qBeep("chat");toast(`✅ ${o.pname||""} · ${QDN[d]} ${x.auto?"결과 도착·자동 완료":"완료"}${ts?" ("+ts.slice(0,30)+")":""}`);qNotify(`✅ ${o.pname||""} ${QDN[d]} 완료`,ts)}})});
+  Object.entries(qParts(o)).forEach(([d,x])=>{if(x&&x.s==="done"&&pre[k].p[d]!=="done"&&!x.auto&&x.by!==qMe()){const ts0=(o.tests||[]).filter(t=>tDept(t)===d).join(", ");sbNote(`${k}_${d}`,`✅ 검사 완료 · ${o.pname||""}${o.chart?" #"+o.chart:""}`,`${QDN[d]} · ${ts0||"기타"}${x.by?" ("+x.by+")":""}`);if(!mine&&qSndPlay("ord"))qBeep("chat")}
+  if(x&&x.s==="done"&&pre[k].p[d]!=="done"&&x.by!==qMe()&&!x.auto&&mine){const ts=(o.tests||[]).filter(t=>tDept(t)===d).join(", ");if(qSndPlay("ord"))qBeep("chat");toast(`✅ ${o.pname||""} · ${QDN[d]} ${x.auto?"결과 도착·자동 완료":"완료"}${ts?" ("+ts.slice(0,30)+")":""}`);qNotify(`✅ ${o.pname||""} ${QDN[d]} 완료`,ts)}})});
   if(!first)nk.forEach(k=>{const m=store[k];if(!m||m.uid===AU.uid)return;
    if(isO){Q.fresh.add(k);const sc=Q.view||qScreen(),dp=sc==="lab"?"lab":sc==="xray"?"img":null,hit=!dp||qParts(m)[dp];
     if(hit&&qSndPlay("ord"))qBeep(m.urgent?"urg":"ord");if(!Q.view)toast(`🧪 ${m.urgent?"긴급 ":""}검사 오더 · ${m.pname||""} · ${(m.tests||[]).join(", ")}`);qNotify(`${m.urgent?"🚨 긴급 ":""}검사 오더 · ${m.pname||""}${m.chart?" #"+m.chart:""}`,(m.tests||[]).join(", "))}
@@ -989,10 +990,12 @@ function qAnOf(t){const chem=new Set(Object.values(CHEM).flat());if(chem.has(t)|
 function lisBadge(){const l=ST.lis&&ST.lis.v;if(!l||!l.hb)return"";const age=Date.now()-l.hb,ok=age<180000&&l.st==="ok";return ` · <b style="color:${ok?"#0f8a7e":"#c93a3a"}">LIS 연동 ${ok?"● 정상":age<180000?"● LIS 창 없음":"● 꺼짐"}</b>`}
 Q.notes={};
 function lisAck(t){if(!t)return;fetch(`${base()}/rooms/${encodeURIComponent(S.code)}/lis/acks/${t}.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:"true"}).catch(()=>{})}
+function sbNote(id,title,body){if(!(innerWidth>=761&&window.Notification&&Notification.permission==="granted"))return;if(Q.notes[id])return;
+ try{const n=new Notification(title,{body,icon:"icon-192.png",silent:true,tag:"sb"+id,requireInteraction:true});Q.notes[id]=n;n.onclick=()=>{try{window.focus()}catch(x){}n._sys=true;n.close();delete Q.notes[id];lisAck(id)};n.onclose=()=>{if(n._sys)return;delete Q.notes[id];lisAck(id)}}catch(x){}}
 function lisOn(){{const ak=ST.lis&&ST.lis.v&&ST.lis.v.acks||{};Object.keys(Q.notes).forEach(t=>{if(ak[t]){const n=Q.notes[t];delete Q.notes[t];n._sys=true;try{n.close()}catch(x){}}})}
  const e=ST.lis&&ST.lis.v&&ST.lis.v.ev;if(Q.lisT===undefined){Q.lisT=e&&e.t||0;return}if(!e||!e.t||e.t<=Q.lisT)return;Q.lisT=e.t;
  if(Date.now()-e.t>120000)return;if(qSndPlay("ord"))qBeep(e.kind==="done"?"chat":"ord");toast(`${e.title} · ${e.body}`.slice(0,90));
- if(innerWidth>=761&&window.Notification&&Notification.permission==="granted")try{const n=new Notification(e.title,{body:e.body,icon:"icon-192.png",silent:true,tag:"lis"+e.t,requireInteraction:true}),t=e.t;Q.notes[t]=n;n.onclick=()=>{try{window.focus()}catch(x){}n._sys=true;n.close();delete Q.notes[t];lisAck(t)};n.onclose=()=>{if(n._sys)return;delete Q.notes[t];lisAck(t)}}catch(x){}}
+ if(innerWidth>=761&&window.Notification&&Notification.permission==="granted")sbNote(String(e.t),e.title,e.body)}
 document.addEventListener("pointerdown",()=>{if(innerWidth>=761&&window.Notification&&Notification.permission==="default")try{Notification.requestPermission()}catch(e){}},{once:true});
 function qRcv(o){const an=o.an||[],rv=o.recv||{},ks=[...new Set([...an,...Object.keys(rv)])];if(!ks.length)return"";return `<div class="qrcv">${ks.map(a=>`<span class="${rv[a]?"ok":""}">${rv[a]?"📥":"⏳"} ${ANZN[a]||a}${rv[a]?" "+hhmm(rv[a]):""}</span>`).join("")}${o.man&&an.length?`<span class="mn">수기 항목 있음</span>`:""}</div>`}
 function qCard(k,o,dp){const p=qParts(o),dps=dp?[dp]:Object.keys(p).sort(),st=dp?p[dp]:null,ing=dp?st&&st.s==="ing":dps.some(d=>p[d].s==="ing");
