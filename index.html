@@ -1744,7 +1744,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
   if(n===p.mjNo&&p.mjAt)return;p.mjNo=n;delete p.mjAt;save(r);render();mjAttach(p,r,true)},
  cuff:()=>{const f=getDraft(id).f;f.cuff=f.cuff===d.v?"":d.v;document.querySelectorAll(`#cuff-${id} .chip`).forEach(b=>b.classList.toggle("sel",b.dataset.v===f.cuff));const v=$("#dpv-"+id);if(v)v.textContent=drPv(id)||"값을 입력하거나 선택하면 여기에 한 줄로 정리됩니다."},
  devopen:()=>{$("#dv").classList.add("open");devLoad()},devclose:()=>$("#dv").classList.remove("open"),
- devok:async()=>{await fetch(`${DBH}/devices/${d.u}/ok.json`,{method:"PUT",body:d.v==="1"?"true":"false"});devLoad()},
+ devok:async()=>{{b.disabled=true;b.textContent=d.v==="1"?"승인 중…":"해제 중…"}try{const r=await fetch(`${DBH}/devices/${d.u}/ok.json`,{method:"PUT",body:d.v==="1"?"true":"false"});if(!r.ok)throw 0;toast(d.v==="1"?"승인했어요 · 그 기기에서 5초 안에 열려요":"승인을 해제했어요")}catch(x){toast("저장하지 못했어요. 다시 눌러 주세요")}devLoad()},
  devadm:async()=>{if(d.v==="1"&&!confirm("이 기기를 관리자로 지정할까요? 관리자는 다른 기기를 승인·해제할 수 있어요."))return;if(d.v!=="1"&&d.u===AU.uid){toast("내 기기의 관리자 권한은 여기서 해제할 수 없어요");return}await fetch(`${DBH}/admins/${d.u}.json`,{method:d.v==="1"?"PUT":"DELETE",body:d.v==="1"?"true":undefined});devLoad()},
  devdel:async()=>{if(d.u===AU.uid){toast("지금 쓰는 기기는 삭제할 수 없어요");return}if(!confirm("이 기기를 목록에서 삭제할까요? 다시 쓰려면 새로 승인받아야 해요."))return;await fetch(`${DBH}/admins/${d.u}.json`,{method:"DELETE"});await fetch(`${DBH}/devices/${d.u}.json`,{method:"DELETE"});devLoad()},
  gatereq:async()=>{const n=$("#gName").value.trim();if(!n){toast("기기 이름을 입력해 주세요");return}try{const r=await devPatch({name:n.slice(0,30),t:Date.now()});if(!r.ok)throw 0;toast("승인 요청을 보냈어요");startGate()}catch(e){toast("요청하지 못했어요. 인터넷을 확인해 주세요")}},
@@ -1813,7 +1813,7 @@ async function startGate(){
  if(st.ok){S.adm=st.adm;S.devName=(st.dev&&st.dev.name)||"";try{localStorage.setItem("sbok","1")}catch(e){}devPatch({t:Date.now()}).catch(()=>{});openApp(true);return}
  OKD=false;stopAll();clearCache();try{localStorage.removeItem("sbok")}catch(e){}
  $("#gateBody").innerHTML=gateView(st);$("#gate").classList.add("open");
- if(st.dev&&st.dev.name)GPOLL=setInterval(()=>{if(!document.hidden)startGate()},20000)}
+ if(st.dev&&st.dev.name)GPOLL=setInterval(()=>{if(!document.hidden)startGate()},5000)}
 function openApp(online){$("#gate").classList.remove("open");$("#dvBtn").style.display=S.adm?"":"none";if(OKD)return;OKD=true;
  render();load("care");loadDis();startPoll();mjPoll();{const w=(location.search.match(/[?&]w=(\w+)/)||[])[1];if(w&&["clinic","chat","lab","xray","basic"].includes(w)){try{sessionStorage.setItem("sbw",w)}catch(e){}history.replaceState(null,"",location.pathname)}}
  {const m=(location.search.match(/[?&]screen=(\w+)/)||[])[1];if(m&&["auto","clinic","chat","lab","xray","basic"].includes(m)){if(m==="auto")qls("screen",null);else qls("screen",m);history.replaceState(null,"",location.pathname)}}qStart();qScreenApply();clearInterval(MJI);MJI=setInterval(mjPoll,90000)}
