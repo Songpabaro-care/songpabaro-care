@@ -233,6 +233,65 @@ details.pcc[open]>summary{margin-bottom:8px}
 #list .trow{padding:5px 6px 5px 10px;gap:8px;border-radius:9px}#list .trow b{font-size:13px}#list .trow .tdue{font-size:12px}#list .trow .btn-xs{height:28px;padding:0 10px}
 .tstrip{display:flex;align-items:center;gap:6px;width:100%;text-align:left;padding:6px 10px;border-radius:9px;border:1px dashed var(--line);background:transparent;font-size:12.5px;color:var(--mute)}
 .tstrip b{color:var(--ink)}.tstrip span{margin-left:auto;font-size:12px;white-space:nowrap}
+
+/* ---- 채팅·검사 오더 ---- */
+#qBtn .bdg,#scrBack i{background:#e5484d;color:#fff;border-radius:99px;font-size:10.5px;font-weight:800;padding:0 5px;margin-left:2px;font-style:normal}
+#scr{position:fixed;inset:0;z-index:35;background:var(--bg);display:none;grid-template-rows:auto minmax(0,1fr)}
+#scr.open{display:grid}
+#scrBack{display:none;position:fixed;right:16px;top:12px;z-index:36;height:36px;border-radius:99px;border:0;background:#4655c9;color:#fff;font-weight:800;padding:0 14px;box-shadow:0 6px 18px rgba(70,85,201,.35)}
+body.scrpin:not(.scron) #scrBack{display:block}
+.qh{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.qh .t{flex:1;min-width:160px}.qh .t b{display:block;font-size:16px}.qh .t span{font-size:12px;color:var(--mute)}
+.qtg{height:34px;border-radius:99px;border:1px solid var(--line);background:var(--soft);padding:0 12px;font-size:12.5px;font-weight:700;white-space:nowrap}
+.qtg.on{background:#e3f3f1;border-color:var(--brand);color:var(--brand)}.qtg.pri{background:#4655c9;border-color:#4655c9;color:#fff}
+.qbody{display:grid;min-height:0}.qbody.two{grid-template-columns:minmax(300px,380px) minmax(0,1fr)}
+.qchat{display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0;border-right:1px solid var(--line)}
+.qmsgs{overflow:auto;padding:12px 14px;display:flex;flex-direction:column;gap:7px}
+.qday{align-self:center;font-size:11.5px;color:var(--mute);background:var(--card);border:1px solid var(--line);border-radius:99px;padding:1px 10px;margin:4px 0}
+.qm{max-width:85%;align-self:flex-start}.qm.me{align-self:flex-end}.qm .who{font-size:11.5px;color:var(--mute);margin:0 4px 2px}.qm.me .who{text-align:right}
+.qbub{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:7px 12px;white-space:pre-wrap}.qm.me .qbub{background:var(--brand);border-color:var(--brand);color:#fff}
+.qcomp{display:flex;gap:8px;padding:10px 12px;background:var(--card);border-top:1px solid var(--line)}
+.qcomp textarea{flex:1;min-height:40px;max-height:110px;border-radius:11px;border:1px solid var(--line);background:var(--soft);padding:9px 12px;resize:none;font:inherit;color:inherit}
+.qboard{overflow:auto;padding:12px 14px;min-height:0}
+.qbh{display:flex;align-items:center;gap:8px;margin-bottom:10px}.qbh h2{margin:0;font-size:16px}.qbh b{color:#4655c9}
+.qgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(225px,1fr));gap:8px;align-items:start}
+.qoc{background:var(--card);border:1.5px solid #4655c9;border-radius:13px;padding:9px 11px;display:grid;gap:5px}
+.qoc.urg{border-color:#e5484d;box-shadow:0 0 0 3px rgba(229,72,77,.13)}.qoc.ing{border-color:#e0a94a}
+.qoc.new-in{animation:qpop 1.2s ease}@keyframes qpop{0%{transform:scale(.92);box-shadow:0 0 0 6px rgba(70,85,201,.35)}100%{transform:none}}
+.qoc .top{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--mute)}.qoc .top .sp{flex:1}
+.qoc .pt{font-size:16px;font-weight:800;line-height:1.3}.qoc .pt small{font-weight:600;color:var(--mute);font-size:12px;margin-left:5px}
+.qtests{display:flex;flex-wrap:wrap;gap:4px}.qtests span{background:#eef0fd;color:#4655c9;border-radius:6px;padding:1px 8px;font-weight:700;font-size:13px}
+.qtests.img span{background:#e7f4fb;color:#0c6b94}
+.qoc .memo{font-size:12.5px;background:var(--soft);border-radius:7px;padding:4px 8px}
+.qdp{display:grid;gap:4px;border-top:1px dashed var(--line);padding-top:6px}.qdp .dl{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700}
+.qbd{border-radius:99px;padding:0 8px;font-weight:800;font-size:11px}.qbd.new{background:#fde8e7;color:#c93a3a}.qbd.ing{background:#fff4e0;color:#a8680f}.qbd.done{background:#e3f3f1;color:var(--brand)}
+.qsb{height:28px;border-radius:99px;border:1px solid var(--line);background:var(--soft);padding:0 11px;font-weight:700;font-size:12.5px}
+.qsb.go{background:#4655c9;border-color:#4655c9;color:#fff}.qsb.ok{background:var(--brand);border-color:var(--brand);color:#fff}
+.qact{display:flex;gap:6px}.qact .qsb{flex:1}
+.qdone{margin-top:14px}.qdone summary{cursor:pointer;color:var(--mute);font-weight:700;font-size:13px}
+.qdone .di{font-size:12.5px;color:var(--mute);padding:5px 8px;border-radius:8px;background:var(--card);border:1px solid var(--line);margin-top:4px}
+.qopt{display:grid;gap:6px}.qopt button{text-align:left;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--soft)}
+.qopt button b{display:block;font-size:14px}.qopt button span{font-size:12px;color:var(--mute)}.qopt button.sel{border-color:var(--brand);background:#e3f3f1}
+.qgrp{font-size:12px;font-weight:800;color:var(--mute);margin:8px 0 4px}
+.chip.qsel{background:#4655c9!important;border-color:#4655c9!important;color:#fff!important;opacity:1!important}
+@media(max-width:760px){.qbody.two{grid-template-columns:1fr}.qbody.two .qboard{display:none}.qbody.two.tab-ord .qboard{display:block}.qbody.two.tab-ord .qchat{display:none}.qgrid{grid-template-columns:1fr}}
+.chip.qtc{height:auto;min-height:34px;padding:5px 12px;display:inline-flex;flex-direction:column;align-items:flex-start;justify-content:center;line-height:1.25;text-align:left}.chip.qtc small{font-size:10.5px;font-weight:500;opacity:.75;margin-top:1px}
+.qchem{display:grid;gap:5px;margin-top:8px;padding:8px;border:1px dashed var(--line);border-radius:12px}.qcr{display:grid;grid-template-columns:62px minmax(0,1fr);gap:6px;align-items:center}.qcr>span{font-size:12px;font-weight:800;color:var(--mute)}.chip.qmini{height:30px!important;min-height:0!important;padding:0 10px!important;font-size:12.5px;line-height:1}.chip.qpn{border-style:dashed}
+.qpc{height:26px;border-radius:99px;border:1.5px dashed #9aa3e6;background:transparent;color:#4655c9;font-size:11.5px;font-weight:800;padding:0 9px;align-self:center}.qpc.on{background:#eef0fd;border-style:solid}
+.qcr2{display:grid;grid-template-columns:62px minmax(0,1fr);column-gap:6px;row-gap:5px;align-items:start;padding:4px 0;border-bottom:1px dashed var(--line)}.qcr2:last-child{border-bottom:0}.qcr2>span{grid-row:1/span 2;font-size:12px;font-weight:800;color:var(--mute);padding-top:7px}.qcr2>.chips{grid-column:2}.chip.qpn{border:1.5px dashed #9aa3e6!important;background:transparent}
+#fchat{position:fixed;z-index:33;width:320px;height:300px;flex-direction:column;resize:both;min-width:240px;min-height:170px;max-width:92vw;max-height:90vh;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.18);overflow:hidden;font-size:13px}
+#fchat .fh{display:flex;align-items:center;gap:6px;padding:7px 8px 7px 12px;background:var(--brand);color:#fff;cursor:move;user-select:none;touch-action:none}
+#fchat .fh .sp{flex:1}#fchat .fh button{width:28px;height:26px;border-radius:7px;border:0;background:rgba(255,255,255,.18);color:#fff;font-weight:800;cursor:pointer}
+#fchat .fh #fcU{background:#e5484d;border-radius:99px;font-size:11px;font-weight:800;padding:0 6px}#fchat .fh #fcU:empty{display:none}
+#fchat .fb{flex:1;display:flex;flex-direction:column;min-height:0}#fchat .fm{flex:1;min-height:0;overflow:auto;padding:8px 10px;display:flex;flex-direction:column;gap:5px;background:var(--soft)}
+#fchat .fm .r{max-width:88%;align-self:flex-start}#fchat .fm .r.me{align-self:flex-end}#fchat .fm .w{font-size:10.5px;color:var(--mute);margin:0 3px}#fchat .fm .r.me .w{text-align:right}
+#fchat .fm .b{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:4px 9px;white-space:pre-wrap;word-break:keep-all}#fchat .fm .r.me .b{background:var(--brand);border-color:var(--brand);color:#fff}
+#fchat .fi{display:flex;gap:6px;padding:7px;border-top:1px solid var(--line)}#fchat .fi textarea{flex:1;min-height:34px;max-height:80px;border-radius:9px;border:1px solid var(--line);background:var(--soft);padding:7px 9px;resize:none;font:inherit;color:inherit}
+#fchat .fi button{border:0;border-radius:9px;background:var(--brand);color:#fff;font-weight:800;padding:0 12px;cursor:pointer}
+#fchat.min .fb{display:none}#fchat.min{width:auto!important;height:auto!important;min-height:0;resize:none}
+#fchat:not(.min):not(.pip)::after{content:"";position:absolute;right:3px;bottom:3px;width:10px;height:10px;border-right:2px solid var(--mute);border-bottom:2px solid var(--mute);opacity:.5;pointer-events:none;border-radius:0 0 3px 0}
+#fchat.pip{position:static;width:auto!important;height:100vh!important;resize:none;max-width:none;max-height:none;border:0;border-radius:0;box-shadow:none;display:flex!important;flex-direction:column}#fchat.pip .fh{cursor:default}#fchat.pip .fb{flex:1;display:flex;flex-direction:column;min-height:0}#fchat.pip .fm{flex:1;height:auto}#fchat.pip #fcMin{display:none}
+.tabn{font-style:normal;background:#4655c9;color:#fff;border-radius:99px;font-size:10px;font-weight:800;padding:0 5px;margin-left:3px;vertical-align:1px}.tabn:empty{display:none}.qwrap .qboard{padding:0;overflow:visible}
 </style>
 </head>
 <body>
@@ -241,17 +300,17 @@ details.pcc[open]>summary{margin-bottom:8px}
     <div class="logo"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAMAAABlApw1AAAAkFBMVEX//////v/9//////7//v7+/v78//7+//v+/ur+/f79/f79/f39/fz+/P78/Pz7+/v9/Oz4+Pj389rs4sPUzLb7sRj7sBr6sBv6sBn7sBf3shn4sRv4sBzvtDLUuHT8rxvrrjGhoaGHh4dubm5TU1NBQUE5OTk4ODg3Nzc2Nzc2NjY0NDQwMTAuLi4sLyorKysuR4FXAAAeRElEQVR42u1da0OrOBBFa1p7qcQAfbdWnmULLP//3+05E9qiVq9Wq37Y7F61D2AO854MieP8P/4f/49TQyklP37FOBeAcn/JEHo+CACHedr7JcP9MBuU0lrb437D0MTguu8G0X7R1b+Efld7e8r+Ljm47/i2CaI4Tn7ViKPQhzKAE573OitcA7A6iJJsWzZN3fyqUaZxZBwN7dRGvc4Ax4/TqqmqMs+3v2vsqmabhALBc1+TftcJ07Lc5mWWl2VR/q6xg1jsYt8BA7xX6HdMlNVFWeRVU4MFv2lApKvttiyqJAQPTokQ7L7W0bbM8V+TJlH4u0YUJ9sGXMibNHC8UwBg+p0I1BdVk0XBL4xuTJgIeVXia/ekAkP+q+2urJLAUR4ZcrbrHD359SW+2DMuIKT1tiybxJySIRinpKHiQk2M1l/hht233nY/EszBDXtaGRWmu2pX1dEpl+Y5EVW9ivFFl+5PnRuN9vCvf32tboaq38cf1/ITP/BSDZXi32o4fP8JwQChGD42SGFi6tR3XngzWKCkLss68R11ppD2evb39WhEynu94WDQHzwd/TtB5Q7vhmdcwTVOmFXFroocyPdzAOFuV5Z56LrOJwAQw9VoMBq8NkbtR6NzABjj6Rg+tkqN5z4jVDlxU+RN7J0PYD+ucJdbclWXdtUB0D8rTUGo4wRZWeyKUOmnZ4AEpTUZ4JjP0N6T8UdRTPp9z6rAcfSv9+9fnwVAGePquC4LqLF+eqddCldZp8b9HAC5ve6Qv0EwFPBGQV+HoyEHXg7gLQc9vDW6OeP00GY4q7KCqfeU9xwAQo0q0Z7+PADPG9zfg9QTKnCPQQUYwrD0nur+O6WId3oHJVDu8/chWk3swNyeT34LwNzf+r5/yx/+8Y/9S7y+vdfGXJ9XbXD8tBJD+hxAVOe7JnI8z/0sB0B+EDwgfnk4NcIAw7/V3pnlEihr1XqCZwAaC0B9nv7g4WH9+PpYrx8eAv9+YDX+DAC1BeA+58COyv0JBgyHQr8fkPzVGwMfA8HtYKQHw7urQe88AC9FqLVO59592BwRn3C9XoPK5WK2nM44JrPOWK42m+kKCB6CW6izursb3pwHQJ0GcC4Her1rhg0Q/4dHoV/G7MVYrlab+XxBJkAR9EAN774WwNkccPqMIG5b+qegHj+fkz+eLZZTAJgvFo+PoX9v+oPR3e/gAADQ7vsPEP+pHScAzGaLxYwA5osV9OBW93uD0U3vdwDoaUrQA9R3PJ+1GHDLnwOYzzYYk8lmtYYQjdRQ/xYR6tGBBevH5WIxn09I5HzykgUAMN3IWD2uYUwZWkgE+PMA4IGFAUvQPxf65yD2hRYsFkuxpdPpgkJ0r2lG3+8OLihCI8+QAdP5xgKgpI9PKcECCg4bO6Ma+EDw7rt/MQA98UWeNmSAkD2fTCan6Z8uCUHGGEIkCPo9xHYuYuwfESFF4QECZN33gQUwn/11LCBKsxURwCXfm9HwjsnDO3hxEQ4wgnDUSFRYNPjvAGZ0FFNxyRLaaSRqX8OB80SIgRmiIDCAdn76N+rHosxU9hXiDmECs031U1ZIosoBvfAaLnb1dwCtMlPaGNq1EJDnqx/ggFjAnoShogEwkpMPAEBkJ6EdEQx/RIQAwGZiDIM27wcwXU3HsyVd3YJcIILej4jQHgBVeD0dz+mintN6gn6EEiu6hNlMvIaEdoN3+LOLALgSABIGIUyYTp5TfxrAZkpnMJ3Mx2OoAr3ye1KbC4jQoHftDGlDH9YEAA92oBIWdTKbnzaskw0NEYPr8XgCgaIQDXo/AKDPMtuVIQPWq+lT90vpmImyPsvLLGvG4/ZLVGWEdrcwx4dqy7eJEEuFfddYBswkgJt2AMynDNwmJwDsUczmY4StUGTmmJ8H8GEOSKVTI5VHJgwdno+nnTwGmQGMJNzbm04NLGJY8eD/BIAei3B9MoCZmL3jBwCrJehnjWX5ZlCxEARfBEB/GAA5IIH0SqT6CQDe14DCtXz9/i9XoiQ/BIAhxEC1NnQ8fgqAThZZF6RrdYLwo0d7BqD3zSI0GA4lDIIGkP5px4/ROAKASNcbLpkAxj/EgWsAUMOBpJLHO3tggWUAPnxdBZZ0FfPx8gd1oE8JWiOOtnWIsSQ0tJwHBqxPFFj27yzndHeTCb77E2a0dzMaGKrwasEEhWQRATzTjPHBo2jA44n4aAafLVq+YiCxnM9sLNG7+nYzqgfaqvBm2t7VyYZh/kz0MrgFc1ab1fQFgg1DiRUjOuQQM6sC3x7MXTmHQBpRXCeCgEhDkNYIMUUDVs8jOqgKgjho7gpOADnc5ueCuV7LAITEk27xZ2EjTKsBixOemILWxtRT5gOBf/8TSf11C2D5BADjZFagH8iANeO5lwWW8UKqR5vNYrmSvPje9H8ioYEOSDFi1gGwFLlYrVsfwFr0qQqXFEk3DJYeQgZy/X7v5tsBXLfFCCYo+1s7ZXSzWLUMeBzDJB0AWF2WjGHJXGa+aMVHZgedH9EBieM28/1sBijcTFn+3DNgMenoN6zRZGynbWhbl1LaYo1Xjb4IwIdFiE6MAI6KCoJXEsb5xMY6y4lCy0SyYpEeqS72B98OgLnktbJh0JwAxm1N0QJonRg89KFS3Xrqibxm2GcrQoOR7rsiQt9pRtXwZjAY9W0xArdYclsZYt2FATJfJqZGCqa2pr6QuQNJHGSuEunET0wx9UZ3d4OBHokKr3nLp4eqM8vn0z0AOojVxtbgYPTbRH4zkRSsrSn+xAwNLksA+l5UeMxa8/zIgtlk78Qe6dAAwOYJ0/lYJgeWVkdo+83g3Hniz3HAAkA66YePEs9LnZCiLmO63sfRjHSQ1G/aMRlTD4iAVQhjtKc+1hvwZSKENKDneTYXlmnTxWS6p3KxkllgSRL40XKJ+G5jJ5ZgRGFVl+Il7rV2R+7PALCNS9rYWI0RzYtWAomjZ4Jt1nqsR8RFEzi2iUyy+lpmZt1e7wd0gK1XA3do/PCh08Sxbns8Hh6sAC2WljlSO0TAw89XDJsWdqJevNeo9wPzxL1rep6RHrG140RHjd8qwIIGZy7VIXpcFige6ZnbCUpassHHPOfX+QFFIwQ3cOhjejoCTtlLqE/ltibzlp0Ua6Y+C2rA/eDOcwfe3dVPmNGrO6SSg/vbfQvWk+H7cqtZKYXfGstEUrBv3LK9FI8shN44106vd/MTHOipP3cDTRtkO7CejYcHttwg2pxLZXcjXg3q0qrGyuZfzkebnb4SQG80Grn0wq368sdeBfhqvZLas6Rmm9W+umK9G9SAEnRzDv1fJkJSUWQxYm83D6boUUSEGSN9L+dgpmzrkDu/TxEIaND7WQCaXpglN6k8T233w77Nhoku6eckDCI7ywBEHIcA450Z/AWtkPIGNgzaTMc2UZmwIMRISGYEVkuGbACwfJIZtHWKB5kQ+2EAdAHrRymLHINQGTakmDD+mUpcum7d8qJN04IwuDcedfj6x0To6k63vTXH0cnIEO7Y+txibuVGbA+yfUmAffiAJ/21N1eAcnX1nRy4urNTAktmYVJM7I6x4GFmxmjaMmDNv6VBBT6Y/ceD3tGOsn/05htF6NpRbT2RM5CHILrFMZbUZjmdTJh/TVvbubYT87YIIe3HcOWIp6U5nJMM173et1ohUWECeGP2CAI2exS9tQyQmiN7IyRasjCMuUNIdA8A31hW4dQ87eISOeJbfQXL6b6+2AIYT9mLcHR6gZQkJKbrfxuAnrOfmGcm+WZjBDL91onZKdjxkvH18uj5pIv6Vp5Y+SoAfxGhnnPsjGDN8GRvaKeE3lbYWaAeS7/fFDqzkpx40emi9vT3AUAcN2gbRP8KYNIWJ9aPrLpIv2LH7s5Yalnb5kvkR1Dly4sQG5sI4P7YW/MGgOl+jmm92kysaVrNJsgvWZkmA0SeJLnUfKrjOwAM+JSb9NivHzez+eT17ix+IMm9aAA8M+/9eGKddBs+zQ7zq2YwGKpvEKEjAMnlX2kNPYzDLCsArJZtbiAFotliOpGCo2UBspvBcNj7Fg701B2b1PmMwHJ+sseS1WhE0bZ42GYwKwKYtQXGZasB0gS+lCrq/Tt7/j4J4Pq6P+BjmaxIr9qo/ySApXDHhnFMLhd2YmDOJOfJdN+Yzk5KRKObb2h85TMO/eu71guzN4K+6QSARQugZQBu/iu6Mp/xUQLKkKuuv6Fzl3nYtRqwniiSPD7BAAr3YkGXa+uLfJ7m1XiD6twWie7c/uV1QAB493bq1Fb7T9DEKaZZhwHwXm+pui3TQYjUtwAY9rXNhafT0x0c0+nSequWAevNdPKWsYJXsIboXY+WfUqEeo4a3f1x2/7E9hmN00Eo6SdVUvudPBe0yRNV5jNB0sb+DY7s5u7PqO2tOYwXd3TJ+vmyzX8ZhW44p/r6mJMFDCi+AQAfB5YpAVig6as82LCYyPTXpvILmNXF7NVm2Cm8xqQtdX2DFRppad9gd9BpABPbbWm7iWWSb4Hc/kSkwd4WtpnOAG88Qd7zNb0SbwMYefKgD73pjG3Ppxgwpg4f4uiFtLMvX9LPJ+Ls/N/Makz4Hc0ebssAaXp+NQ9bLtpyqEgQm4xPWFuAksLL2DZWSLn38gD69imB5fwtpSSA6XGSj1S+tKKTmTxkYw2Wrb/fmsvrgCvFCAAYj98CsHdiMscEAOMXADhRP+GDiUvpzBGG3Wvn4r3Tuu1wHb8JYDUf7zPJaTvPfep5JqoBu8Vn44lMIHQLRZcB0OvJo2JrUcrxySZQ68em+3LodL6fqD/5PJnVY5sa+++SoM964r54YWYnp55raE3SYnnMJG2Z9DSAFa2odFU8PoTI7PXoso6Mj2pIc9MUjonNNa9EQhSNfRi3acukJySOSY50O60fbMMNwqyLWiH7rA8ZMBHT/UonNEMDG8Y9tI+lL09X7ybtA6FS3Lq9N3pwd3cxEeoNuMhFv2+bm2wJdLwfs/GecMkQl7PxYl+P5kPRkrm/YACf6ZjYZxFtwwd8/LumK88CIH0FI6/fhxd+fOwSP+4UpuXBKkg2ZwRaBixme5CH0G/fjoDUfrEU3bXLG1x0gqOHhHsw8PSoLWdNlvtn5uV5wsPM0tJaluOEwOFbJxc3sPWI+2/oVmF/9IjlP5K1nLd9G13aZGJM3uKzJIdM8vCd0wjE+OuPrdNzrgghhvDkeefHse1dWu57Jw9SDTJn82e1lK7XEm4dGbaZLeWpeq1vvoUDg4E+9Na0VebnQx7l3jccsxvcdmq9MsZzW07xPsaC88xoDwZoxAd9HsU34drL2UuKGIQCRqsBSylFdwl+NhjA+bQ+37AoQB8qMGgfFbPq1/3V0crVps0k316b5KACUlL8hnUlpDFJylnrt8ZKGoZsGPe4Wv9t4Jv3o8Hoz/XFAVz3+zKnET78jSQ+3ixh3IPtfep+8JL+0EeO/ad/eQCOuhpKSf1dQ7qF3vdN+uB+v+0/et/CuufpgLphm+v97bsGV6F671cP/bpcDI8UKfciHLgZDq+GI1kg6/5+0P5/av2sgTEGln0Ek2W/awdeiRZx2S39ZLWtAwAuz+x5nv5bD+PZAIZD7Y16dg2t9hn6liIJxOTfCAQgquQrbeRt5f4ZquGTh9uuboauizdHGPruxi7poLq9bBcQoRtZ8RDUPR2aLcggo0XB+6dHfbw0xiN9ozsOfec9PWzgOEheRndDPQKMwYgLxpkgjDDCAGmZ9jzlvrGo63kZWY+320/SzkiSODQ3I/YLkFrF5RXdP2GCLyXh8O7qamgBDM3Tw+IoND0CAVKNo5XjR0lWNVXdVPg0cJTh4q3qC0WIbfaQCm1SXOU4/q13aQjyjdmrgat13JR108RXd3cQOwi2wsc47N/jqKsiCY0IG0AYz0RpVVd5URbboqyqNDLKaJzpqzhw1QIAmSattv/8k+dbroK7/QdX+zeLugBGvSAtZF1Zc7VfFRL3Ov2Xh23lsF35zz/lvzmo9KjSIDYumqzMc94aWTC0SXxlXFd9oQhd85FJCDYA7Hal3P2GP6rtrioiB1LAJUYFQFTnskRxJI96Q7I84cCuLFu2VfgQ0IHgDwVoZOK63JVVnUO40m3NJTcrIvhSEZLHbkeesmvURe2Ik3xX/VNlgeOBS1dKj0zPT8uSi7I2iVG4weylgRClDXjSOawu810WXkPQjculE8s6i8PAN34YZzXuAI7GJ19dlYCxIIAmOYAyUVaA3nZ1PQVpd0Ku65tt8yoLwZj2kgBQHA6zS+dCyhJqjxdy9c0qDTV8GT7TYVLlVQ4Gmi+vCwmAGpSodjVhrd24htrFjmW30q4XN0WZxVm5rWOvXfRdAGzrxNjlf6G8gAkqs8CFeiRNsauBVnuQekipE+AmbUGgpy7CgXqHW+lK1AIEKspLviEAuO5zkOHkiZ80WcXFBJ8AsOsQOwCgTEKx59qmYb7bcQVaoKJFxTkd8iTHW95lRIiyoORu09+0AOQYEKCiakv9jaqcJLgdESIAex5wwcRVUTQg2yMLwRwwk37SU0QRw6RCwE4vdfNZEaIOIPByPUNhcOImJyFishWtVINzB0pW1NyTQAA1DrN2XcNba1oeOY7LzFY7sMLbf1cZLkq7LSFV7iUAlAclJodD2MftLlSicOS+rPvsWVXIWxL2HDBceZ9iD6BJne/wOWitCgib6lzVw1VwdHkugHfowP4RgTBKm3LbUDvtuTU0kgopxqhsYld1dYCr7lvFNlwinTSI0YJwGa9LoQtnXjbRpUSoyvZBTVaB1ZCY1ghxMVn4AODRLtew5ieqqwN2LXRjghhHFlXscq1u6ELsmGMIqvguFAPvXsSMNiVdPr1+VcEBVSXpxzFIRLQSn8pTwD1ViDMiWVvZFR2Aq0pijiTJano6kAAdgtfiRY+xp6xhX+bwxu5JFnzaClHKC5i+Yse19IsSoRebV12A8OEleGYuyg013onph3kRDgBr3QaC1W4LCkKCjuttWT0BgNvhhAV0IPEuA6Co4GYl2kE8JHBiGEEwXotAV7Ey4mFhC3f0T3BQBIAvFlmREzzg100SUti5WLfwrEONEltQ1ecC+JsVKstjUBOnjGMaIHCVLJ6fl5loBDQ1zPIdPlFc5B0iVCB2QADY0E+U25S7gchF24XUn8zDkRSagMt4YhiNo8XzY0TVVR5KGEMPChPVpl1+QnkKHG4VwGCuymQzFrBwJzbeWACFqKvu5vIe1y8u6nOV+K8ArCNz+U878Jq4pTF3PqL73daZ3TWGoTECtkpCbTGjVEqXjKm5RQMtldgtAkiM2+E7HF3cbHnoZcxoG0ocxJVyLfT43J2hKA/pWoUMq07htLRwAIdxTwkd0VJJDkFi4MhITHctftgwSR8u5ImrbQcAWC+mPzWyJDrHcdsSaPu2AhlHAIpbM3Cbia2En3bPA+gNtdjrSFC4g7/PgjM54H0AAChCYFwCgOMxLobqPdm6hzrBzKoFACx2B4R82wZKXK5b9tTobO2DYI4qkLjqotGoTWBw3ytaPNruDIY/pWlqRxSL26aC7wFAhBQiVvq/PHLEx4GDebWNxJnLFm58q5aQ1r2IJ652bThtk7CQRNaxCy/cFBWu2h1IFre8JQcAvLznitjQR9DJMawrxCxRQQzyyABOA7fCVxfKB0iJlgFTGaVUSVyeXrhiGuUdtnHT2qfNSo3bAcCg2w3gTSpoPjXCBBlTMqSUiKShyh7SzXJbbIHoUiJUpYeNvtLtLivqGo6MNpQBZNccavjZbQ01Vl0A0Bbu18NICZEpbBEkalfWeRJJgIukHgEKvbvnXUaESu7TVDesqjQN6w9lDCNKSRAvrJ/ENDBRVNcnHGCoEdNHQD1clrXiqsKrZocoN8sbaHgF+lki/moOeJ6IEGw94pki3+7wR4UgE6JAUkuk8Z1ijmx8A1isupguAFLGxD2HEIEdyOSjEnjg3hjuFYz6GF1p9dUipCAooKQ76iKLQ0YREJam2Upm+OScYYnwB+Fdil/JkbfcL4PHx6z9KJZSSsboSC+KqmFp8Y2VX88XIdw61xytpFjKMHBF2VwJ7oxs2fPkWvZ9OSwy+ngqe6JIqGBEEiZpBmlEmAddcIy+SL8QEZzoQeu+93x6wrRtXnsdOjqrvSdvhcozfhCGURj6LK9/CsAbVghJ+XGDLAb6nC+wJHNmAGL7/GBFJaWxpFB3Miw70aAtDmT0qmNymB99JQDlGu6wKeUQ2jbXU4xEFeeEuEOhR+dKn+TKPpbwTd0KA4/A7dVG5m4QeuAvVoAUN9/i2TSjT1fmA+DiDN2ZpP68U539HD8hQrR0Hq+sSYnifeOddulFcVd5FxnisEwL7IrUHhUBaRoP4HwL805DCg2JM76vSKUjWiMb/GhnX4szMj/AL5+QpY8DUEEcBwxyoyQUGx7rIImcMOHEgOcGSeyzVBVxrzw4tCQ4lGVxrTgm/T40GKY2TtM0YspsojTLcDaYH44okC+2/jGNNE8O0VOBJJ6fFCHQ1DQRS34JQ0vXZIkKixjvMiSGI2V5gWE1C+os1cGYKudQU8zgxlSQJ/RqDbOcNIDrquHNS6T1cQPnhfcDP0v9JEuzBv9ij7XVgN6leRnSfZgD8EZZhoAGMVjFLMnPEqQhsRMiTmMxMREAbpynUtGKAOC4EamXMKPxcIzy0zIi/+APgoybsERIJaMilPcik6YIrUy8w3d8J8yznPX1sPoQAMTzUqJRnWgAnims4ggBDXIP3J3AEQB5TB+VGHtffSTHaRqWccsB3blWSnniMaTX4W3Ig6BMOLGXRG4ku28FWYIvekIDZUbHWYgDvdc5sG1O7UODPA4AunNTtA9uXIVBkSAugI/BlfcAojJjMBOXeeq7vJRJM18LgCMHdJJxe8hIAHAehKfDN+sk4hafKs5ZHQI2k6WwYwoAGK1miY5r3LOwPg2gEgAvtjKqdzse0Aln6GnIfifhZESa+gBj8hZAnUCQfFYYfYpZgIA0cl8AaDJkl1kT67gMpeJFIMwiCkYMUZ7EcbLNQtwdVibIAbxbhbgELnsagA8A9WkArGV09j2FWUf+1MRBEOEDA3mG9IZ7EaqjJPXDIkoyCm0SBvjEvMoBMhLuygJQJkS+BlSwBHmWwtbg7uwBeGAlTkZxPQVAUg/ogHkhQmHF2Fd3K8UwMlDSLKOhMOQAUMZHALgcZAAwWOLEl4oyRGIWiluSrO2pDkT0awpAQlDsIq3J/KiM/EAqSS0HIDhuuKtwshzE4xp0/2wDsZqpuKFamAmAl/uRZUzPffeYX8ukXSEl2aQMNYmBKSpbEWoi8AM3HQB82D4O8Cmug3020AJwRah5Ip8zCrBoYKrHgkTuU4mtsSAAa8MgbHIyfJFKbEPzVi7o3SBhO9k4zT2h3MUudDrzs3DpcSGXCHY0FDQMsPc0TFRbL2mKCFJiop3UAaEJPohrI1Mxo/QDHs2MRwMKYUphGf00j4IQrw2kXUI5B0rstTYM0o9wBeYArCoSOZm/L7vQqOikkoq2Mc+VI5Y6Z2evPuhzkCaygSLuM2UFV4vBgTCL5F9EC4S3YyTDnOWI8iiqqLXMyZXoADjA/AWRv4mzXd5wYl+HKeQSjkxFcGaeklk/Jm5OBF8SyQQtc6Q4zHiyXRqoFoDLQk5WSRXgecbmsrhccV7I64SfJkR07rLNI/TDEH95fggfGcIf2N/AGBp8AvoRNITIamUEVhA1P0HogNeGmhtFgWawzB20ETnjZIY+ntcJ2R2B127ANgqXJwsOJ9tvU8cvx5WtBT7v70LUmTLfTegh9nNGssOgZsh4EDTPservOSKFsnGqzTe9rl2zKsb6p7EXb/f6Yyi7P5sItuinsmfS9rwMFJnmHHwtyFDinjxJXtsphedlCykObnMm1Oa4CfYe5sEQyC87c9T+rY49SiSFu8a6zw7f25C9l7Sbyzqdbc/3X+w0PAkwd3+MhL/GDfd7s75MOpFdszqY1zGMjfn09qBfPZBFGFdBe4pduQ1PJc1KS1EMegAzza3U3V81YCW4AXfFSk1sTm+wLAKW76R1RP82DsB9R8m2Lqptlfgn94+VWx7lNSszdca+sF+2R3da1FI74rTPq08eqyhryhx2qql2ZfVb9nffFmVZN3XBeYOSKd+ru5cquNqkBtBtzk3qi98x2MQFYnIRDZqYN5pL4QF9tuDVVZHn218DAGO7hX1hIs0CwuvPrtNNKj9i81rT1M3vGXVT5Wkc0sJ7rYM9LUPWK5ogelpE/AUjCn330Fv9Zncvt6hX4jf1bxnewYG/y+ch5pMZUaN+yZByHQuB71vclk2/UjP8LeGE8oQNUN93U+QSgnJ+CQOO8Z/z//h//D+ej/8ATZlcN8NxD5EAAAAASUVORK5CYII=" alt="BARO Animal Hospital"></div>
     <div class="sp"><h1><small>송파바로동물병원</small>케어 노트</h1>
       <div class="sync" id="sync"><span class="dot"></span><span id="syncTxt">실시간 동기화 중</span></div></div>
-    <button class="ib" data-act="theme" id="themeBtn" aria-label="화면 모드 전환">🌙</button>
-    <button class="ib" data-act="shareweb" aria-label="웹 공유 및 링크 복사">🔗</button>
     <button class="ib" id="mjBtn" data-act="mjopen" aria-label="사전 문진 보기">📋</button>
+    <button class="ib" id="qBtn" data-act="qchat" aria-label="업무 채팅·검사 오더">💬</button>
+    <button class="ib" id="qSetBtn" data-act="qset" aria-label="이 기기 화면·알림 설정">⚙</button>
     <button class="ib" id="pcBtn" data-act="pcopen" aria-label="PC 차트 보드">🖥</button>
     <button class="ib" id="dvBtn" data-act="devopen" aria-label="기기 관리" style="display:none">🔐</button>
   </div>
   <div class="tabs" id="tabs">
     <button class="tab on" data-r="care" data-act="room"><span>🏥</span>환축 케어</button>
     <button class="tab" data-r="checkup" data-act="room"><span>🩺</span>건강검진</button>
-    <button class="tab" data-r="lab_fluid" data-act="room"><span>🔬</span>검사·수액</button>
-    <button class="tab" data-r="calc" data-act="room"><span>🧮</span>약물계산</button>
+    <button class="tab" data-r="ord" data-act="room"><span>🧪</span>검사 의뢰<i id="ordTabN" class="tabn"></i></button>
+    <button class="tab" data-r="calc" data-act="room"><span>🧮</span>계산</button>
   </div>
   <div class="roombar">방 코드
     <input id="roomCode" value="songpa-baro-care" autocapitalize="off" aria-label="방 코드">
@@ -326,6 +385,18 @@ details.pcc[open]>summary{margin-bottom:8px}
 <div class="mask" id="tk"><div class="sheet">
   <div class="row" style="justify-content:space-between;align-items:center"><h3 id="tkTitle">⏰ 처치 스케줄</h3><button class="ib" data-act="tkclose" aria-label="닫기">✕</button></div>
   <div id="tkBody"></div>
+</div></div>
+<div id="fchat" style="display:none"><div class="fh" id="fcH"><b>💬 채팅</b><span id="fcU"></span><span class="sp"></span><button id="fcPip" title="다른 프로그램 위에 항상 띄우기">📌</button><button id="fcMin" title="접기">–</button></div>
+ <div class="fb"><div class="fm" id="fcM"></div><div class="fi"><textarea id="fcT" rows="1" placeholder="메시지 입력 · Enter 보내기"></textarea><button id="fcS">보내기</button></div></div></div>
+<div id="scr"></div>
+<button id="scrBack" data-act="scrback">🧪 오더 화면으로</button>
+<div class="mask" id="qs"><div class="sheet">
+  <div class="row" style="justify-content:space-between;align-items:center"><h3>⚙ 이 기기 설정</h3><button class="ib" data-act="qsclose" aria-label="닫기">✕</button></div>
+  <div id="qsBody"></div>
+</div></div>
+<div class="mask" id="qom"><div class="sheet">
+  <div class="row" style="justify-content:space-between;align-items:center"><h3>🧪 검사 오더 보내기</h3><button class="ib" data-act="qomclose" aria-label="닫기">✕</button></div>
+  <div id="qomBody"></div>
 </div></div>
 <div id="pcb"></div>
 <div id="gate"><div class="gw" id="gateBody"></div></div>
@@ -608,7 +679,7 @@ function watch(key,fn){
   es.onopen=()=>badge(true);es.onerror=()=>badge(false)})}
 function stopAll(){EGEN++;Object.keys(ES).forEach(k=>{ES[k].close();delete ES[k]})}
 async function load(r){const _l=await load0(r);useCache(r==="care"?["care","dis"]:[r]);return _l}
-async function load0(r){stopAll();if(r==="calc"){await watch(PATHS.care,onRoom("care"));watch(PATHS.lab_fluid,onRoom("lab_fluid"));return}const pr=watch(PATHS[r],onRoom(r));if(r==="care")watch("discharged_patients",onDis);if(r==="lab_fluid")watch(PATHS.care,onRoom("care"));await pr}
+async function load0(r){stopAll();if(r==="ord"){await watch(PATHS.care,onRoom("care"));return}if(r==="calc"){await watch(PATHS.care,onRoom("care"));watch(PATHS.lab_fluid,onRoom("lab_fluid"));return}const pr=watch(PATHS[r],onRoom(r));if(r==="care")watch("discharged_patients",onDis);if(r==="lab_fluid")watch(PATHS.care,onRoom("care"));await pr}
 async function loadDis(){}
 function startPoll(){}
 document.addEventListener("visibilitychange",()=>{if(document.hidden)stopAll();else if(OKD)load(S.room)});
@@ -759,19 +830,186 @@ function pcCopy(m){const its=pcItems(),cur=its.find(x=>x.p.id===S.pcSel);if(!cur
  if(cur.r==="checkup"){copy(soapChart(cur.p),`${cur.p.name} SOAP를 복사했어요`);return}
  copyCare(cur.p,m);pcRender()}
 const pcPref=()=>{try{return localStorage.getItem("pcboard")}catch(e){return null}};
-addEventListener("resize",()=>{if(S.pc&&innerWidth<1000){S.pcAuto=true;pcClose()}else if(!S.pc&&OKD&&innerWidth>=1000&&pcPref()!=="0")pcOpen()});
+addEventListener("resize",()=>{const sc=qScreen();if(["chat","lab","xray"].includes(sc)){if(Q.view)qRender();return}if(S.pc&&innerWidth<1000){S.pcAuto=true;pcClose()}else if(!S.pc&&OKD&&innerWidth>=1000&&sc==="clinic"&&pcPref()!=="0")pcOpen()});
 document.addEventListener("keydown",e=>{if(!S.pc)return;const tg=e.target;if(tg&&tg!==document.body&&!tg.closest("#pcb"))return;if(tg&&(tg.tagName==="INPUT"||tg.tagName==="TEXTAREA"||tg.tagName==="SELECT")){if(e.key==="Escape")tg.blur();return}
  const its=pcItems(),q=(S.pcQ||"").trim(),fl=its.filter(x=>!q||nz(x.p.name+x.p.room+(x.p.mjNo||"")).includes(nz(q))),ord=[...fl.filter(x=>x.r==="care"),...fl.filter(x=>x.r==="checkup")],i=ord.findIndex(x=>x.p.id===S.pcSel);
  if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();const n=ord[Math.max(0,Math.min(ord.length-1,i+(e.key==="ArrowDown"?1:-1)))];if(n){pcPick(n.p.id);const b=document.querySelector(".pcr.on");if(b)b.scrollIntoView({block:"nearest"})}}
  else if(e.key==="Enter"){e.preventDefault();const c=ord[i];pcCopy(c&&c.r==="checkup"?"soap":"new")}
  else if(e.key==="t"||e.key==="T")pcCopy("today");else if(e.key==="a"||e.key==="A")pcCopy("all");else if(e.key==="Escape")pcClose()});
+/* ======== 업무 채팅 · 검사 오더 ======== */
+const QTESTS={
+ "영상":[["흉부 방사선"],["흉복부 방사선","흉부+복부"],["복부 방사선"],["앞다리 방사선"],["뒷다리 방사선"],["치과 방사선"],["복부 초음파"],["심장 초음파"]],
+ "혈액":[["CBC","혈구 검사"],["응고검사","PT · aPTT"],["CRP","vc-CRP (강아지)"],["혈액형"]],
+ "전해질·혈액가스":[["전해질","Na · K · Cl"],["혈액가스","pH · pCO2 · HCO3 · BE"]],
+ "호르몬":[["T4"],["TSH"],["코르티솔"]],
+ "특수 검사":[["SDMA"],["proBNP"],["췌장염 키트","cPL · fPL"]],
+ "기타":[["혈압"],["심전도"],["안압"],["피부·귀 도말"],["FNA 세포검사"]]};
+const QSUB={};Object.values(QTESTS).forEach(a=>a.forEach(([n,d])=>{if(d)QSUB[n]=d}));
+/* 혈청화학: 장기별 낱개 항목 + 묶음 버튼(누르면 해당 항목이 한꺼번에 선택됨) · 후지 NX700 항목 */
+const CHEM={"간":["ALT","AST","ALP","GGT","TBIL","NH3"],"신장":["BUN","CRE","IP","Ca","UA"],"단백":["TP","ALB"],"당·지질":["GLU","TCHO","TG"],"췌장":["v-AMYL","v-LIP"],"근육·기타":["CPK","LDH","Mg","TCO2"]};
+const PANELS=[["기본 6종 🐶",["ALT","ALP","BUN","CRE","ALB","GLU"],"묶음","기본 6종 🐶"],["기본 7종 🐱",["ALT","ALP","BUN","CRE","TP","ALB","GLU"],"묶음","기본 7종 🐱"],["종합 10종",["ALB","TP","ALT","ALP","BUN","CRE","GLU","Ca","IP"],"묶음","종합 10"],["종합 14종",["ALB","TP","ALT","AST","ALP","GGT","TBIL","BUN","CRE","GLU","Ca","IP","TCHO"],"묶음","14"],["종합 16종",["ALB","TP","ALT","AST","ALP","GGT","TBIL","BUN","CRE","GLU","Ca","IP","TCHO","v-AMYL","v-LIP"],"묶음","16"],
+ ["간 4종",["ALT","ALP","GGT","TBIL"],"간","4종"],["간 5종",["ALT","AST","ALP","GGT","TBIL"],"간","5종"],["간 5종+NH3",["ALT","AST","ALP","GGT","TBIL","NH3"],"간","5종+NH3"],
+ ["신장 4종",["BUN","CRE","IP","Ca"],"신장","4종"],["신장 4종+UA",["BUN","CRE","IP","Ca","UA"],"신장","4종+UA"]];
+PANELS.forEach(([n,a])=>{QSUB[n]=a.join(" · ")+(/종합/.test(n)?" · GLOB(계산)":"")});
+const URINE={"소변":["요스틱","요비중(USG)","요침사(현미경)","요분석기(기계)","UPC","요배양·감수성"],"분변":["분변 직접도말","분변 부유법","분변 키트"]},UCOL=["방광천자","자연뇨","카테터"];
+PANELS.push(["요검사 종합",["요스틱","요비중(USG)","요분석기(기계)"],"소변"]);QSUB["요검사 종합"]="요스틱 · 요비중(USG) · 요분석기(기계)";
+const CHEMALL=[...Object.values(CHEM).flat(),...Object.values(URINE).flat()];
+function qCompress(sel){const chem=new Set([...sel].filter(x=>CHEMALL.includes(x))),out=[];
+ [...PANELS].sort((a,b)=>b[1].length-a[1].length).forEach(([n,a])=>{if(a.length&&a.every(x=>chem.has(x))){out.push(n);a.forEach(x=>chem.delete(x))}});
+ return [...out,...CHEMALL.filter(x=>chem.has(x)),...[...sel].filter(x=>!CHEMALL.includes(x))]}
+const QDN={lab:"검사실",img:"영상"},tDept=x=>QTESTS["영상"].some(e=>e[0]===x)||/방사선|X-ray|초음파/.test(x)?"img":"lab";
+const Q={chat:{},ords:{},init:{},es:{},fresh:new Set(),sel:new Set(),pre:null,view:null,temp:false,tab:"chat"};
+const qls=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){return null}};
+const qSnd=k=>qls("snd_"+k)==="1";
+let QAC=null;
+function qBeep(kind){try{QAC=QAC||new(window.AudioContext||window.webkitAudioContext)();if(QAC.state==="suspended")QAC.resume();
+ const seq=kind==="urg"?[[1046,0],[1046,.22],[1046,.44],[1397,.66]]:kind==="ord"?[[880,0],[1175,.16],[1568,.32]]:[[988,0],[1319,.12]];
+ seq.forEach(([f,dt])=>{const o=QAC.createOscillator(),g=QAC.createGain();o.type="sine";o.frequency.value=f;o.connect(g);g.connect(QAC.destination);const t=QAC.currentTime+dt;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.25,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+.18);o.start(t);o.stop(t+.2)})}catch(e){}}
+document.addEventListener("pointerdown",()=>{if(!QAC&&(qSnd("chat")||qSnd("ord")))try{QAC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}},{once:true});
+const QCH=()=>`${base()}/rooms/${encodeURIComponent(S.code)}/chat`,QOR=()=>`${base()}/rooms/${encodeURIComponent(S.code)}/orders`;
+const qMe=()=>S.devName||"이름 없는 기기";
+const qParts=o=>o.parts||{};
+const qActive=(o,dp)=>{const p=qParts(o);return dp?(p[dp]&&p[dp].s!=="done"):Object.values(p).some(x=>x.s!=="done")};
+const qMine=dp=>Object.entries(Q.ords).filter(([,o])=>o&&qActive(o,dp));
+const qScreen=()=>{const v=qls("screen")||"auto";return v==="auto"?(innerWidth>=1000?"clinic":"basic"):v};
+function qApply(store,path,data,patch){const ks=path.split("/").filter(Boolean);
+ if(!ks.length){const prev=new Set(Object.keys(store));if(patch)Object.entries(data||{}).forEach(([k,v])=>{if(v===null)delete store[k];else store[k]=v});else{Object.keys(store).forEach(k=>delete store[k]);Object.assign(store,data||{})}return Object.keys(store).filter(k=>!prev.has(k))}
+ const k=ks[0],isNew=!store[k]&&ks.length===1&&data;
+ if(ks.length===1){if(data===null)delete store[k];else if(patch)store[k]={...(store[k]||{}),...data};else store[k]=data}
+ else{let o=store[k]=store[k]||{};for(let i=1;i<ks.length-1;i++)o=o[ks[i]]=o[ks[i]]||{};if(data===null)delete o[ks[ks.length-1]];else o[ks[ks.length-1]]=data}
+ return isNew?[k]:[]}
+async function qListen(name){if(Q.es[name])Q.es[name].close();let t=null;try{t=await auTok()}catch(e){}
+ const isO=name==="ord",store=isO?Q.ords:Q.chat,u=isO?`${QOR()}.json`:`${QCH()}.json?orderBy=%22$key%22&limitToLast=300`;
+ const es=Q.es[name]=new EventSource(withAuth(u,t));
+ const h=patch=>e=>{let d;try{d=JSON.parse(e.data)}catch(x){return}const nk=qApply(store,d.path||"/",d.data,patch),first=!Q.init[name];Q.init[name]=true;
+  if(!first)nk.forEach(k=>{const m=store[k];if(!m||m.uid===AU.uid)return;
+   if(isO){Q.fresh.add(k);const sc=Q.view||qScreen(),dp=sc==="lab"?"lab":sc==="xray"?"img":null,hit=!dp||qParts(m)[dp];
+    if(hit&&qSnd("ord"))qBeep(m.urgent?"urg":"ord");if(!Q.view)toast(`🧪 ${m.urgent?"긴급 ":""}검사 오더 · ${m.pname||""} · ${(m.tests||[]).join(", ")}`);qNotify(`${m.urgent?"🚨 긴급 ":""}검사 오더 · ${m.pname||""}${m.chart?" #"+m.chart:""}`,(m.tests||[]).join(", "))}
+   else{if(qSnd("chat"))qBeep("chat");if(Q.view!=="chat")toast(`💬 ${m.by||"직원"}: ${String(m.text||"").slice(0,40)}`);qNotify(`💬 ${m.by||"직원"}`,m.text)}});
+  qBadge();qRender();fcRender();if(isO&&S.room==="ord"&&!Q.view)softRender()};
+ es.addEventListener("put",h(false));es.addEventListener("patch",h(true));
+ es.addEventListener("auth_revoked",()=>{AU.tok=null;qListen(name)});es.addEventListener("cancel",()=>{es.close()})}
+function qStart(){fcShow();qListen("chat");qListen("ord");setTimeout(qPrune,10000)}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&OKD)["chat","ord"].forEach(n=>{if(!Q.es[n]||Q.es[n].readyState===2)qListen(n)})});
+function qNotify(t,b){if(!(qls("noti")==="1"&&window.Notification&&Notification.permission==="granted"&&document.hidden))return;try{new Notification(t,{body:b||"",icon:"icon-192.png"})}catch(e){}}
+function qBadge(){{const t=$("#ordTabN"),n=qMine(null).length;if(t)t.textContent=n?String(n):""}const seen=+(qls("chatSeen")||0),un=Object.values(Q.chat).filter(m=>m&&m.uid!==AU.uid&&(m.t||0)>seen).length,on=qMine(null).length,b=$("#qBtn");
+ if(b)b.innerHTML="💬"+(un||on?`<span class="bdg">${un?un:on}</span>`:"");const bk=$("#scrBack");if(bk)bk.innerHTML=`🧪 오더 화면으로${on?` <i>${on}</i>`:""}`}
+async function qPrune(){const lim=Date.now()-7*864e5;Object.entries(Q.chat).forEach(([k,m])=>{if(m&&(m.t||0)<lim)fetch(`${QCH()}/${k}.json`,{method:"DELETE"}).catch(()=>{})});
+ Object.entries(Q.ords).forEach(([k,o])=>{if(o&&!qActive(o)){const lt=Math.max(...Object.values(qParts(o)).map(x=>x.t||0),o.t||0);if(lt<lim)fetch(`${QOR()}/${k}.json`,{method:"DELETE"}).catch(()=>{})}})}
+async function qPost(url,m){m.t=Date.now();m.by=qMe();m.uid=AU.uid;const r=await fetch(`${url}.json`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(m)});if(!r.ok)throw 0}
+/* ---- 화면 ---- */
+const QTITLE={chat:"💬 채팅 · 검사 오더",lab:"🧪 검사실 오더 (혈액·요·분변·기타)",xray:"🩻 영상실 오더 (X-ray·초음파)"};
+function scrOpen(mode,temp){setTimeout(fcShow,0);Q.view=mode;Q.temp=!!temp;$("#scr").classList.add("open");document.body.classList.add("scron");if(mode==="chat")qls("chatSeen",String(Date.now()));qBadge();qRender()}
+function scrClose(){setTimeout(fcShow,0);Q.view=null;$("#scr").classList.remove("open");document.body.classList.remove("scron");qBadge()}
+function qCard(k,o,dp){const p=qParts(o),dps=dp?[dp]:Object.keys(p).sort(),st=dp?p[dp]:null,ing=dp?st&&st.s==="ing":dps.some(d=>p[d].s==="ing");
+ const tg=d=>(o.tests||[]).filter(x=>tDept(x)===d);
+ const tch=x=>`<span${QSUB[x]&&PANELS.some(p=>p[0]===x)?` title="${esc(QSUB[x])}"`:""}>${esc(x)}${PANELS.some(p=>p[0]===x)?`<small style="display:block;font-weight:500;font-size:10.5px;opacity:.8">${esc(QSUB[x])}</small>`:""}</span>`;
+ const ctl=(d,x)=>x.s==="new"?`<button class="qsb go" data-act="qst" data-k="${k}" data-d="${d}" data-v="ing">접수</button><button class="qsb ok" data-act="qst" data-k="${k}" data-d="${d}" data-v="done">완료</button>`:x.s==="ing"?`<button class="qsb ok" data-act="qst" data-k="${k}" data-d="${d}" data-v="done">완료</button>`:"";
+ const who=x=>x.s==="ing"?`${esc(x.by||"")} 접수 ${hhmm(x.t)}`:x.s==="done"?`✓ ${esc(x.by||"")} ${hhmm(x.t)}`:"";
+ const bd=x=>`<span class="qbd ${x.s}">${x.s==="new"?"대기":x.s==="ing"?"진행 중":"완료"}</span>`;
+ let body;
+ if(dp)body=`<div class="qtests${dp==="img"?" img":""}">${tg(dp).map(tch).join("")||"<span>기타</span>"}</div>${o.memo?`<div class="memo">${esc(o.memo)}</div>`:""}${st.s==="ing"?`<div class="top">${who(st)}</div>`:""}<div class="qact">${ctl(dp,st)}</div>`;
+ else body=(o.memo?`<div class="memo">${esc(o.memo)}</div>`:"")+dps.map(d=>`<div class="qdp"><div class="dl">${QDN[d]} ${bd(p[d])}<span class="meta" style="font-weight:500">${who(p[d])}</span></div><div class="qtests${d==="img"?" img":""}">${tg(d).map(tch).join("")||"<span>기타</span>"}</div>${p[d].s!=="done"?`<div class="qact">${ctl(d,p[d])}</div>`:""}</div>`).join("");
+ return `<div class="qoc${o.urgent?" urg":""}${ing?" ing":""}${Q.fresh.has(k)?" new-in":""}"><div class="top">${o.urgent?'<b style="color:#c93a3a">🚨 긴급</b>':""}${dp?bd(st):""}<span class="sp"></span><span>${hhmm(o.t)} · ${esc(o.by||"")}</span></div>
+  <div class="pt">${esc(o.pname||"환축 미지정")}${o.chart?`<small>#${esc(o.chart)}</small>`:""}${o.room?`<small>${esc(o.room)}</small>`:""}</div>${body}</div>`}
+function qBoard(dp){const act=qMine(dp).sort((a,b)=>(b[1].urgent?1:0)-(a[1].urgent?1:0)||(a[1].t||0)-(b[1].t||0));
+ const td=new Date();td.setHours(0,0,0,0);const lastT=o=>Math.max(...Object.values(qParts(o)).map(x=>x.t||0));
+ const dn=Object.entries(Q.ords).filter(([,o])=>o&&(dp?(qParts(o)[dp]&&qParts(o)[dp].s==="done"&&(qParts(o)[dp].t||0)>=td.getTime()):(!qActive(o)&&lastT(o)>=td.getTime()))).sort((a,b)=>lastT(b[1])-lastT(a[1]));
+ const html=`<div class="qboard"><div class="qbh"><h2>진행 중 오더 <b>${act.length}건</b></h2></div><div class="qgrid">${act.map(([k,o])=>qCard(k,o,dp)).join("")||'<div class="meta" style="padding:8px">진행 중인 오더가 없어요</div>'}</div>
+  <details class="qdone"><summary>오늘 완료 (${dn.length})</summary>${dn.map(([k,o])=>`<div class="di">✓ <b>${esc(o.pname||"")}</b>${o.chart?" #"+esc(o.chart):""} · ${esc((o.tests||[]).filter(x=>!dp||tDept(x)===dp).join(", "))} <button class="qsb" style="height:24px;padding:0 8px" data-act="qundo" data-k="${k}" data-d="${dp||""}">되돌리기</button></div>`).join("")}</details></div>`;
+ Q.fresh.clear();return html}
+function qChatHtml(){const arr=Object.entries(Q.chat).filter(([,m])=>m).sort((a,b)=>(a[1].t||0)-(b[1].t||0));let prev="",h="";
+ arr.forEach(([k,m])=>{const d=new Date(m.t),ds=`${d.getMonth()+1}월 ${d.getDate()}일`;if(ds!==prev){h+=`<div class="qday">${ds}</div>`;prev=ds}const me=m.uid===AU.uid;h+=`<div class="qm${me?" me":""}"><div class="who">${esc(m.by||"직원")} · ${hhmm(m.t)}</div><div class="qbub">${esc(m.text)}</div></div>`});
+ return `<div class="qchat"><div class="qmsgs" id="qmsgs">${h||'<div class="meta">아직 메시지가 없어요</div>'}</div><div class="qcomp"><textarea id="qtxt" rows="1" placeholder="메시지 입력"></textarea><button class="btn" data-act="qsend">보내기</button></div></div>`}
+function qRender(){if(!Q.view)return;const el=$("#scr"),v=Q.view,on=qMine(null).length;
+ const keep=$("#qtxt")?$("#qtxt").value:"",foc=document.activeElement&&document.activeElement.id==="qtxt",ms=$("#qmsgs"),stick=!ms||ms.scrollHeight-ms.scrollTop-ms.clientHeight<80;
+ const head=`<div class="qh"><div class="t"><b>${QTITLE[v]}</b><span>${esc(qMe())}${Q.temp?"":" · 이 기기의 기본 화면"}</span></div>
+  <button class="qtg${qSnd("chat")?" on":""}" data-act="qsnd" data-k="chat">🔔 채팅 소리</button><button class="qtg${qSnd("ord")?" on":""}" data-act="qsnd" data-k="ord">🧪 오더 소리</button>
+  <button class="qtg pri" data-act="qord">＋ 검사 오더</button><button class="qtg" data-act="${Q.temp?"scrclose":"scrhide"}">${Q.temp?"닫기":"케어 노트 보기"}</button><button class="qtg" data-act="qset">⚙</button></div>`;
+ let body;if(v==="chat")body=`<div class="qbody two ${Q.tab==="ord"?"tab-ord":""}">${qChatHtml()}${qBoard(null)}</div>${innerWidth<=760?`<div style="position:fixed;left:0;right:0;bottom:0"></div>`:""}`;
+ else body=`<div class="qbody">${qBoard(v==="lab"?"lab":"img")}</div>`;
+ el.innerHTML=head+(v==="chat"&&innerWidth<=760?`<div class="qh" style="padding:6px 10px"><button class="qtg${Q.tab!=="ord"?" on":""}" style="flex:1" data-act="qtab" data-v="chat">💬 채팅</button><button class="qtg${Q.tab==="ord"?" on":""}" style="flex:1" data-act="qtab" data-v="ord">🧪 오더 (${on})</button></div>`:"")+body;
+ if(v==="chat"){el.style.gridTemplateRows=innerWidth<=760?"auto auto minmax(0,1fr)":"auto minmax(0,1fr)";const t=$("#qtxt");if(t){t.value=keep;if(foc)t.focus();t.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();qSendChat()}}}const m=$("#qmsgs");if(m&&stick)m.scrollTop=m.scrollHeight;qls("chatSeen",String(Date.now()));qBadge()}else el.style.gridTemplateRows="auto minmax(0,1fr)"}
+async function qSendChat(){const t=$("#qtxt"),v=(t.value||"").trim();if(!v)return;t.value="";try{await qPost(QCH(),{text:v.slice(0,1000)})}catch(e){t.value=v;toast("보내지 못했어요")}}
+/* ---- 오더 보내기 창 ---- */
+function qomOpen(pre){Q.pre=pre||null;Q.sel=new Set();Q.uc="";qomRender();$("#qom").classList.add("open")}
+function qomRender(){const pts=[...(S.p.care||[]).map(p=>({p,g:"입원"})),...((S.p.checkup&&S.p.checkup.length?S.p.checkup:S.pcCk)||[]).map(p=>({p,g:"검진"}))],pr=Q.pre;
+ $("#qomBody").innerHTML=`${pr?`<div class="tstrip" style="border-style:solid;color:var(--ink)"><b>${esc(pr.name)}</b>${pr.room?" · "+esc(pr.room):""}${pr.chart?" · #"+esc(pr.chart):""}<span>이 환축으로 보냄</span></div>`:`<div class="f"><label>환축</label><select class="in" id="qPt"><option value="">— 케어 노트 환축에서 고르기 (또는 아래 직접 입력) —</option>${pts.map(x=>`<option value="${esc(x.p.id)}">[${x.g}] ${x.p.species==="cat"?"🐱":"🐶"} ${esc(x.p.name)} · ${esc(x.p.room||"")}</option>`).join("")}</select></div>`}
+ <div class="g2"><div class="f"><label>이름</label><input class="in" id="qName" value="${esc(pr?pr.name:"")}" placeholder="환축 이름"></div><div class="f"><label>환축번호 (인투벳)</label><input class="in" id="qNo" value="${esc(pr&&pr.chart||"")}" placeholder="선택 입력"></div></div>
+ <div id="qTests">${qTestsHtml()}</div>
+ <input class="in" id="qEtc" style="margin-top:8px" placeholder="기타 검사 · 메모 (예: 금식 12시간 확인)">
+ <label style="display:flex;align-items:center;gap:8px;font-weight:800;color:#c93a3a;margin-top:8px"><input type="checkbox" id="qUrg"> 🚨 긴급</label>
+ <button class="btn" style="width:100%;background:#4655c9" data-act="qosend">검사 오더 보내기</button>`;
+ const sp=$("#qPt");if(sp)sp.onchange=()=>{const x=pts.find(y=>y.p.id===sp.value);if(x){$("#qName").value=x.p.name;Q.preRoom=x.p.room||"";Q.prePid=x.p.id}}}
+function qTestsHtml(){const grp=(g,a)=>`<div class="qgrp">${g}</div><div class="chips">${a.map(([x,dsc])=>`<button type="button" class="chip qtc${Q.sel.has(x)?" qsel":""}" data-act="qtest" data-v="${esc(x)}">${esc(x)}${dsc?`<small>${esc(dsc)}</small>`:""}</button>`).join("")}</div>`;
+ const ent=Object.entries(QTESTS),pn=g=>PANELS.filter(p=>p[2]===g).map(([n,a])=>`<button type="button" class="chip qtc qpn${a.every(x=>Q.sel.has(x))?" qsel":""}" data-act="qpanel" data-v="${esc(n)}">${esc(n)}<small>${esc(QSUB[n])}</small></button>`).join("");
+ const sg=a=>a.map(x=>`<button type="button" class="chip qmini${Q.sel.has(x)?" qsel":""}" data-act="qtest" data-v="${esc(x)}">${esc(x)}</button>`).join("");
+ const chem=`<div class="qgrp">혈청화학 <span style="font-weight:500">· 점선 묶음을 누르면 항목이 한꺼번에 선택돼요 (다시 누르면 해제)</span></div>
+  <div class="qchem"><div class="qcr2"><span>묶음</span><div class="chips">${pn("묶음")}</div></div>${Object.entries(CHEM).map(([g,a])=>{const P=pn(g);return `<div class="qcr2"><span>${g}</span>${P?`<div class="chips">${P}</div>`:""}<div class="chips">${sg(a)}</div></div>`}).join("")}</div>`;
+ const uri=`<div class="qgrp">요·분변</div><div class="qchem">${Object.entries(URINE).map(([g,a])=>{const P=pn(g);return `<div class="qcr2"><span>${g}</span>${P?`<div class="chips">${P}</div>`:""}<div class="chips">${sg(a)}</div></div>`}).join("")}
+  <div class="qcr2"><span>채뇨 방법</span><div class="chips">${UCOL.map(x=>`<button type="button" class="chip qmini${Q.uc===x?" qsel":""}" data-act="quc" data-v="${x}">${x}</button>`).join("")}<span class="meta" style="align-self:center">선택 · 요배양할 때 필요</span></div></div></div>`;
+ const rest=ent.slice(2),oth=rest.filter(([g])=>g!=="기타"),etc=rest.filter(([g])=>g==="기타");
+ return ent.slice(0,2).map(([g,a])=>grp(g,a)).join("")+chem+oth.map(([g,a])=>grp(g,a)).join("")+uri+etc.map(([g,a])=>grp(g,a)).join("")}
+async function qoSend(){const name=($("#qName").value||"").trim(),tests=qCompress(Q.sel),etc=($("#qEtc").value||"").trim();
+ if(!name){toast("환축을 고르거나 이름을 입력해 주세요");return}if(!tests.length&&!etc){toast("검사 항목을 골라 주세요");return}
+ const tl=tests.length?tests:["기타"],parts={};tl.forEach(x=>{parts[tDept(x)]={s:"new"}});
+ const o={pname:name.slice(0,30),chart:($("#qNo").value||"").trim().slice(0,20),tests:tl,memo:((Q.uc?`채뇨: ${Q.uc}`:"")+(Q.uc&&etc?" · ":"")+etc).slice(0,200),urgent:$("#qUrg").checked,parts,room:(Q.pre&&Q.pre.room)||Q.preRoom||"",pid:(Q.pre&&Q.pre.pid)||Q.prePid||""};
+ try{await qPost(QOR(),o);$("#qom").classList.remove("open");Q.preRoom=Q.prePid="";toast(`${name} 검사 오더를 보냈어요`)}catch(e){toast("보내지 못했어요")}}
+/* ---- 떠 있는 채팅창: 끌어서 옮기고, 📌로 다른 프로그램 위에 항상 띄우기 (크롬·엣지) ---- */
+const FC={pip:null};
+function fcOn(){return qls("fchat")==="1"&&OKD&&Q.view!=="chat"}
+function fcShow(){const el=$("#fchat");if(!el)return;if(FC.pip){fcRender();return}el.style.display=fcOn()?"flex":"none";if(!fcOn())return;
+ if(qls("fcmin")!=="1"){const w=+(qls("fcw")||0),hh=+(qls("fch")||0);if(w)el.style.width=Math.min(w,innerWidth-8)+"px";if(hh)el.style.height=Math.min(hh,innerHeight-8)+"px"}
+ el.classList.toggle("min",qls("fcmin")==="1");$("#fcMin").textContent=qls("fcmin")==="1"?"+":"–";
+ const x=+(qls("fcx")||innerWidth-340),y=+(qls("fcy")||innerHeight-330);fcPlace(x,y);fcRender()}
+function fcPlace(x,y){const el=$("#fchat"),w=el.offsetWidth||320,h=el.offsetHeight||60;x=Math.max(4,Math.min(innerWidth-w-4,x));y=Math.max(4,Math.min(innerHeight-h-4,y));el.style.left=x+"px";el.style.top=y+"px";return[x,y]}
+function fcRender(){const m=$("#fcM",FC.pip),root=FC.pip?FC.pip.document:document,box=root.getElementById("fcM");if(!box)return;
+ const arr=Object.values(Q.chat).filter(Boolean).sort((a,b)=>(a.t||0)-(b.t||0)).slice(-40),stick=box.scrollHeight-box.scrollTop-box.clientHeight<60;
+ box.innerHTML=arr.map(c=>`<div class="r${c.uid===AU.uid?" me":""}"><div class="w">${esc(c.uid===AU.uid?"나":c.by||"직원")} · ${hhmm(c.t)}</div><div class="b">${esc(c.text)}</div></div>`).join("")||'<div class="w">아직 메시지가 없어요</div>';if(stick)box.scrollTop=box.scrollHeight;
+ const seen=+(qls("chatSeen")||0),un=Object.values(Q.chat).filter(c=>c&&c.uid!==AU.uid&&(c.t||0)>seen).length,u=root.getElementById("fcU");if(u)u.textContent=(qls("fcmin")==="1"||FC.pip)&&un?un:""}
+async function fcSend(){const root=FC.pip?FC.pip.document:document,t=root.getElementById("fcT"),v=(t.value||"").trim();if(!v)return;t.value="";try{await qPost(QCH(),{text:v.slice(0,1000)})}catch(e){t.value=v;toast("보내지 못했어요")}}
+function fcInit(){const el=$("#fchat"),h=$("#fcH");
+ $("#fcS").onclick=fcSend;$("#fcT").onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();fcSend()}};
+ $("#fcT").onfocus=()=>{qls("chatSeen",String(Date.now()));qBadge();fcRender()};
+ $("#fcMin").onclick=e=>{e.stopPropagation();qls("fcmin",qls("fcmin")==="1"?"0":"1");fcShow()};
+ $("#fcPip").onclick=async e=>{e.stopPropagation();if(FC.pip){FC.pip.close();return}
+  if(!window.documentPictureInPicture){toast("이 브라우저는 '항상 위에 띄우기'를 지원하지 않아요 (PC 크롬·엣지에서 가능)");return}
+  try{const w=await documentPictureInPicture.requestWindow({width:340,height:440});FC.pip=w;
+   document.querySelectorAll("style").forEach(st=>w.document.head.appendChild(st.cloneNode(true)));w.document.documentElement.dataset.theme=document.documentElement.dataset.theme||"";w.document.title="송파바로 채팅";
+   w.document.body.style.margin="0";el.classList.add("pip");el.classList.remove("min");w.document.body.appendChild(el);fcRender();
+   w.addEventListener("pagehide",()=>{el.classList.remove("pip");document.body.appendChild(el);FC.pip=null;fcShow()})}catch(x){toast("띄우지 못했어요")}};
+ let dr=null;h.addEventListener("pointerdown",e=>{if(FC.pip||e.target.closest("button"))return;const r=el.getBoundingClientRect();dr={dx:e.clientX-r.left,dy:e.clientY-r.top};h.setPointerCapture(e.pointerId)});
+ h.addEventListener("pointermove",e=>{if(!dr)return;fcPlace(e.clientX-dr.dx,e.clientY-dr.dy)});
+ h.addEventListener("pointerup",e=>{if(!dr)return;dr=null;const r=el.getBoundingClientRect();qls("fcx",String(Math.round(r.left)));qls("fcy",String(Math.round(r.top)))});
+ if(window.ResizeObserver){let rt;new ResizeObserver(()=>{if(FC.pip||el.classList.contains("min")||el.style.display==="none")return;clearTimeout(rt);rt=setTimeout(()=>{qls("fcw",String(Math.round(el.offsetWidth)));qls("fch",String(Math.round(el.offsetHeight)));fcPlace(parseFloat(el.style.left)||0,parseFloat(el.style.top)||0)},300)}).observe(el)}
+ addEventListener("resize",()=>{if(!FC.pip&&el.style.display!=="none")fcPlace(parseFloat(el.style.left)||0,parseFloat(el.style.top)||0)})}
+fcInit();
+/* ---- 이 기기 설정 ---- */
+const QSCR=[["auto","자동","넓은 화면이면 진료실, 폰이면 일반"],["clinic","① 진료실","왼쪽 케어 노트 + 오른쪽 차트 복사 보드 · 환축 화면에서 바로 오더"],["chat","② 채팅·오더 모니터","왼쪽 채팅 + 오른쪽 전체 오더 보드"],["lab","③ 검사실","혈액·요·분변·기타 오더만 · 서버 PC 옆에 띄우기"],["xray","④ 영상실","X-ray·초음파 오더만"],["basic","⑤ 일반","케어 노트만"]];
+function qsRender(){const cur=qls("screen")||"auto",dk=document.documentElement.dataset.theme==="dark";
+ $("#qsBody").innerHTML=`<div class="otitle" style="margin:0">이 기기의 기본 화면</div><div class="qopt">${QSCR.map(([v,t,d])=>`<button class="${cur===v?"sel":""}" data-act="qscr" data-v="${v}"><b>${t}</b><span>${d}</span></button>`).join("")}</div>
+ <div class="otitle">알림음 <span class="meta" style="font-weight:500">· 이 기기에서만 · 기본은 꺼짐</span></div>
+ <div class="row" style="flex-wrap:wrap;gap:6px"><button class="qtg${qSnd("chat")?" on":""}" data-act="qsnd" data-k="chat">🔔 채팅 소리 ${qSnd("chat")?"켬":"끔"}</button><button class="qtg${qSnd("ord")?" on":""}" data-act="qsnd" data-k="ord">🧪 오더 소리 ${qSnd("ord")?"켬":"끔"}</button><button class="qtg${qls("noti")==="1"?" on":""}" data-act="qnoti">🖥 화면 알림 ${qls("noti")==="1"?"켬":"끔"}</button></div>
+ <div class="otitle">떠 있는 채팅창 <span class="meta" style="font-weight:500">· 이 기기에서만</span></div>
+ <div class="row" style="flex-wrap:wrap;gap:6px"><button class="qtg${qls("fchat")==="1"?" on":""}" data-act="qfchat">💬 떠 있는 채팅창 ${qls("fchat")==="1"?"켬":"끔"}</button></div>
+ <div class="meta">화면 위에 작은 채팅창이 떠요. 위쪽 띠를 끌어서 옮기고, 📌를 누르면 인투벳 같은 다른 프로그램 위에도 항상 떠 있어요 (PC 크롬·엣지).</div>
+ <div class="meta">검사실·영상실 화면에서는 그 부서 오더에만 소리가 나요. 소리는 페이지를 연 뒤 화면을 한 번 눌러야 나기 시작해요.</div>
+ <div class="otitle">기타</div><div class="row" style="flex-wrap:wrap;gap:6px"><button class="qtg" id="themeBtn" data-act="theme">${dk?"☀️ 밝은 화면":"🌙 어두운 화면"}</button><button class="qtg" data-act="shareweb">🔗 링크 공유</button></div>`}
+S.ordF="all";
+function ordView(){const f=S.ordF,dp=f==="all"?null:f,cnt=d=>qMine(d).length;
+ return `<div class="card" style="display:grid;gap:10px"><div class="row" style="align-items:center;gap:6px;flex-wrap:wrap">${[["all","전체",cnt(null)],["lab","검사실",cnt("lab")],["img","영상",cnt("img")]].map(([k,t,n])=>`<button type="button" class="chip ${f===k?"sel":""}" data-act="ordf" data-k="${k}">${t} ${n}</button>`).join("")}<span style="flex:1"></span><button class="btn" style="background:#4655c9" data-act="qord">＋ 검사 오더</button></div>
+ <div class="qwrap">${qBoard(dp)}</div></div>`}
+function qScreenApply(){const sc=qScreen();document.body.classList.toggle("scrpin",["chat","lab","xray"].includes(sc));
+ if(["chat","lab","xray"].includes(sc)){if(S.pc){S.pcAuto=true;pcClose()}scrOpen(sc,false)}
+ else{if(Q.view&&!Q.temp)scrClose();if(sc==="clinic"&&innerWidth>=1000){if(!S.pc&&(qls("screen")==="clinic"||pcPref()!=="0"))pcOpen()}else if(sc==="basic"&&S.pc){S.pcAuto=true;pcClose()}}}
 function render(){{const tk=$("#tk");if(tk&&tk.classList.contains("open"))setTimeout(tkRender,0)}if(S.pendSel&&S.pendSel.r===S.room&&rowsOf(S.room).some(p=>p.id===S.pendSel.id)){S.sel[S.room]=S.pendSel.id;S.pendSel=null}
  if(S.pc){const cs=S.sel[S.room];if(cs&&(S.room==="care"||S.room==="checkup"))S.pcSel=cs;setTimeout(pcRender,0)}
  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.r===S.room));
  const all=rowsOf(S.room),id=S.sel[S.room],cur=id&&all.find(p=>p.id===id);if(id&&!cur)S.sel[S.room]=null;
  const L=$("#list"),sb=document.querySelector(".searchbar"),fab=document.querySelector(".fab");
- if(fab)fab.style.display=(S.room==="calc"||cur)?"none":"";
+ if(fab)fab.style.display=(S.room==="calc"||S.room==="ord"||cur)?"none":"";
  if(S.room==="calc"){$("#dash").innerHTML="";$("#dis").innerHTML="";sb.style.display="none";L.className="";L.innerHTML=calcView();calcUpdate();return}
+ if(S.room==="ord"){$("#dash").innerHTML="";$("#dis").innerHTML="";sb.style.display="none";L.className="";L.innerHTML=ordView();return}
  if(cur){$("#dash").innerHTML="";$("#dis").innerHTML="";sb.style.display="none";L.className="";
   L.innerHTML=`<div><button class="btn-s" data-act="back">← 목록으로</button></div>`+card(cur);if(S.room==="lab_fluid")labFill(cur);return}
  sb.style.display="";L.className="tiles";renderDash();
@@ -789,10 +1027,11 @@ function renderDash(){
  `<div class="sub" style="margin-top:8px"><button class="pill" data-act="photo">📷 사진 찍어 등록</button></div>`;
 }
 
+function qOrdBtn(p){const n=Object.values(Q.ords).filter(o=>o&&o.pid===p.id&&qActive(o)).length;return `<button class="hb${n?" on":""}" style="${n?"border-color:#c7cdf6;background:#eef0fd;color:#4655c9":""}" data-act="qord" data-id="${p.id}">🧪 오더${n?`<i>${n}</i>`:""}</button>`}
 function head(p,r){
  const lc=r!=="care"&&isCareP(p.id),b=(r==="care"||lc)?`<span class="badge ${cat(p)==="호텔"?"h":""}">${cat(p)}${dayN(p)}</span>`:"";
  const ln=r==="care"?lateN(p):0,an=(p.alerts||[]).length+(p.cpr?1:0),tn=r==="care"?tasksOf(p).length:0;
- const bar=r==="care"?`<div class="hbar"><button class="hb${an?" on":""}" data-act="alopen" data-id="${p.id}">⚠ 주의${an?`<i>${an}</i>`:""}</button><button class="hb${ln?" late":tn?" on":""}" data-act="tkopen" data-id="${p.id}">⏰ 처치${ln?`<i>${ln} 지남</i>`:tn?`<i>${tn}</i>`:""}</button><button class="hb bad" data-act="discharge" data-id="${p.id}">퇴원</button></div>`:"";const d="";
+ const bar=r==="care"?`<div class="hbar"><button class="hb${an?" on":""}" data-act="alopen" data-id="${p.id}">⚠ 주의${an?`<i>${an}</i>`:""}</button><button class="hb${ln?" late":tn?" on":""}" data-act="tkopen" data-id="${p.id}">⏰ 처치${ln?`<i>${ln} 지남</i>`:tn?`<i>${tn}</i>`:""}</button>${qOrdBtn(p)}<button class="hb bad" data-act="discharge" data-id="${p.id}">퇴원</button></div>`:r==="checkup"?`<div class="hbar">${qOrdBtn(p)}</div>`:"";const d="";
  return `<div class="top"><div class="av">${p.species==="cat"?"🐱":"🐶"}</div><div class="sp"><div class="nm">${esc(p.name)}${r==="care"||r==="checkup"?`<button type="button" class="mjno${p.mjNo?(p.mjAt?"":" wait"):" add"}" data-act="mjnum" data-id="${p.id}" title="${p.mjNo?(p.mjAt?"문진 연결됨 · 눌러서 수정":"문진 도착 전 · 도착하면 자동 연결"):"문진번호 입력"}">${p.mjNo?"#"+esc(p.mjNo)+(p.mjAt?"":" 대기"):"+ 문진번호"}</button>`:""}</div>
  <div class="meta">${b}<span class="badge n">${esc(p.room)}</span>${esc(p.breed||"")}${r==="care"?"":(p.owner?" · 보호자 "+esc(p.owner):"")}</div>${r==="care"?`<div class="meta" id="dxm-${p.id}">${p.dx?"병명 "+esc(p.dx):""}</div>`+alertRow(p):""}</div>
  <div class="act">${d}${lc?"":`<button class="btn-s" data-act="remove" data-id="${p.id}" aria-label="삭제">✕</button>`}</div></div>${bar}`}
@@ -987,6 +1226,11 @@ function discharge(id){const l=S.p.care,i=l.findIndex(p=>p.id===id);if(i<0)retur
 function restore(id){const i=S.dis.findIndex(p=>p.id===id);if(i<0)return;const[x]=S.dis.splice(i,1);delete x.dischargedAt;delete x.dischargedTs;if(dup(x)){x.adm=x.adm||admOf(x);x.id="p-care-"+Date.now()}S.p.care.unshift({...x,category:cat(x)});render();save("care");saveDis();toast(`${x.name} 케어 룸으로 복원했어요`)}
 function setRoom(r){S.room=r;S.filter="ALL";S.sel[r]=null;render();load(r);if(r==="care")loadDis()}
 
+async function calcOcr(inp){const f=inp.files&&inp.files[0];if(!f)return;toast("검사지를 읽는 중…");
+ try{if(!window.Tesseract)throw new Error("Tesseract missing");const{data}=await Tesseract.recognize(f,"eng+kor");const t=(data.text||"").trim();
+  const m=t.match(/(?:HCO3|TCO2)[^0-9\-]*([0-9]+(?:\.[0-9]+)?)/i),k=t.match(/(?:^|\s)K\+?[^0-9a-z]{0,6}([0-9](?:\.[0-9]+)?)/i);let got=[];
+  if(m){const v=parseFloat(m[1]);if(v>0&&v<60){S.cv.bc_h=String(v);got.push("HCO3- "+v)}}if(k){const v=parseFloat(k[1]);if(v>0&&v<15){S.cv.kc_k=String(v);got.push("K+ "+v)}}
+  render();toast(got.length?`${got.join(", ")} 읽음 · 수치를 확인해 주세요`:"수치를 찾지 못했어요. 직접 입력해 주세요")}catch(e){toast("읽지 못했어요. 수치를 직접 입력해 주세요")}inp.value=""}
 async function labOcr(id,inp){const f=inp.files&&inp.files[0];if(!f)return;const p=find("lab_fluid",id);if(!p)return;p.lab=p.lab||{bw:0,hco3:0,ocrText:"",result:""};toast("검사지를 읽는 중…");
  try{if(!window.Tesseract)throw new Error("Tesseract missing");const{data}=await Tesseract.recognize(f,"eng+kor");const t=(data.text||"").trim();p.lab.ocrText=t;const m=t.match(/(?:HCO3|TCO2)[^0-9\-]*([0-9]+(?:\.[0-9]+)?)/i);if(m){const v=parseFloat(m[1]);if(v>0&&v<60)p.lab.hco3=v}render();save("lab_fluid");toast("수치를 확인해 주세요")}catch(e){toast("읽지 못했어요. 수치를 직접 입력해 주세요")}inp.value=""}
 
@@ -1245,7 +1489,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.classList&&
 /* ---- 약물계산 탭 (엑셀 계산기 이식) ---- */
 const num=v=>{const x=parseFloat(v);return isNaN(x)?0:x};
 const fm=(v,d=2)=>{if(!isFinite(v))return"-";const a=Math.abs(v);return String(+v.toFixed(a>=1000?0:a>=10?1:d))};
-S.cw={bw:"",sp:"dog",pid:""};S.cv={};S.ck="cri";S.ctext="";
+S.cw={bw:"",sp:"dog",pid:""};S.cv={};S.ck="bic";S.ctext="";
 const cvv=(k,d)=>S.cv[k]!==undefined?S.cv[k]:(d===undefined?"":d),cn=(k,d)=>num(cvv(k,d));
 const cin=(k,label,def,unit,step)=>`<div class="f"><label>${label}${unit?` <small>(${unit})</small>`:""}</label><input class="in" type="number" inputmode="decimal" step="${step||"any"}" data-cin="${k}" value="${esc(cvv(k,def))}"></div>`;
 const cbw=()=>num(S.cw.bw),csp=()=>S.cw.sp==="cat"?"cat":"dog",NB=["체중을 위에서 먼저 입력해 주세요"];
@@ -1283,7 +1527,19 @@ const BGAK=[["pH","pH",""],["pCO2","pCO2","mmHg"],["HCO3","HCO3","mEq/L"],["AnGa
 const AGT=[["높은 음이온차이 산증",[["고질소혈증·요독증","진행된 신부전 · 신장 배출부전으로 유기산 축적"],["젖산산증","쇼크, 저혈량증, 조직 관류 불량 · 젖산 축적"],["케톤산증","당뇨병성 케톤산증 · 케톤산 생산 증가"],["비케톤 고삼투증","당뇨병 · 나트륨 등 양이온 축적, 혈량 위축 시 젖산산증 동반"],["중독","Ethylene glycol, aspirin, methanol, paraldehyde 등 · 산성 대사물 축적"]]],
  ["정상 음이온차이(고염소혈) 산증",[["설사","다수의 위장관 질병 · HCO3- 소실"],["초기 신부전","암모니아 배출 감소로 H+ 축적, HCO3- 재생 부전"],["신세뇨관 산증","원위(Fanconi) 또는 근위 · 신장의 산 처리 부전"],["탄산탈수효소 억제제","H2CO3가 HCO3-로 전환되는 효소 억제"],["산성 물질 · 고영양 · 빠른 정맥 재수화","외인성 산 부하 / 아미노산 대사 산 부하 / 혈장 중탄산 희석"],["케톤산증(신장 케톤 소실 동반)","당뇨병 · AG 상승을 막을 정도로 케톤산이 신장으로 배출"]]],
  ["낮은 음이온차이 (대사성 산증 없이도 종종 발생)",[["비-나트륨 양이온 존속","양이온 증가 → 나트륨 감소 → 계산된 AG 낮아짐"],["종양 관련 고단백혈증 · 고칼슘혈증 · 고마그네슘혈증 · 리튬 중독","양이온 증가"],["저알부민혈증, 희석","미측정 음이온 감소를 보상해 측정 음이온 증가"]]]];
+const cpName=()=>{const p=(S.p.care||[]).find(x=>x.id===S.cw.pid);return p?p.name:"환자"};
+const txtL=t=>String(t||"").split("\n").slice(1).filter(x=>x.trim()!=="");
+const ocrBtn=`<label class="btn sky" style="display:grid;place-items:center;cursor:pointer;height:40px;font-size:12.5px;margin-bottom:8px">📷 검사지 촬영해서 수치 읽기<input type="file" accept="image/*" capture="environment" hidden id="cOcr"></label>`;
 const CALCS=[
+{k:"bic",t:"🧪 중탄산 교정",title:"중탄산(HCO3-) 교정",
+ form:()=>ocrBtn+cin("bc_h","측정 HCO3-","","mEq/L")+`<div class="meta">공식: 체중 × 0.3 × (25 − HCO3-) · 5배 희석 · 6시간 CRI (우리병원 방법)</div>`,
+ res:()=>{const bw=cbw();if(!bw)return NB;const h=cn("bc_h");if(h<=0)return null;return txtL(bicarb(cpName(),bw,h))}},
+{k:"kcl",t:"🧪 칼륨 교정",title:"칼륨(KCl) 수액 교정",
+ form:()=>ocrBtn+cin("kc_k","측정 K+","","mEq/L"),
+ res:()=>{const bw=cbw();if(!bw)return NB;const k=cn("kc_k");if(k<=0)return null;return txtL(kcl(cpName(),bw,k))}},
+{k:"tx",t:"🩸 수혈",title:"수혈량 계산",
+ form:()=>`<div class="g2">${cin("tx_cu","현재 PCV","","%")}${cin("tx_tg","목표 PCV","","%")}</div>${cin("tx_pr","공혈(제제) PCV","","%")}`,
+ res:()=>{const bw=cbw();if(!bw)return NB;const cu=cn("tx_cu"),tg=cn("tx_tg"),pr=cn("tx_pr");if(cu<=0||tg<=0||pr<=0)return null;return txtL(txf(cpName(),csp()==="cat"?"cat":"dog",bw,cu,tg,pr))}},
 {k:"cri",t:"단일 CRI",title:"CRI 계산",
  form:()=>{const d=CRIS.find(x=>x.id===cvv("cr_id","dob"))||CRIS[0];return ccard(CRIS.map(x=>[x.id,x.n.replace(/ \d+%| 10%/,"")]),"ccri",d.id)+`<div class="meta">${d.n} (${d.c} ${d.cu}) · 권장 ${d.r}</div>${cin("cr_dose","용량","",d.u)}${d.nb?"":`<div class="g2">${cin("cr_bag","수액 총량","100","ml")}${cin("cr_rate","CRI 속도","","ml/hr")}</div>`}`},
  res:()=>{const bw=cbw();if(!bw)return NB;const d=CRIS.find(x=>x.id===cvv("cr_id","dob"))||CRIS[0],dose=cn("cr_dose");if(dose<=0)return null;
@@ -1305,7 +1561,7 @@ const CALCS=[
  res:()=>{const bw=cbw();if(!bw)return NB;const m=bw*60/24,h=cn("fl_h",4)||4,L=[],row=(n,r)=>L.push([n,fm(r),"ml/hr",n==="유지"]);
   row("유지",m);[2,3,4].forEach(x=>row("유지 ×"+x,m*x));
   const def=p=>(bw*1000*p/100)/h+m;[5,10].forEach(p=>row("탈수 "+p+"% ("+h+"hr 교정 포함)",def(p)));const cp=cn("fl_p");if(cp>0)row("탈수 "+cp+"% ("+h+"hr 교정 포함)",def(cp));return L}},
-{k:"trans",t:"수혈",title:"수혈 계산",
+{k:"trans",t:"수혈 (엑셀식)",title:"수혈 계산 (엑셀식)",
  form:()=>`<div class="meta">필요 혈액량 = 계수 × 체중 × (목표−현재) ÷ 공혈 PCV</div><div class="g2">${cin("tr_d","공혈 PCV","","%")}${cin("tr_c","현재 PCV","","%")}</div><div class="g2">${cin("tr_t","목표 PCV","","%")}${cin("tr_f","혈액량 계수",csp()==="cat"?60:80,csp()==="cat"?"고양이":"엑셀 기준 80")}</div>${cin("tr_ns","생리식염수 혼합량 (선택)","","ml")}`,
  res:()=>{const bw=cbw();if(!bw)return NB;const d=cn("tr_d"),c=cn("tr_c"),t=cn("tr_t"),f=cn("tr_f",csp()==="cat"?60:80);if(d<=0||c<=0||t<=0)return null;if(t<=c)return["목표 PCV가 현재 PCV보다 커야 합니다"];
   const v=f*bw*(t-c)/d,ns=cn("tr_ns"),tot=v+ns,L=[["필요 혈액량",fm(v),"ml ("+fm(v/bw,1)+" ml/kg)",1]];
@@ -1404,7 +1660,20 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
  calc:()=>{const p=find("lab_fluid",id);if(!p)return;p.lab=p.lab||{};const bw=parseFloat($("#bw-"+id).value)||0,h=parseFloat($("#hc-"+id).value)||0;p.lab.bw=bw;p.lab.hco3=h;if(bw<=0||h<=0){toast("체중과 HCO3-를 입력해 주세요");return}p.lab.result=bicarb(p.name,bw,h);render();save("lab_fluid");toast("계산했어요")},
  applycode:()=>{const c=$("#roomCode").value.trim().replace(/[^a-zA-Z0-9_-]/g,"");if(!c){toast("방 코드를 입력해 주세요");return}S.code=c;$("#roomCode").value=c;toast(`방 코드 '${c}' 적용`);load(S.room);loadDis()},
  mjopen:()=>{$("#mj").classList.add("open");mjLoad()},
- alopen:()=>alOpen(id),tkopen:()=>tkOpen(id),tkclose:()=>$("#tk").classList.remove("open"),alclose:()=>$("#al").classList.remove("open"),
+ alopen:()=>alOpen(id),
+ qchat:()=>scrOpen("chat",true),scrclose:scrClose,scrhide:scrClose,scrback:()=>scrOpen(qScreen(),false),
+ qset:()=>{qsRender();$("#qs").classList.add("open")},qsclose:()=>$("#qs").classList.remove("open"),
+ qscr:()=>{if(d.v==="auto")qls("screen",null);else qls("screen",d.v);if(d.v==="clinic")qls("pcboard","1");qsRender();$("#qs").classList.remove("open");if(Q.view)scrClose();qScreenApply();toast(`이 기기 화면: ${(QSCR.find(x=>x[0]===d.v)||[])[1]}`)},
+ qsnd:()=>{const on=!qSnd(d.k);qls("snd_"+d.k,on?"1":"0");if(on)qBeep(d.k==="ord"?"ord":"chat");qsRender();qRender();toast(`${d.k==="chat"?"채팅":"오더"} 알림음 ${on?"켬":"끔"} (이 기기만)`)},
+ qfchat:()=>{qls("fchat",qls("fchat")==="1"?"0":"1");qsRender();fcShow()},
+ qnoti:async()=>{if(!window.Notification){toast("이 브라우저는 화면 알림을 지원하지 않아요");return}if(qls("noti")==="1"){qls("noti","0")}else{const p=await Notification.requestPermission();if(p==="granted")qls("noti","1");else toast("브라우저에서 알림 권한을 허용해 주세요")}qsRender()},
+ qord:()=>{const p=id&&find(S.room,id);qomOpen(p?{pid:p.id,name:p.name,room:p.room||"",chart:p.chartNo||""}:null)},qomclose:()=>$("#qom").classList.remove("open"),
+ qtest:()=>{Q.sel.has(d.v)?Q.sel.delete(d.v):Q.sel.add(d.v);const t=$("#qTests");if(t)t.innerHTML=qTestsHtml()},
+ quc:()=>{Q.uc=Q.uc===d.v?"":d.v;const t=$("#qTests");if(t)t.innerHTML=qTestsHtml()},
+ qpanel:()=>{const a=(PANELS.find(x=>x[0]===d.v)||[,[]])[1],all=a.every(x=>Q.sel.has(x));a.forEach(x=>all?Q.sel.delete(x):Q.sel.add(x));const t=$("#qTests");if(t)t.innerHTML=qTestsHtml()},qosend:qoSend,qsend:qSendChat,
+ qtab:()=>{Q.tab=d.v;qRender()},ordf:()=>{S.ordF=d.k;render()},
+ qst:async()=>{try{const r=await fetch(`${QOR()}/${d.k}/parts/${d.d}.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({s:d.v,by:qMe(),t:Date.now()})});if(!r.ok)throw 0}catch(e){toast("바꾸지 못했어요")}},
+ qundo:async()=>{const o=Q.ords[d.k];if(!o)return;const dps=d.d?[d.d]:Object.keys(qParts(o));for(const x of dps)await fetch(`${QOR()}/${d.k}/parts/${x}.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({s:"new"})}).catch(()=>{})},tkopen:()=>tkOpen(id),tkclose:()=>$("#tk").classList.remove("open"),alclose:()=>$("#al").classList.remove("open"),
  altog:()=>{const p=find("care",S.alId);if(!p)return;const a=p.alerts=p.alerts||[],i=a.indexOf(d.v);if(i>=0)a.splice(i,1);else a.push(d.v);alSave(p)},
  aladd:()=>{const p=find("care",S.alId),v=($("#alIn").value||"").trim();if(!p||!v)return;p.alerts=p.alerts||[];if(!p.alerts.includes(v))p.alerts.push(v.slice(0,30));alSave(p)},
  alcpr:()=>{const p=find("care",S.alId);if(!p)return;if(d.v==="미정")delete p.cpr;else p.cpr=d.v;alSave(p)},
@@ -1455,6 +1724,7 @@ document.addEventListener("change",e=>{const t=e.target;if(t.dataset&&t.dataset.
 document.addEventListener("change",e=>{const t=e.target;
  if(t.dataset.soap){const p=find("checkup",t.dataset.id);if(!p)return;p.soap=p.soap||{};p.soap[t.dataset.soap]=t.value;save("checkup")}
  else if(t.dataset.labocr)labOcr(t.dataset.labocr,t);
+ else if(t.id==="cOcr")calcOcr(t);
  else if(t.id==="ocrFile"||t.id==="ocrFile2")photoOcr(t);
  else if(t.id==="fRoom"){catW();$("#ocrBox").style.display=t.value==="care"?"grid":"none"}});
 
@@ -1468,7 +1738,7 @@ pn.addEventListener("click",e=>{const b=e.target.closest("[data-op]");if(!b)retu
 $("#q").addEventListener("input",applyQ);
 
 document.querySelectorAll(".mask").forEach(m=>m.addEventListener("click",e=>{if(e.target===m)m.classList.remove("open")}));
-function toggleTheme(){const r=document.documentElement,dk=r.dataset.theme!=="dark";r.dataset.theme=dk?"dark":"light";$("#themeBtn").textContent=dk?"☀️":"🌙"}
+function toggleTheme(){const r=document.documentElement,dk=r.dataset.theme!=="dark";r.dataset.theme=dk?"dark":"light";const b=$("#themeBtn");if(b)b.textContent=dk?"☀️ 밝은 화면":"🌙 어두운 화면"}
 if(matchMedia("(prefers-color-scheme:dark)").matches)toggleTheme();
 
 /* ---- 기기 승인 화면 ---- */
@@ -1492,7 +1762,7 @@ async function startGate(){
  $("#gateBody").innerHTML=gateView(st);$("#gate").classList.add("open");
  if(st.dev&&st.dev.name)GPOLL=setInterval(()=>{if(!document.hidden)startGate()},20000)}
 function openApp(online){$("#gate").classList.remove("open");$("#dvBtn").style.display=S.adm?"":"none";if(OKD)return;OKD=true;
- render();load("care");loadDis();startPoll();mjPoll();if(innerWidth>=1000&&pcPref()!=="0")pcOpen();clearInterval(MJI);MJI=setInterval(mjPoll,90000)}
+ render();load("care");loadDis();startPoll();mjPoll();{const m=(location.search.match(/[?&]screen=(\w+)/)||[])[1];if(m&&["auto","clinic","chat","lab","xray","basic"].includes(m)){if(m==="auto")qls("screen",null);else qls("screen",m);history.replaceState(null,"",location.pathname)}}qStart();qScreenApply();clearInterval(MJI);MJI=setInterval(mjPoll,90000)}
 let RCK=0;async function recheck(){if(Date.now()-RCK<15000)return;RCK=Date.now();try{const st=await devState();if(!st.ok){OKD=false;startGate()}}catch(e){}}
 async function devLoad(){const box=$("#dvList");box.innerHTML='<div class="meta">불러오는 중...</div>';
  try{const [dr,ar]=await Promise.all([fetch(`${DBH}/devices.json`),fetch(`${DBH}/admins.json`)]);if(!dr.ok)throw 0;const ds=await dr.json()||{},as=(ar.ok?await ar.json():null)||{};
