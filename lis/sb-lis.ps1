@@ -2,7 +2,7 @@
 # 하는 일: IntoVET_LIS 창 아래 상태줄의 "자료 수신 Unit[..] ID[동물번호]" 글자만 읽어서
 #          케어 노트 검사 오더에 "결과 도착"을 표시하고, 필요한 기계 결과가 다 오면 검사실 완료로 바꿉니다.
 # 인투벳·LIS 프로그램과 그 DB에는 아무것도 쓰지 않습니다. (화면 글자 읽기만)
-param([switch]$Diag, [switch]$JDiag, [switch]$Reception)
+param([switch]$Diag, [switch]$JDiag, [switch]$Reception, [switch]$DbDiag)
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -22,6 +22,49 @@ function Log([string]$m) {
   try { Add-Content -Path $LOGF -Value $l -Encoding UTF8 } catch {}
 }
 function NowMs { [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() }
+
+# ---------- DB 위치 찾기 (읽기만 · 비밀번호는 화면/파일에 쓰지 않음 · 케어 노트에 아무것도 보내지 않음) ----------
+if ($DbDiag) {
+  $out = New-Object System.Collections.Generic.List[string]
+  $out.Add("== 인투벳 DB 위치 진단 (" + (Get-Date) + ") · 읽기만 함 ==")
+  $MASK = '(?i)((pwd|password|passwd|pass|비밀번호)\s*[=:]\s*)[^;"''\s]+'
+  $out.Add(""); $out.Add("== 이 PC의 SQL 서비스 ==")
+  try { Get-Service | Where-Object { $_.Name -match 'SQL|MSSQL|MySQL|Maria|Postgre|Firebird|Oracle' } | ForEach-Object { $out.Add("$($_.Name)  $($_.Status)  $($_.DisplayName)") } } catch {}
+  try { $ins = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\Instance Names\SQL' -ErrorAction SilentlyContinue; if ($ins) { $ins.PSObject.Properties | Where-Object { $_.Name -notmatch '^PS' } | ForEach-Object { $out.Add("SQL 인스턴스: $($_.Name)") } } } catch {}
+  $out.Add(""); $out.Add("== ODBC 연결 ==")
+  try { Get-OdbcDsn -ErrorAction SilentlyContinue | ForEach-Object { $out.Add("$($_.Name)  $($_.DriverName)  " + (($_.Attribute.GetEnumerator() | Where-Object { $_.Key -match 'Server|Database' } | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ' ')) } } catch {}
+  $srv = New-Object System.Collections.Generic.List[string]
+  foreach ($root in 'C:\IntoCNS', 'D:\IntoCNS', 'E:\IntoCNS', 'C:\IntoVet', 'C:\Program Files\IntoCNS', 'C:\Program Files (x86)\IntoCNS') {
+    if (-not (Test-Path $root)) { continue }
+    $out.Add(""); $out.Add("== 설정 파일: $root ==")
+    Get-ChildItem $root -Recurse -File -Include *.ini, *.config, *.xml, *.udl, *.cfg, *.conf, *.json -ErrorAction SilentlyContinue | Where-Object { $_.Length -lt 300KB -and $_.FullName -notmatch '\\(Logs?|Temp|Backup)\\' } | Select-Object -First 80 | ForEach-Object {
+      $f = $_
+      try {
+        $ls = Get-Content $f.FullName -Encoding Default -ErrorAction Stop | Where-Object { $_ -match '(?i)server|data\s*source|database|catalog|\bdb|host|port|uid|user|provider|connection|ip\s*[=:]' }
+        if ($ls) {
+          $out.Add("-- " + $f.FullName)
+          foreach ($l in ($ls | Select-Object -First 25)) {
+            $m = $l -replace $MASK, '$1(가림)'
+            $out.Add("   " + $m.Trim())
+            $x = [regex]::Match($l, '(?i)(data\s*source|server|addr|address|host)\s*[=:]\s*([^;"''\s]+)'); if ($x.Success) { $v = $x.Groups[2].Value; if (-not $srv.Contains($v)) { $srv.Add($v) } }
+          }
+        }
+      } catch {}
+    }
+  }
+  foreach ($d in 'localhost', '.\SQLEXPRESS', '(local)') { if (-not $srv.Contains($d)) { $srv.Add($d) } }
+  $out.Add(""); $out.Add("== 윈도우 로그인으로 접속 시험 (데이터베이스 이름만 읽음) ==")
+  foreach ($sv in ($srv | Select-Object -First 8)) {
+    try {
+      $cn = New-Object System.Data.SqlClient.SqlConnection("Server=$sv;Integrated Security=true;Connect Timeout=3;Application Name=SongpaBaro-ReadOnly")
+      $cn.Open()
+      $cm = $cn.CreateCommand(); $cm.CommandText = 'SELECT name FROM sys.databases'; $rd = $cm.ExecuteReader(); $names = @(); while ($rd.Read()) { $names += $rd.GetString(0) }; $rd.Close(); $cn.Close()
+      $out.Add("✅ $sv · 접속됨 · DB: " + ($names -join ', '))
+    } catch { $out.Add("✖ $sv · " + ($_.Exception.Message -split "`n")[0]) }
+  }
+  $fj = Join-Path $DIR 'dbdump.txt'; $out | Set-Content -Path $fj -Encoding UTF8; Start-Process notepad.exe $fj
+  Write-Host "진단 파일을 열었어요: $fj"; Start-Sleep -Seconds 3; exit
+}
 
 # ---------- 접수실 진단 (읽기만 · 케어 노트에 아무것도 보내지 않음) ----------
 if ($JDiag) {
