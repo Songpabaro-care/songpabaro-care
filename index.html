@@ -286,6 +286,8 @@ body.scrpin:not(.scron) #scrBack{display:block}
 
 #scr.vchat .qact{gap:5px}#scr.vchat .qsb{height:26px!important;font-size:12px!important;padding:0 8px}#scr.vchat .qdp .dl .meta{display:none}#scr.vchat .qoc{position:relative}#scr.vchat .qoc .top{position:absolute;top:9px;right:11px;font-size:11.5px!important;pointer-events:none}#scr.vchat .qby,#scr.vchat .qrm{display:none}#scr.vchat .qoc .pt{padding-right:46px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#scr.vchat .qoc.urg .pt{padding-right:95px}#scr.vchat .qoc.urg .pt{padding-left:0}#scr.vchat .qgrid{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))!important;gap:8px!important}#scr.vchat .qoc{padding:7px 11px!important;gap:3px!important}#scr.vchat .qdp{gap:3px;padding-top:4px}#scr.vchat .qoc .pt{font-size:22px!important}#scr.vchat .qtests{gap:4px}#scr.vchat .qtests span{font-size:19px!important;padding:2px 10px!important;border-radius:7px}#scr.vchat .qtests span small{font-size:12px!important}#scr.vchat .qoc .memo{font-size:15px!important;padding:3px 8px}#scr.vchat .qoc .top,#scr.vchat .qdp .dl{font-size:13.5px!important}
 #scr.vchat .qgrid{grid-template-columns:repeat(auto-fill,minmax(340px,1fr))!important;gap:10px!important}#scr.vchat .qoc{padding:10px 13px!important;gap:5px!important}#scr.vchat .qoc .pt{font-size:29px!important;padding-right:64px}#scr.vchat .qoc.urg .pt{padding-right:125px}#scr.vchat .qoc .pt small{font-size:17px!important}#scr.vchat .qoc .top{top:14px;right:13px;font-size:15px!important}#scr.vchat .qtests span{font-size:25px!important;padding:3px 12px!important}#scr.vchat .qtests span small{font-size:15px!important}#scr.vchat .qdp .dl{font-size:17px!important}#scr.vchat .qbd{font-size:13.5px!important}#scr.vchat .qoc .memo{font-size:19px!important}#scr.vchat .qsb{height:34px!important;font-size:15px!important}
+.qel{font-weight:800;border-radius:99px;padding:0 7px;background:var(--soft);color:var(--mute);margin-right:5px;white-space:nowrap}.qel.l1{background:#fff1dc;color:#b06a00}.qel.l2{background:#fde3e2;color:#c93a3a}.qoc.late1:not(.urg){border-color:#e8a33d;box-shadow:0 0 0 2px rgba(232,163,61,.18)}.qoc.late2{border-color:#e5484d;background:#fff7f6}#scr.vchat .qtm{display:none}
+#netBan{display:none;position:fixed;left:0;right:0;top:0;z-index:60;background:#e5484d;color:#fff;font-weight:800;padding:9px 14px;align-items:center;gap:10px;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.2)}#netBan.on{display:flex}#netBan button{border:0;border-radius:99px;background:#fff;color:#c93a3a;font-weight:800;padding:5px 12px;cursor:pointer}
 .chip.qtc{height:auto;min-height:34px;padding:5px 12px;display:inline-flex;flex-direction:column;align-items:flex-start;justify-content:center;line-height:1.25;text-align:left}.chip.qtc small{font-size:10.5px;font-weight:500;opacity:.75;margin-top:1px}
 .qchem{display:grid;gap:5px;margin-top:8px;padding:8px;border:1px dashed var(--line);border-radius:12px}.qcr{display:grid;grid-template-columns:62px minmax(0,1fr);gap:6px;align-items:center}.qcr>span{font-size:12px;font-weight:800;color:var(--mute)}.chip.qmini{height:30px!important;min-height:0!important;padding:0 10px!important;font-size:12.5px;line-height:1}.chip.qpn{border-style:dashed}
 .qpc{height:26px;border-radius:99px;border:1.5px dashed #9aa3e6;background:transparent;color:#4655c9;font-size:11.5px;font-weight:800;padding:0 9px;align-self:center}.qpc.on{background:#eef0fd;border-style:solid}
@@ -693,7 +695,7 @@ let EGEN=0,RSG=0,RS=null,RSgot=false;const SUB={},RSW=[];
 function rsRoute(seg,path,data,patch){
  if(seg==="chat"||seg==="orders"){qOn(seg==="orders"?"ord":"chat",path,data,patch);return}
  const st=ST[seg]||(ST[seg]={v:null});applyEv(st,{path,data},patch);st.got=true;if(SUB[seg])flush(seg,SUB[seg])}
-function rsEv(d,patch){const ps=String(d.path||"/").split("/").filter(Boolean),data=d.data;
+function rsEv(d,patch){Q.lastEv=Date.now();Q.down=0;const ps=String(d.path||"/").split("/").filter(Boolean),data=d.data;
  if(!ps.length){
   if(patch)Object.entries(data||{}).forEach(([k,v])=>{const ks=k.split("/").filter(Boolean),seg=ks.shift();if(!seg)return;if(!ks.length)rsRoute(seg,"/",v,false);else rsRoute(seg,"/",{[ks.join("/")]:v},true)});
   else{const o=data&&typeof data==="object"?data:{};new Set([...Object.keys(o),...Object.keys(ST),...Object.keys(SUB),"chat","orders"]).forEach(seg=>rsRoute(seg,"/",o[seg]===undefined?null:o[seg],false))}
@@ -707,7 +709,8 @@ async function rsOpen(){if(RS&&RS.readyState!==2&&RS._c===S.code)return;const g=
  es.addEventListener("patch",e=>{if(RS!==es)return;let d;try{d=JSON.parse(e.data)}catch(x){return}rsEv(d,true)});
  es.addEventListener("auth_revoked",()=>{es.close();AU.tok=null;if(RS===es){RS=null;rsOpen()}});
  es.addEventListener("cancel",()=>{es.close();if(RS===es)RS=null;badge(false);recheck()});
- es.onopen=()=>badge(true);es.onerror=()=>badge(false)}
+ es.addEventListener("keep-alive",()=>{if(RS===es)Q.lastEv=Date.now()});
+ es.onopen=()=>{badge(true);Q.down=0;Q.lastEv=Date.now()};es.onerror=()=>{badge(false);if(!Q.down)Q.down=Date.now()}}
 function rsClose(){RSG++;RSgot=false;if(RS){try{RS.close()}catch(e){}RS=null}}
 function watch(key,fn){SUB[key]=fn;const g=EGEN;rsOpen();
  return new Promise(res=>{let done=false;const fin=()=>{if(!done){done=true;res()}};setTimeout(fin,4000);
@@ -929,7 +932,9 @@ function qApply(store,path,data,patch){const ks=path.split("/").filter(Boolean);
  else{let o=store[k]=store[k]||{};for(let i=1;i<ks.length-1;i++)o=o[ks[i]]=o[ks[i]]||{};if(data===null)delete o[ks[ks.length-1]];else o[ks[ks.length-1]]=data}
  return isNew?[k]:[]}
 function qOn(name,path,data,patch){const isO=name==="ord",store=isO?Q.ords:Q.chat;
+ const pre={};if(isO&&Q.init.ord)Object.entries(Q.ords).forEach(([k,o])=>{if(o&&o.uid===AU.uid)pre[k]=Object.fromEntries(Object.entries(qParts(o)).map(([d,x])=>[d,x&&x.s]))});
  const nk=qApply(store,path||"/",data,patch),first=!Q.init[name];Q.init[name]=true;
+ if(isO&&!first)Object.keys(pre).forEach(k=>{const o=Q.ords[k];if(!o)return;Object.entries(qParts(o)).forEach(([d,x])=>{if(x&&x.s==="done"&&pre[k][d]!=="done"&&x.by!==qMe()){const ts=(o.tests||[]).filter(t=>tDept(t)===d).join(", ");if(qSndPlay("ord"))qBeep("chat");toast(`✅ ${o.pname||""} · ${QDN[d]} 완료${ts?" ("+ts.slice(0,30)+")":""}`);qNotify(`✅ ${o.pname||""} ${QDN[d]} 완료`,ts)}})});
   if(!first)nk.forEach(k=>{const m=store[k];if(!m||m.uid===AU.uid)return;
    if(isO){Q.fresh.add(k);const sc=Q.view||qScreen(),dp=sc==="lab"?"lab":sc==="xray"?"img":null,hit=!dp||qParts(m)[dp];
     if(hit&&qSndPlay("ord"))qBeep(m.urgent?"urg":"ord");if(!Q.view)toast(`🧪 ${m.urgent?"긴급 ":""}검사 오더 · ${m.pname||""} · ${(m.tests||[]).join(", ")}`);qNotify(`${m.urgent?"🚨 긴급 ":""}검사 오더 · ${m.pname||""}${m.chart?" #"+m.chart:""}`,(m.tests||[]).join(", "))}
@@ -937,6 +942,14 @@ function qOn(name,path,data,patch){const isO=name==="ord",store=isO?Q.ords:Q.cha
   qBadge();qRender();fcRender();if(isO&&S.room==="ord"&&!Q.view)softRender()}
 function qListen(){rsOpen()}
 function qStart(){fcShow();rsOpen();setTimeout(qPrune,10000)}
+setInterval(()=>{if(document.hidden)return;if(Q.view)qRender();else if(S.room==="ord")softRender()},30000);
+Q.urgT={};setInterval(()=>{if(!OKD)return;const n=Date.now();Object.entries(Q.ords).forEach(([k,o])=>{if(!o||!o.urgent)return;const p=qParts(o);const waiting=Object.entries(p).filter(([,x])=>x.s==="new").map(([d])=>d);if(!waiting.length)return;
+ const last=Q.urgT[k]||o.t||n;if(n-last<120000)return;Q.urgT[k]=n;const sc=Q.view||qScreen(),dp=sc==="lab"?"lab":sc==="xray"?"img":null;if(dp&&!waiting.includes(dp))return;
+ if(qSndPlay("ord"))qBeep("urg");if(Q.view||sc!=="clinic")toast(`🚨 긴급 오더 아직 대기 중 · ${o.pname||""}`);qNotify(`🚨 긴급 오더 대기 중 · ${o.pname||""}`,(o.tests||[]).join(", "))})},30000);
+/* 연결 끊김 경고 */
+const NETB=document.createElement("div");NETB.id="netBan";NETB.innerHTML='<span>⚠ 실시간 연결이 끊겼어요 · 다시 연결하는 중… 새 채팅·오더가 안 보일 수 있어요</span><button type="button">새로고침</button>';document.body.appendChild(NETB);NETB.querySelector("button").onclick=()=>location.reload();
+setInterval(()=>{if(!OKD||document.hidden){NETB.classList.remove("on");return}const n=Date.now(),idle=n-(Q.lastEv||n);
+ if(!navigator.onLine||(Q.down&&n-Q.down>15000)||idle>90000){NETB.classList.add("on");if(idle>90000||!RS||RS.readyState===2){Q.lastEv=n;try{RS&&RS.close()}catch(e){}RS=null;rsOpen()}}else NETB.classList.remove("on")},5000);
 function qNotify(t,b){if(!(qls("noti")==="1"&&window.Notification&&Notification.permission==="granted"&&document.hidden))return;try{new Notification(t,{body:b||"",icon:"icon-192.png"})}catch(e){}}
 function qBadge(){{const t=$("#ordTabN"),n=qMine(null).length;if(t)t.textContent=n?String(n):""}const seen=+(qls("chatSeen")||0),un=Object.values(Q.chat).filter(m=>m&&m.uid!==AU.uid&&(m.t||0)>seen).length,on=qMine(null).length,b=$("#qBtn");
  if(b)b.innerHTML="💬"+(un||on?`<span class="bdg">${un?un:on}</span>`:"");const bk=$("#scrBack");if(bk)bk.innerHTML=`🧪 오더 화면으로${on?` <i>${on}</i>`:""}`}
@@ -956,7 +969,8 @@ function qCard(k,o,dp){const p=qParts(o),dps=dp?[dp]:Object.keys(p).sort(),st=dp
  let body;
  if(dp)body=`<div class="qtests${dp==="img"?" img":""}">${tg(dp).map(tch).join("")||"<span>기타</span>"}</div>${o.memo?`<div class="memo">${esc(o.memo)}</div>`:""}${st.s==="ing"?`<div class="top">${who(st)}</div>`:""}<div class="qact">${ctl(dp,st)}</div>`;
  else body=(o.memo?`<div class="memo">${esc(o.memo)}</div>`:"")+dps.map(d=>`<div class="qdp"><div class="dl">${QDN[d]} ${bd(p[d])}<span class="meta" style="font-weight:500">${who(p[d])}</span></div><div class="qtests${d==="img"?" img":""}">${tg(d).map(tch).join("")||"<span>기타</span>"}</div>${p[d].s!=="done"?`<div class="qact">${ctl(d,p[d])}</div>`:""}</div>`).join("");
- return `<div class="qoc${o.urgent?" urg":""}${ing?" ing":""}${Q.fresh.has(k)?" new-in":""}"><div class="top">${o.urgent?'<b style="color:#c93a3a">🚨 긴급</b>':""}${dp?bd(st):""}<span class="sp"></span><span>${hhmm(o.t)}<i class="qby" style="font-style:normal"> · ${esc(o.by||"")}</i></span></div>
+ const el=Math.max(0,Math.floor((Date.now()-(o.t||Date.now()))/60000)),lim=o.urgent?[5,10]:[15,30],lv=el>=lim[1]?2:el>=lim[0]?1:0;
+ return `<div class="qoc${o.urgent?" urg":""}${ing?" ing":""}${lv?" late"+lv:""}${Q.fresh.has(k)?" new-in":""}"><div class="top">${o.urgent?'<b style="color:#c93a3a">🚨 긴급</b>':""}${dp?bd(st):""}<span class="sp"></span><b class="qel l${lv}" title="오더 후 경과 시간">${el<1?"방금":el+"분"}</b><span class="qtm">${hhmm(o.t)}<i class="qby" style="font-style:normal"> · ${esc(o.by||"")}</i></span></div>
   <div class="pt">${esc(o.pname||"환축 미지정")}${o.chart?`<small>#${esc(o.chart)}</small>`:""}${o.room?`<small class="qrm">${esc(o.room)}</small>`:""}</div>${body}</div>`}
 function qBoard(dp){const act=qMine(dp).sort((a,b)=>(b[1].urgent?1:0)-(a[1].urgent?1:0)||(a[1].t||0)-(b[1].t||0));
  const td=new Date();td.setHours(0,0,0,0);const lastT=o=>Math.max(...Object.values(qParts(o)).map(x=>x.t||0));
