@@ -292,6 +292,10 @@ body.scrpin:not(.scron) #scrBack{display:block}
 #fchat:not(.min):not(.pip)::after{content:"";position:absolute;right:3px;bottom:3px;width:10px;height:10px;border-right:2px solid var(--mute);border-bottom:2px solid var(--mute);opacity:.5;pointer-events:none;border-radius:0 0 3px 0}
 #fchat.pip{position:static;width:auto!important;height:100vh!important;resize:none;max-width:none;max-height:none;border:0;border-radius:0;box-shadow:none;display:flex!important;flex-direction:column}#fchat.pip .fh{cursor:default}#fchat.pip .fb{flex:1;display:flex;flex-direction:column;min-height:0}#fchat.pip .fm{flex:1;height:auto}#fchat.pip #fcMin{display:none}
 .tabn{font-style:normal;background:#4655c9;color:#fff;border-radius:99px;font-size:10px;font-weight:800;padding:0 5px;margin-left:3px;vertical-align:1px}.tabn:empty{display:none}.qwrap .qboard{padding:0;overflow:visible}
+#toast.act{pointer-events:auto;display:flex;align-items:center;gap:12px;padding:8px 8px 8px 18px}
+#toast.act button{border:0;border-radius:99px;background:#ffd166;color:#14201f;font-weight:800;padding:6px 14px;cursor:pointer;white-space:nowrap}
+.trl{display:grid;gap:6px}.tri{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:9px 11px;border:1px solid var(--line);border-radius:11px;background:var(--soft)}
+.tri b{display:block;font-size:13.5px}.tri span{font-size:12px;color:var(--mute)}.tri small{display:inline-block;font-size:11px;font-weight:800;border-radius:6px;padding:0 6px;margin-right:4px;background:var(--card);border:1px solid var(--line);color:var(--mute)}
 </style>
 </head>
 <body>
@@ -390,6 +394,11 @@ body.scrpin:not(.scron) #scrBack{display:block}
  <div class="fb"><div class="fm" id="fcM"></div><div class="fi"><textarea id="fcT" rows="1" placeholder="메시지 입력 · Enter 보내기"></textarea><button id="fcS">보내기</button></div></div></div>
 <div id="scr"></div>
 <button id="scrBack" data-act="scrback">🧪 오더 화면으로</button>
+<div class="mask" id="trs"><div class="sheet">
+  <div class="row" style="justify-content:space-between;align-items:center"><h3>🗑 최근 지운 항목</h3><button class="ib" data-act="trclose" aria-label="닫기">✕</button></div>
+  <div class="meta">모든 기기에서 지운 기록·환축 카드·처치가 7일 동안 여기 남아요. 복구를 누르면 원래 자리로 돌아갑니다.</div>
+  <div id="trBody"></div>
+</div></div>
 <div class="mask" id="qs"><div class="sheet">
   <div class="row" style="justify-content:space-between;align-items:center"><h3>⚙ 이 기기 설정</h3><button class="ib" data-act="qsclose" aria-label="닫기">✕</button></div>
   <div id="qsBody"></div>
@@ -598,7 +607,9 @@ const S={room:"care",code:"songpa-baro-care",db:DB0,filter:"ALL",oCat:OCATS[0],d
 let toastT,poll;
 S.sel={care:null,checkup:null,lab_fluid:null};
 
-function toast(m){const t=$("#toast");if(!t)return;t.textContent=m;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),2400)}
+function toast(m,act){const t=$("#toast");if(!t)return;t.textContent=m;t.classList.toggle("act",!!act);
+ if(act){const b=document.createElement("button");b.textContent=act.label||"되돌리기";b.onclick=e=>{e.stopPropagation();t.classList.remove("show","act");clearTimeout(toastT);act.fn()};t.appendChild(b)}
+ t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show","act"),act?7000:2400)}
 const now=()=>{const d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")};
 const nowDT=()=>{const d=new Date();return d.toISOString().slice(0,10)+" "+now()};
 const cat=p=>p.category==="입원"||p.category==="호텔"?p.category:(String(p.room||"").includes("호텔")?"호텔":"입원");
@@ -994,7 +1005,7 @@ function qsRender(){const cur=qls("screen")||"auto",dk=document.documentElement.
  <div class="row" style="flex-wrap:wrap;gap:6px"><button class="qtg${qls("fchat")==="1"?" on":""}" data-act="qfchat">💬 떠 있는 채팅창 ${qls("fchat")==="1"?"켬":"끔"}</button></div>
  <div class="meta">화면 위에 작은 채팅창이 떠요. 위쪽 띠를 끌어서 옮기고, 📌를 누르면 인투벳 같은 다른 프로그램 위에도 항상 떠 있어요 (PC 크롬·엣지).</div>
  <div class="meta">검사실·영상실 화면에서는 그 부서 오더에만 소리가 나요. 소리는 페이지를 연 뒤 화면을 한 번 눌러야 나기 시작해요.</div>
- <div class="otitle">기타</div><div class="row" style="flex-wrap:wrap;gap:6px"><button class="qtg" id="themeBtn" data-act="theme">${dk?"☀️ 밝은 화면":"🌙 어두운 화면"}</button><button class="qtg" data-act="shareweb">🔗 링크 공유</button></div>`}
+ <div class="otitle">기타</div><div class="row" style="flex-wrap:wrap;gap:6px"><button class="qtg" data-act="tropen">🗑 최근 지운 항목</button><button class="qtg" id="themeBtn" data-act="theme">${dk?"☀️ 밝은 화면":"🌙 어두운 화면"}</button><button class="qtg" data-act="shareweb">🔗 링크 공유</button></div>`}
 S.ordF="all";
 function ordView(){const f=S.ordF,dp=f==="all"?null:f,cnt=d=>qMine(d).length;
  return `<div class="card" style="display:grid;gap:10px"><div class="row" style="align-items:center;gap:6px;flex-wrap:wrap">${[["all","전체",cnt(null)],["lab","검사실",cnt("lab")],["img","영상",cnt("img")]].map(([k,t,n])=>`<button type="button" class="chip ${f===k?"sel":""}" data-act="ordf" data-k="${k}">${t} ${n}</button>`).join("")}<span style="flex:1"></span><button class="btn" style="background:#4655c9" data-act="qord">＋ 검사 오더</button></div>
@@ -1202,11 +1213,27 @@ function careBody(p){const id=p.id,dr=getDraft(id),f=dr.f,ct=p.species==="cat",
  <div class="row" style="flex-wrap:wrap"><button class="btn" style="flex:2;min-width:130px" data-act="copycare" data-m="new" data-id="${id}">📋 새 기록만 복사</button><button class="btn dk" style="flex:1;width:auto;min-width:90px" data-act="copycare" data-m="today" data-id="${id}">오늘</button><button class="btn gh" style="flex:1;min-width:70px" data-act="copycare" data-m="all" data-id="${id}">전체</button></div>
  <div class="meta" id="cpm-${id}">${p.cpAt?"마지막 복사 "+fmtDT(p.cpAt):"아직 복사한 적 없어요 · 'IntoVet 차트'에 붙여넣기용"}</div>`}
 
+/* ======== 휴지통: 지운 것 7일 보관 + 바로 되돌리기 ======== */
+const TRU=()=>`${base()}/rooms/${encodeURIComponent(S.code)}/trash`;
+const TRK={log:"기록",patient:"환축 카드",task:"처치"};
+async function trashPut(kind,label,data){try{const r=await fetch(`${TRU()}.json`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({t:Date.now(),by:S.devName||"",kind,label:String(label).slice(0,120),data})});if(!r.ok)return null;return (await r.json()).name}catch(e){return null}}
+function trashApply(kind,data){
+ if(kind==="log"){const p=find("care",data.pid);if(!p){toast("환축이 없어서 복구하지 못했어요 (먼저 환축 카드를 복구해 주세요)");return false}p.logs=p.logs||[];if(!p.logs.some(l=>l.id===data.log.id)){p.logs.push(data.log);p.logs.sort((a,b)=>logTs(b)-logTs(a))}save("care")}
+ else if(kind==="patient"){const r=data.room;S.p[r]=S.p[r]||[];if(!S.p[r].some(x=>x.id===data.p.id))S.p[r].unshift(data.p);save(r)}
+ else if(kind==="task"){const p=find("care",data.pid);if(!p){toast("환축이 없어서 복구하지 못했어요");return false}p.tasks=p.tasks||[];if(!p.tasks.some(x=>x.id===data.task.id))p.tasks.push(data.task);save("care")}
+ render();return true}
+async function trashDel(key){if(key)try{await fetch(`${TRU()}/${key}.json`,{method:"DELETE"})}catch(e){}}
+async function trashed(kind,label,data,msg){const kp=trashPut(kind,label,data);toast(msg,{label:"되돌리기",fn:async()=>{if(trashApply(kind,data)){toast("되돌렸어요");trashDel(await kp)}}})}
+async function trOpen(){$("#trs").classList.add("open");const box=$("#trBody");box.innerHTML='<div class="meta" style="padding:10px 0">불러오는 중…</div>';
+ try{const r=await fetch(`${TRU()}.json`);const o=(r.ok?await r.json():null)||{},lim=Date.now()-7*864e5,arr=[];
+  Object.entries(o).forEach(([k,v])=>{if(!v)return;if((v.t||0)<lim){trashDel(k);return}arr.push([k,v])});arr.sort((a,b)=>b[1].t-a[1].t);S.trash=Object.fromEntries(arr);
+  box.innerHTML=arr.length?`<div class="trl">${arr.map(([k,v])=>`<div class="tri"><div><b><small>${TRK[v.kind]||v.kind}</small>${esc(v.label)}</b><span>${fmtDT(v.t)} · ${esc(v.by||"")} 삭제</span></div><button class="btn-xs" data-act="trrest" data-k="${esc(k)}">복구</button></div>`).join("")}</div>`:'<div class="meta" style="padding:10px 0">최근 7일 동안 지운 항목이 없어요</div>'}
+ catch(e){box.innerHTML='<div class="meta">불러오지 못했어요</div>'}}
 function deleteLog(id,logId){const p=find("care",id);if(!p||!Array.isArray(p.logs))return;
  const idx=p.logs.findIndex(l=>l.id===logId);if(idx<0)return;
- p.logs.splice(idx,1);
+ const[lg]=p.logs.splice(idx,1);
  const ni=$("#note-"+id);if(ni)getDraft(id).memo=ni.value;
- render();save("care");toast(`${p.name} · 기록 삭제`)}
+ render();save("care");trashed("log",`${p.name} · ${lg.time||""} ${lg.text||""}`,{pid:id,log:lg},`${p.name} 기록을 지웠어요`)}
 
 function voice(id){const ua=navigator.userAgent;if(!(/iPhone|iPod/i.test(ua)||(/Android/i.test(ua)&&/Mobile/i.test(ua)))){toast("음성 입력은 휴대폰에서만 쓸 수 있어요");return}
  const R=window.SpeechRecognition||window.webkitSpeechRecognition;if(!R){toast("이 브라우저는 음성 입력을 지원하지 않아요");return}
@@ -1634,7 +1661,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
  chip:()=>toggleDraftChip(id,d.c,d.v),delDraftItem:()=>removeDraftItem(id,+d.idx),clearDraft:()=>clearDraft(id),delLog:()=>deleteLog(id,d.lid),voice:()=>voice(id),
  note:()=>commitDraft(id),
  discharge:()=>discharge(id),restore:()=>restore(id),
- remove:()=>{const target=find(S.room,id);S.p[S.room]=(S.p[S.room]||[]).filter(p=>p.id!==id);delete S.drafts[id];render();save(S.room);toast(`${target?target.name+" 카드를 ":"환축 카드를 "}삭제했어요`)},
+ remove:()=>{const target=find(S.room,id),rm=S.room;S.p[rm]=(S.p[rm]||[]).filter(p=>p.id!==id);delete S.drafts[id];render();save(rm);if(target)trashed("patient",`${target.name} (${target.room||""})`,{room:rm,p:target},`${target.name} 카드를 삭제했어요`);else toast("환축 카드를 삭제했어요")},
  copy:()=>{const p=find(S.room,id);if(p)copy(chartText(p),`${p.name} 차트를 복사했어요`)},
  osub:()=>{S.oCat=d.c;render()},cchip:()=>{S.ck=d.k;render()},cspec:()=>{S.cw.sp=d.s;render()},
  ccri:()=>{S.cv.cr_id=d.k;S.cv.cr_dose="";S.cv.cr_rate="";render()},cmix:()=>{S.cv.mx_set=d.k;["mx_bag","mx_rate","mx_d0","mx_d1","mx_d2","mx_d3","mx_d4"].forEach(k=>delete S.cv[k]);render()},
@@ -1683,7 +1710,10 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
   const [h,m]=(at||hhmm(Date.now())).split(":").map(Number),dd=new Date();dd.setHours(h,m,0,0);tAddOne(p,n,ev,dd.getTime());save("care");render();toast(`${n} 처치를 걸었어요 · ${hhmm(dd.getTime())}`)},
  ttpl:()=>{const p=find("care",id);if(!p)return;const now=Date.now();(TTPL[d.v]||[]).forEach(([n,ev])=>tAddOne(p,n,ev,now));save("care");render();toast(`'${d.v}' 처치 ${TTPL[d.v].length}개를 걸었어요`)},
  tdone:()=>{const p=find("care",id);if(p)tDone(p,d.t)},
- tdel:()=>{const p=find("care",id);if(!p)return;const t=(p.tasks||[]).find(x=>x.id===d.t);if(!t||!confirm(`'${t.name}' 처치를 스케줄에서 뺄까요?`))return;p.tasks=p.tasks.filter(x=>x.id!==d.t);save("care");render()},
+ tdel:()=>{const p=find("care",id);if(!p)return;const t=(p.tasks||[]).find(x=>x.id===d.t);if(!t)return;p.tasks=p.tasks.filter(x=>x.id!==d.t);save("care");render();trashed("task",`${p.name} · ${t.name}`,{pid:id,task:t},`'${t.name}' 처치를 뺐어요`)},
+ trclose:()=>$("#trs").classList.remove("open"),
+ trrest:async()=>{const v=(S.trash||{})[d.k];if(!v)return;if(trashApply(v.kind,v.data)){await trashDel(d.k);toast(`${TRK[v.kind]||""} 복구했어요`);trOpen()}},
+ tropen:()=>{$("#qs").classList.remove("open");trOpen()},
  pcopen:pcOpen,pcclose:pcClose,pcsel:()=>pcPick(id),pccopy:()=>pcCopy(d.m),
  mjnum:()=>{const p=find(S.room,id),r=roomOf(p);if(!p||!r)return;const v=prompt(p.mjAt?`문진 #${p.mjNo}이 이미 연결돼 있어요.\n번호를 바꾸거나, 비우면 표시를 지웁니다.`:"보호자가 받은 문진번호 4자리를 입력하세요 (비우면 지움)",p.mjNo||"");if(v===null)return;
   const n=v.replace(/\D/g,"");if(n&&n.length!==4){toast("문진번호는 4자리 숫자예요");return}
