@@ -868,10 +868,10 @@ const QTESTS={
 const QSUB={};Object.values(QTESTS).forEach(a=>a.forEach(([n,d])=>{if(d)QSUB[n]=d}));
 /* 혈청화학: 장기별 낱개 항목 + 묶음 버튼(누르면 해당 항목이 한꺼번에 선택됨) · 후지 NX700 항목 */
 const CHEM={"간":["ALT","AST","ALP","GGT","TBIL","NH3"],"신장":["BUN","CRE","IP","Ca","UA"],"단백":["TP","ALB"],"당·지질":["GLU","TCHO","TG"],"췌장":["v-AMYL","v-LIP"],"근육·기타":["CPK","LDH","Mg","TCO2"]};
-const PANELS=[["기본 6종 🐶",["ALT","ALP","BUN","CRE","ALB","GLU"],"묶음","기본 6종 🐶"],["기본 7종 🐱",["ALT","ALP","BUN","CRE","TP","ALB","GLU"],"묶음","기본 7종 🐱"],["종합 10종",["ALB","TP","ALT","ALP","BUN","CRE","GLU","Ca","IP"],"묶음","종합 10"],["종합 14종",["ALB","TP","ALT","AST","ALP","GGT","TBIL","BUN","CRE","GLU","Ca","IP","TCHO"],"묶음","14"],["종합 16종",["ALB","TP","ALT","AST","ALP","GGT","TBIL","BUN","CRE","GLU","Ca","IP","TCHO","v-AMYL","v-LIP"],"묶음","16"],
+const PANELS=[["기본 6종 🐶",["ALT","ALP","BUN","CRE","ALB","GLU"],"묶음","기본 6종 🐶"],["기본 7종 🐱",["ALT","ALP","BUN","CRE","TP","ALB","GLU"],"묶음","기본 7종 🐱"],["종합 10종",["ALB","ALT","AST","ALP","GGT","BUN","CRE","GLU","Ca","IP"],"묶음","종합 10"],["종합 14종",["ALB","TP","ALT","AST","ALP","GGT","TBIL","BUN","CRE","GLU","Ca","IP","TCHO","TG"],"묶음","14"],["종합 16종",["ALB","TP","ALT","AST","ALP","GGT","TBIL","BUN","CRE","GLU","Ca","IP","TCHO","TG","v-AMYL","v-LIP"],"묶음","16"],
  ["간 4종",["ALT","ALP","GGT","TBIL"],"간","4종"],["간 5종",["ALT","AST","ALP","GGT","TBIL"],"간","5종"],["간 5종+NH3",["ALT","AST","ALP","GGT","TBIL","NH3"],"간","5종+NH3"],
  ["신장 4종",["BUN","CRE","IP","Ca"],"신장","4종"],["신장 4종+UA",["BUN","CRE","IP","Ca","UA"],"신장","4종+UA"]];
-PANELS.forEach(([n,a])=>{QSUB[n]=a.join(" · ")+(/종합/.test(n)?" · GLOB(계산)":"")});
+PANELS.forEach(([n,a])=>{QSUB[n]=a.join(" · ")+""});
 const URINE={"소변":["요스틱","요비중(USG)","요침사(현미경)","요분석기(기계)","UPC","요배양·감수성"],"분변":["분변 직접도말","분변 부유법","분변 키트"]},UCOL=["방광천자","자연뇨","카테터"];
 PANELS.push(["요검사 종합",["요스틱","요비중(USG)","요분석기(기계)"],"소변"]);QSUB["요검사 종합"]="요스틱 · 요비중(USG) · 요분석기(기계)";
 const CHEMALL=[...Object.values(CHEM).flat(),...Object.values(URINE).flat()];
@@ -921,7 +921,7 @@ function qBadge(){{const t=$("#ordTabN"),n=qMine(null).length;if(t)t.textContent
  if(b)b.innerHTML="💬"+(un||on?`<span class="bdg">${un?un:on}</span>`:"");const bk=$("#scrBack");if(bk)bk.innerHTML=`🧪 오더 화면으로${on?` <i>${on}</i>`:""}`}
 async function qPrune(){const lim=Date.now()-7*864e5;Object.entries(Q.chat).forEach(([k,m])=>{if(m&&(m.t||0)<lim)fetch(`${QCH()}/${k}.json`,{method:"DELETE"}).catch(()=>{})});
  Object.entries(Q.ords).forEach(([k,o])=>{if(o&&!qActive(o)){const lt=Math.max(...Object.values(qParts(o)).map(x=>x.t||0),o.t||0);if(lt<lim)fetch(`${QOR()}/${k}.json`,{method:"DELETE"}).catch(()=>{})}})}
-async function qPost(url,m){m.t=Date.now();m.by=qMe();m.uid=AU.uid;const r=await fetch(`${url}.json`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(m)});if(!r.ok)throw 0}
+async function qPost(url,m){m.t={".sv":"timestamp"};m.by=qMe();m.uid=AU.uid;const r=await fetch(`${url}.json`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(m)});if(!r.ok)throw 0}
 /* ---- 화면 ---- */
 const QTITLE={chat:"💬 채팅 · 검사 오더",lab:"🧪 검사실 오더 (혈액·요·분변·기타)",xray:"🩻 영상실 오더 (X-ray·초음파)"};
 function scrOpen(mode,temp){setTimeout(fcShow,0);Q.view=mode;Q.temp=!!temp;$("#scr").classList.add("open");document.body.classList.add("scron");if(mode==="chat")qls("chatSeen",String(Date.now()));qBadge();qRender()}
@@ -943,7 +943,7 @@ function qBoard(dp){const act=qMine(dp).sort((a,b)=>(b[1].urgent?1:0)-(a[1].urge
  const html=`<div class="qboard"><div class="qbh"><h2>진행 중 오더 <b>${act.length}건</b></h2></div><div class="qgrid">${act.map(([k,o])=>qCard(k,o,dp)).join("")||'<div class="meta" style="padding:8px">진행 중인 오더가 없어요</div>'}</div>
   <details class="qdone"><summary>오늘 완료 (${dn.length})</summary>${dn.map(([k,o])=>`<div class="di">✓ <b>${esc(o.pname||"")}</b>${o.chart?" #"+esc(o.chart):""} · ${esc((o.tests||[]).filter(x=>!dp||tDept(x)===dp).join(", "))} <button class="qsb" style="height:24px;padding:0 8px" data-act="qundo" data-k="${k}" data-d="${dp||""}">되돌리기</button></div>`).join("")}</details></div>`;
  Q.fresh.clear();return html}
-function qChatHtml(){const arr=Object.entries(Q.chat).filter(([,m])=>m).sort((a,b)=>(a[1].t||0)-(b[1].t||0));let prev="",h="";
+function qChatHtml(){const arr=Object.entries(Q.chat).filter(([,m])=>m).sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0);let prev="",h="";
  arr.forEach(([k,m])=>{const d=new Date(m.t),ds=`${d.getMonth()+1}월 ${d.getDate()}일`;if(ds!==prev){h+=`<div class="qday">${ds}</div>`;prev=ds}const me=m.uid===AU.uid;h+=`<div class="qm${me?" me":""}"><div class="who">${esc(m.by||"직원")} · ${hhmm(m.t)}</div><div class="qbub">${esc(m.text)}</div></div>`});
  return `<div class="qchat"><div class="qmsgs" id="qmsgs">${h||'<div class="meta">아직 메시지가 없어요</div>'}</div><div class="qcomp"><textarea id="qtxt" rows="1" placeholder="메시지 입력"></textarea><button class="btn" data-act="qsend">보내기</button></div></div>`}
 function qRender(){if(!Q.view)return;const el=$("#scr"),v=Q.view,on=qMine(null).length;el.classList.remove("fs1","fs2");if(qFs())el.classList.add("fs"+qFs());
@@ -990,7 +990,7 @@ function fcShow(){const el=$("#fchat");if(!el)return;if(FC.pip){fcRender();retur
  const x=+(qls("fcx")||innerWidth-340),y=+(qls("fcy")||innerHeight-330);fcPlace(x,y);fcRender()}
 function fcPlace(x,y){const el=$("#fchat"),w=el.offsetWidth||320,h=el.offsetHeight||60;x=Math.max(4,Math.min(innerWidth-w-4,x));y=Math.max(4,Math.min(innerHeight-h-4,y));el.style.left=x+"px";el.style.top=y+"px";return[x,y]}
 function fcRender(){const m=$("#fcM",FC.pip),root=FC.pip?FC.pip.document:document,box=root.getElementById("fcM");if(!box)return;
- const arr=Object.values(Q.chat).filter(Boolean).sort((a,b)=>(a.t||0)-(b.t||0)).slice(-40),stick=box.scrollHeight-box.scrollTop-box.clientHeight<60;
+ const arr=Object.entries(Q.chat).filter(([,c])=>c).sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0).map(([,c])=>c).slice(-40),stick=box.scrollHeight-box.scrollTop-box.clientHeight<60;
  box.innerHTML=arr.map(c=>`<div class="r${c.uid===AU.uid?" me":""}"><div class="w">${esc(c.uid===AU.uid?"나":c.by||"직원")} · ${hhmm(c.t)}</div><div class="b">${esc(c.text)}</div></div>`).join("")||'<div class="w">아직 메시지가 없어요</div>';if(stick)box.scrollTop=box.scrollHeight;
  const seen=+(qls("chatSeen")||0),un=Object.values(Q.chat).filter(c=>c&&c.uid!==AU.uid&&(c.t||0)>seen).length,u=root.getElementById("fcU");if(u)u.textContent=(qls("fcmin")==="1"||FC.pip)&&un?un:""}
 async function fcSend(){const root=FC.pip?FC.pip.document:document,t=root.getElementById("fcT"),v=(t.value||"").trim();if(!v)return;t.value="";try{await qPost(QCH(),{text:v.slice(0,1000)})}catch(e){t.value=v;toast("보내지 못했어요")}}
