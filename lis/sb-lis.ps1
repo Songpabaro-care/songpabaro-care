@@ -50,10 +50,10 @@ if ($JDiag) {
       } else { $out.Add("== [진료대기자 목록]을 못 찾음 · 아래 전체에서 동물 이름을 찾아 주세요 ==") }
       # 2차 시도: 옛 방식(MSAA)으로 표(그리드) 안의 줄까지 읽어 보기 — 읽기만 함
       try {
-        if (-not ('SbAcc' -as [type])) {
+        if (-not ('SbAcc2' -as [type])) {
           Add-Type -ReferencedAssemblies Accessibility -TypeDefinition @"
 using System; using System.Collections.Generic; using System.Runtime.InteropServices; using Accessibility;
-public static class SbAcc {
+public static class SbAcc2 {
   [DllImport("oleacc.dll")] static extern int AccessibleObjectFromWindow(IntPtr h, uint id, ref Guid iid, [MarshalAs(UnmanagedType.Interface)] out object o);
   [DllImport("oleacc.dll")] static extern int AccessibleChildren(IAccessible p, int start, int cnt, [Out] object[] ch, out int got);
   public static List<string> Dump(IntPtr h, int max) {
@@ -66,22 +66,26 @@ public static class SbAcc {
     int n = 0; try { n = a.accChildCount; } catch {} if (n <= 0) return; if (n > 800) n = 800;
     var ch = new object[n]; int got = 0; try { AccessibleChildren(a, 0, n, ch, out got); } catch { return; }
     for (int i = 0; i < got && L.Count < max; i++) {
-      var c = ch[i] as IAccessible; string nm = "", v = "";
+      var c = ch[i] as IAccessible; string nm = "", v = ""; int r = 0;
       try { nm = c != null ? c.get_accName(0) : a.get_accName(ch[i]); } catch {}
       try { v = c != null ? c.get_accValue(0) : a.get_accValue(ch[i]); } catch {}
-      if (!String.IsNullOrEmpty(nm) || !String.IsNullOrEmpty(v)) L.Add(new String(' ', Math.Min(d, 20)) + nm + "\t" + v);
+      try { r = Convert.ToInt32(c != null ? c.get_accRole(0) : a.get_accRole(ch[i])); } catch {}
+      // 제목줄·메뉴·스크롤바 같은 잡음은 건너뜀
+      if (r == 1 || r == 2 || r == 3 || r == 11 || r == 12 || r == 13 || r == 43) continue;
+      string tag = (r == 24 ? "[표]" : r == 28 ? "[줄]" : r == 29 ? "[칸]" : r == 33 ? "[목록]" : r == 34 ? "[항목]" : r == 35 ? "[트리]" : r == 36 ? "[트리항목]" : r == 25 ? "[열머리]" : r == 26 ? "[줄머리]" : "");
+      if (!String.IsNullOrEmpty(nm) || !String.IsNullOrEmpty(v) || tag != "") L.Add(new String(' ', Math.Min(d, 20)) + tag + nm + "\t" + v);
       if (c != null) Walk(c, d + 1, L, max);
     }
   }
 }
 "@
         }
-        $ma = [SbAcc]::Dump([IntPtr]$gw.Current.NativeWindowHandle, 8000)
+        $ma = [SbAcc2]::Dump([IntPtr]$gw.Current.NativeWindowHandle, 30000)
         $out.Add(""); $out.Add("== [MSAA] 읽힌 줄 수: $($ma.Count) ==")
-        $hit = @(); for ($j = 0; $j -lt $ma.Count; $j++) { if ($ma[$j] -match 'Canine|Feline|입원실|호텔|접수시간|고객번호') { $hit += $j } }
-        $out.Add("== [MSAA] 진료대기자 목록 후보 (Canine/Feline/입원실/호텔 근처) ==")
+        $hit = @(); for ($j = 0; $j -lt $ma.Count; $j++) { if ($ma[$j] -match '\[(표|줄|칸|목록|항목|트리항목|열머리)\]|Feline|입원실|접수시간|고객번호|동물명') { $hit += $j } }
+        $out.Add("== [MSAA] 진료대기자 목록 후보 ([표]/[줄]/[칸]/Feline/입원실 근처) ==")
         $shown = @{}
-        foreach ($h in ($hit | Select-Object -First 40)) { for ($j = [Math]::Max(0, $h - 6); $j -le [Math]::Min($ma.Count - 1, $h + 6); $j++) { if (-not $shown[$j]) { $shown[$j] = 1; $out.Add("$j`t" + ($ma[$j] -replace '\d{2,3}-\d{3,4}-\d{4}', '***-****-****')) } } ; $out.Add("   ---") }
+        foreach ($h in ($hit | Select-Object -First 60)) { for ($j = [Math]::Max(0, $h - 6); $j -le [Math]::Min($ma.Count - 1, $h + 6); $j++) { if (-not $shown[$j]) { $shown[$j] = 1; $out.Add("$j`t" + ($ma[$j] -replace '\d{2,3}-\d{3,4}-\d{4}', '***-****-****')) } } ; $out.Add("   ---") }
         $out.Add(""); $out.Add("== [MSAA 전체] ==")
         for ($j = 0; $j -lt $ma.Count; $j++) { $out.Add("$j`t" + ($ma[$j] -replace '\d{2,3}-\d{3,4}-\d{4}', '***-****-****')) }
       } catch { $out.Add("MSAA 읽기 실패: $($_.Exception.Message)") }
