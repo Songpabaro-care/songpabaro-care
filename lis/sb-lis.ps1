@@ -2,7 +2,7 @@
 # 하는 일: IntoVET_LIS 창 아래 상태줄의 "자료 수신 Unit[..] ID[동물번호]" 글자만 읽어서
 #          케어 노트 검사 오더에 "결과 도착"을 표시하고, 필요한 기계 결과가 다 오면 검사실 완료로 바꿉니다.
 # 인투벳·LIS 프로그램과 그 DB에는 아무것도 쓰지 않습니다. (화면 글자 읽기만)
-param([switch]$Diag, [switch]$JDiag)
+param([switch]$Diag, [switch]$JDiag, [switch]$Reception)
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -10,10 +10,10 @@ try { $Host.UI.RawUI.WindowTitle = 'SongpaBaro LIS' } catch {}
 $KEY  = 'AIzaSyB7SmDVueDq1ghmIbNTjcHGxMM2vpHSvWw'
 $DB   = 'https://songpabaro-default-rtdb.asia-southeast1.firebasedatabase.app'
 $ROOM = 'songpa-baro-care'
-$NAME = '서버PC LIS 연동'
+$NAME = if ($Reception) { '접수실 인투벳 연동' } else { '서버PC LIS 연동' }
 $DIR  = Join-Path $env:APPDATA 'songpabaro-lis'
 New-Item -ItemType Directory -Force -Path $DIR | Out-Null
-$AUTHF = Join-Path $DIR 'auth.json'
+$AUTHF = Join-Path $DIR $(if ($Reception) { 'auth-r.json' } else { 'auth.json' })
 $LOGF  = Join-Path $DIR 'log.txt'
 
 function Log([string]$m) {
@@ -58,7 +58,7 @@ if ($JDiag) {
 
 # ---------- 자동 업데이트: 저장소에 새 버전이 올라오면 스스로 바꾸고 다시 시작 ----------
 $SELF = $PSCommandPath
-$script:MTX = New-Object System.Threading.Mutex($false, 'Global\SongpaBaroLIS')
+$script:MTX = New-Object System.Threading.Mutex($false, ('Global\SongpaBaroLIS' + $(if ($Reception) { 'R' } else { '' })))
 $got = $false
 try { $got = $script:MTX.WaitOne(0) } catch [System.Threading.AbandonedMutexException] { $got = $true }
 if (-not $got) {
@@ -78,7 +78,7 @@ function Try-Update {
     Copy-Item $tmp $SELF -Force
     Log '새 버전을 받았어요 · 다시 시작합니다'
     try { $script:MTX.ReleaseMutex() } catch {}
-    $args2 = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ('"' + $SELF + '"')); if ($Diag) { $args2 += '-Diag' } else { $args2 = @('-WindowStyle', 'Minimized') + $args2 }
+    $args2 = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ('"' + $SELF + '"')); if ($Reception) { $args2 += '-Reception' }; if ($Diag) { $args2 += '-Diag' } else { $args2 = @('-WindowStyle', 'Minimized') + $args2 }
     Start-Process powershell -ArgumentList $args2
     exit
   } catch { Log "업데이트 확인 실패: $($_.Exception.Message)" }
@@ -122,7 +122,7 @@ while ($true) {
   Log "승인 대기 중 · 케어 노트 🔐 기기 관리에서 '$NAME' (코드 $code) 를 승인해 주세요"
   Start-Sleep -Seconds 10
 }
-Log "승인됨 · LIS 감시를 시작합니다 (코드 $code)"
+Log "승인됨 · $(if ($Reception) { '인투벳 접수 감시' } else { 'LIS 감시' })를 시작합니다 (코드 $code)"
 $script:startToast = $true
 
 # ---------- LIS 화면 글자 읽기 (윈도우 UI Automation) ----------
@@ -386,6 +386,89 @@ function Handle([string]$unit, [string]$id) {
 
 Try-Update
 $lastUp = Get-Date
+
+# ================= 접수실 모드: 인투벳 접수 → 케어 노트 외래 자동 등록 / 수납 완료 → 자동 정리 =================
+if ($Reception) {
+  try { $Host.UI.RawUI.WindowTitle = 'SongpaBaro Reception' } catch {}
+  function Find-GE {
+    $c = New-Object Windows.Automation.PropertyCondition($AE::ControlTypeProperty, [Windows.Automation.ControlType]::Window)
+    foreach ($w in $AE::RootElement.FindAll($TS::Children, $c)) { $n = $w.Current.Name; if ($n -match 'IntoVet' -and $n -notmatch 'LIS') { return $w } }
+    return $null
+  }
+  function Parse-GE($names) {
+    $L = New-Object System.Collections.Generic.List[string]
+    foreach ($n in $names) { $t = $n.Trim(); if ($t -and ($L.Count -eq 0 -or $L[$L.Count - 1] -ne $t)) { $L.Add($t) } }
+    $wi = -1; for ($i = 0; $i -lt $L.Count; $i++) { if ($L[$i] -match '^\d+(\.\d+)?\s*kg') { $wi = $i; break } }
+    if ($wi -lt 0) { return $null }
+    $r = [ordered]@{ bw = ([regex]::Match($L[$wi], '^\d+(\.\d+)?')).Value; no = ''; cust = ''; st = ''; birth = ''; sex = ''; breed = ''; sp = ''; name = '' }
+    $si = -1
+    for ($i = $wi + 1; $i -lt [Math]::Min($L.Count, $wi + 30); $i++) {
+      $v = $L[$i]
+      if ($v -match '^\d{2,7}$') { if (-not $r.no) { $r.no = $v } elseif (-not $r.cust) { $r.cust = $v }; continue }
+      if ($r.cust -and -not $r.st -and $v -notmatch '\d' -and $v.Length -le 8) { $r.st = $v; continue }
+      if (-not $r.birth -and $v -match '^\d{4}-\d{2}-\d{2}') { $r.birth = ($v -replace '\s+', ' '); continue }
+      if (-not $r.sex -and $v -match 'Male|Female|수컷|암컷|중성') { $r.sex = $v; continue }
+      if (-not $r.sp -and $v -match '^(Canine|Feline|Exotic|Avian|Rabbit|Other|Others|기타)$') { $r.sp = $v; $si = $i; continue }
+      if (-not $r.breed -and $v -match '\(' -and $v -notmatch '^\d') { $r.breed = $v; continue }
+    }
+    if ($si -ge 0) {
+      for ($i = $si + 1; $i -lt [Math]::Min($L.Count, $si + 12); $i++) {
+        $v = $L[$i]
+        if ($v -match '\d{2,4}-\d{3,4}-\d{3,4}' -or $v -match '^[\d\-\s]+$') { continue }          # 전화번호
+        if ($v.Length -gt 12 -or $v -match '(시|구|동|로|길|읍|면)\s|\d+-\d+|아파트|빌라') { continue }   # 주소
+        $r.name = $v; break
+      }
+    }
+    if (-not $r.no) { return $null }
+    return [pscustomobject]$r
+  }
+  function Care-Find($no) {
+    $ps = Fb 'Get' "rooms/$ROOM/care_patients" $null
+    if ($ps) { foreach ($p in $ps.PSObject.Properties) { $v = $p.Value; if ($v -and ((("" + $v.chartNo) -replace '\D', '') -eq $no)) { return $v } } }
+    return $null
+  }
+  function Opd-Register($g) {
+    if (Care-Find $g.no) { Log "이미 케어 노트에 있음 · #$($g.no) $($g.name)"; return }
+    $id = "p-care-$(NowMs)"; $today = Get-Date -Format 'yyyy-MM-dd'; $tm = Get-Date -Format 'HH:mm'
+    $sp = if ($g.sp -eq 'Feline') { 'cat' } else { 'dog' }
+    $info = (@($g.sex, $(if ($g.bw) { "$($g.bw)kg" }), $g.birth) | Where-Object { $_ }) -join ' · '
+    $p = [ordered]@{ id = $id; name = $(if ($g.name) { $g.name } else { "#$($g.no)" }); room = ''; chartNo = $g.no; species = $sp; breed = $g.breed; owner = ''; dx = ''; category = '외래'; adm = $today; auto = 'intovet'; sex = $g.sex; bw = $g.bw
+      logs = @([ordered]@{ id = "l$(NowMs)"; time = $tm; d = $today; text = "🏥 인투벳 외래 접수 자동 등록 · $info" }) }
+    Fb 'Put' "rooms/$ROOM/care_patients/$id" $p | Out-Null
+    Log "✅ 외래 등록 · #$($g.no) $($p.name) ($($g.breed), $info)"
+  }
+  function Opd-Out($g) {
+    $x = Care-Find $g.no
+    if (-not $x) { return }
+    if ($x.category -ne '외래') { Log "입원·호텔 환축이라 자동 정리 안 함 · #$($g.no)"; return }
+    $x | Add-Member -NotePropertyName dischargedAt -NotePropertyValue ((Get-Date -Format 'yyyy-MM-dd HH:mm')) -Force
+    $x | Add-Member -NotePropertyName dischargedTs -NotePropertyValue (NowMs) -Force
+    $x | Add-Member -NotePropertyName autoOut -NotePropertyValue $g.st -Force
+    Fb 'Put' "rooms/$ROOM/discharged_patients/$($x.id)" $x | Out-Null
+    Fb 'Delete' "rooms/$ROOM/care_patients/$($x.id)" $null | Out-Null
+    Log "🧾 $($g.st) · 외래 정리 · #$($g.no) $($x.name)"
+  }
+  $last = ''
+  while ($true) {
+    try {
+      $w = Find-GE
+      if ($w) {
+        $g = Parse-GE (Get-Names $w)
+        if ($g) {
+          $key = "$($g.no)|$($g.st)"
+          if ($key -ne $last) {
+            $last = $key
+            if ($Diag) { Log "[진단] 읽음 · 번호 $($g.no) / 이름 $($g.name) / 상태 $($g.st) / $($g.sp) $($g.breed) $($g.sex) $($g.bw)kg" }
+            if ($g.st -match '수납\s*완료|진료\s*완료|귀가') { Opd-Out $g }
+            elseif ($g.st -match '접수') { Opd-Register $g }
+          }
+        }
+      }
+      if (((Get-Date) - $lastUp).TotalMinutes -ge 60) { $lastUp = Get-Date; Try-Update }
+    } catch { Log "오류: $($_.Exception.Message)"; Start-Sleep -Seconds 7 }
+    Start-Sleep -Seconds 4
+  }
+}
 if ($script:startToast) { Toast "송파바로 LIS 연동 시작" "검사 결과가 들어오면 이 자리에 알림이 떠요" }
 $script:lastScan = [datetime]::MinValue; $script:dumped = $false
 Tail-Logs -init | Out-Null
