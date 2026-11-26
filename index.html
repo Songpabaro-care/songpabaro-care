@@ -867,7 +867,7 @@ function pcRender(){const el=$("#pcb");if(!el||!S.pc)return;const its=pcItems();
  const grp=(t,a)=>a.length?`<div class="pcg">${t} (${a.length})</div>`+a.map(row).join(""):"";
  let mid='<div class="meta" style="padding:40px;text-align:center">왼쪽에서 환축을 고르세요</div>';
  if(cur){const p=cur.p;
-  const hdr=`<div class="pch"><div class="av">${p.species==="cat"?"🐱":"🐶"}</div><div><div class="nm">${esc(p.name)}${p.mjNo?`<span class="mjno${p.mjAt?"":" wait"}">#${esc(p.mjNo)}</span>`:""}</div><div class="meta">${esc(pno(p))} · ${esc(p.breed||"")}${cur.r==="care"?` · ${cat(p)}${dayN(p)}${p.dx?" · 병명 "+esc(p.dx):""}`:" · 건강검진"}</div>${cur.r==="care"?`<div class="meta">${p.cpAt?"마지막 복사 "+fmtDT(p.cpAt):"아직 복사한 적 없음"}${lateN(p)?` · <span class="tlate">⏰ 처치 ${lateN(p)}건 지남</span>`:""}</div>`+alertRow(p):""}</div></div>`;
+  const hdr=`<div class="pch"><div class="av">${p.species==="cat"?"🐱":"🐶"}</div><div><div class="nm">${esc(p.name)}${p.mjNo?`<span class="mjno${p.mjAt?"":" wait"}">#${esc(p.mjNo)}</span>`:""}</div><div class="meta">${esc(pno(p))} · ${esc(p.breed||"")}${sxw(p)}${cur.r==="care"?` · ${cat(p)}${dayN(p)}${p.dx?" · 병명 "+esc(p.dx):""}`:" · 건강검진"}</div>${cur.r==="care"?`<div class="meta">${p.cpAt?"마지막 복사 "+fmtDT(p.cpAt):"아직 복사한 적 없음"}${lateN(p)?` · <span class="tlate">⏰ 처치 ${lateN(p)}건 지남</span>`:""}</div>`+alertRow(p):""}</div></div>`;
   if(cur.r==="care"){const nw=careRows(p,"new"),td=careRows(p,"today");
    mid=hdr+pcCard(`새 기록 ${nw.length}건`,"마지막 복사 이후 · 복사하면 '복사함'으로 표시돼요",nw.length?careChart(p,nw):"새 기록이 없어요",{m:"new"},"Enter",!nw.length)
     +pcCard(`오늘 기록 ${td.length}건`,"눌러서 펼치기",td.length?careChart(p,td):"오늘 기록이 없어요",{m:"today",gh:1},"T",!td.length,1)
@@ -1140,12 +1140,14 @@ function renderDash(){
 }
 
 function qOrdBtn(p){const n=Object.values(Q.ords).filter(o=>o&&o.pid===p.id&&qActive(o)).length;return `<button class="hb${n?" on":""}" style="${n?"border-color:#c7cdf6;background:#eef0fd;color:#4655c9":""}" data-act="qord" data-id="${p.id}">🧪 오더${n?`<i>${n}</i>`:""}</button>`}
+function sexKo(x){x=String(x||"");if(!x)return"";const f=/female|암|♀|\bF\b|\bFS\b|\bSF\b/i.test(x),m=!f&&/male|수컷|♂|\bM\b|\bMN\b|\bMC\b|\bCM\b/i.test(x),n=/spay|neut|castr|중성|\b(FS|MN|MC|SF|CM)\b/i.test(x);return (f?"암컷":m?"수컷":esc(x))+(n?"(중성화)":(f||m)?"(미중성화)":"")}
+function sxw(p){const a=[sexKo(p.sex),p.bw?esc(p.bw)+"kg":""].filter(Boolean);return a.length?" · "+a.join(" · "):""}
 function head(p,r){
  const lc=r!=="care"&&isCareP(p.id),b=(r==="care"||lc)?`<span class="badge ${cat(p)==="호텔"?"h":cat(p)==="외래"?"o":""}">${cat(p)}${cat(p)==="외래"?"":dayN(p)}</span>`:"";
  const ln=r==="care"?lateN(p):0,an=(p.alerts||[]).length+(p.cpr?1:0),tn=r==="care"?tasksOf(p).length:0;
  const bar=r==="care"?`<div class="hbar"><button class="hb${an?" on":""}" data-act="alopen" data-id="${p.id}">⚠ 주의${an?`<i>${an}</i>`:""}</button><button class="hb${ln?" late":tn?" on":""}" data-act="tkopen" data-id="${p.id}">⏰ 처치${ln?`<i>${ln} 지남</i>`:tn?`<i>${tn}</i>`:""}</button>${anBtn(p)}${qOrdBtn(p)}<button class="hb bad" data-act="discharge" data-id="${p.id}">퇴원</button></div>`:r==="checkup"?`<div class="hbar">${qOrdBtn(p)}</div>`:"";const d="";
  return `<div class="top"><div class="av">${p.species==="cat"?"🐱":"🐶"}</div><div class="sp"><div class="nm">${esc(p.name)}${r==="care"||r==="checkup"?`<button type="button" class="mjno${p.mjNo?(p.mjAt?"":" wait"):" add"}" data-act="mjnum" data-id="${p.id}" title="${p.mjNo?(p.mjAt?"문진 연결됨 · 눌러서 수정":"문진 도착 전 · 도착하면 자동 연결"):"문진번호 입력"}">${p.mjNo?"#"+esc(p.mjNo)+(p.mjAt?"":" 대기"):"+ 문진번호"}</button>`:""}</div>
- <div class="meta">${b}<span class="badge n">${esc(pno(p))}</span>${esc(p.breed||"")}${r==="care"?"":(p.owner?" · 보호자 "+esc(p.owner):"")}</div>${r==="care"?`<div class="meta" id="dxm-${p.id}">${p.dx?"병명 "+esc(p.dx):""}</div>`+alertRow(p):""}</div>
+ <div class="meta">${b}<span class="badge n">${esc(pno(p))}</span>${esc(p.breed||"")}${sxw(p)}${r==="care"?"":(p.owner?" · 보호자 "+esc(p.owner):"")}</div>${r==="care"?`<div class="meta" id="dxm-${p.id}">${p.dx?"병명 "+esc(p.dx):""}</div>`+alertRow(p):""}</div>
  <div class="act">${d}${lc?"":`<button class="btn-s" data-act="remove" data-id="${p.id}" aria-label="삭제">✕</button>`}</div></div>${bar}`}
 
 function soapList(raw){
