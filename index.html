@@ -688,27 +688,38 @@ const onDis=v=>{ingest("dis",v,false);pruneDis();if(S.room==="care")softRender()
 const DAY=864e5;
 function pruneDis(){const n=Date.now();let ch=false;S.dis=S.dis.filter(d=>{if(!d.dischargedTs){d.dischargedTs=n;ch=true;return true}if(n-d.dischargedTs>DAY){ch=true;return false}return true});if(ch)saveDis()}
 setInterval(()=>{if(S.room==="care"&&!document.hidden&&S.live&&S.live.dis)pruneDis()},600000);
-let EGEN=0;
-function watch(key,fn){
- if(ES[key]){ES[key].close();delete ES[key]}
- const st=ST[key]={v:null},g=EGEN;
- return new Promise(async res=>{let done=false;const fin=()=>{if(!done){done=true;res()}};setTimeout(fin,4000);
-  let t=null;try{t=await auTok()}catch(e){}
-  if(g!==EGEN){fin();return}if(ES[key]){ES[key].close();delete ES[key]}
-  let es;try{es=new EventSource(withAuth(url(key),t))}catch(e){badge(false);fin();return}
-  es.addEventListener("auth_revoked",()=>{es.close();AU.tok=null;if(ES[key]===es&&g===EGEN)watch(key,fn)});
-  es.addEventListener("cancel",()=>{es.close();badge(false);recheck()});
-  ES[key]=es;
-  const h=patch=>e=>{try{applyEv(st,JSON.parse(e.data),patch)}catch(x){return}st.got=true;fin();flush(key,fn)};
-  es.addEventListener("put",h(false));es.addEventListener("patch",h(true));
-  es.onopen=()=>badge(true);es.onerror=()=>badge(false)})}
-function stopAll(){EGEN++;Object.keys(ES).forEach(k=>{ES[k].close();delete ES[k]})}
+let EGEN=0,RSG=0,RS=null,RSgot=false;const SUB={},RSW=[];
+/* 방 전체를 실시간 연결 1개로 받고, 하위 경로별로 나눠 전달 */
+function rsRoute(seg,path,data,patch){
+ if(seg==="chat"||seg==="orders"){qOn(seg==="orders"?"ord":"chat",path,data,patch);return}
+ const st=ST[seg]||(ST[seg]={v:null});applyEv(st,{path,data},patch);st.got=true;if(SUB[seg])flush(seg,SUB[seg])}
+function rsEv(d,patch){const ps=String(d.path||"/").split("/").filter(Boolean),data=d.data;
+ if(!ps.length){
+  if(patch)Object.entries(data||{}).forEach(([k,v])=>{const ks=k.split("/").filter(Boolean),seg=ks.shift();if(!seg)return;if(!ks.length)rsRoute(seg,"/",v,false);else rsRoute(seg,"/",{[ks.join("/")]:v},true)});
+  else{const o=data&&typeof data==="object"?data:{};new Set([...Object.keys(o),...Object.keys(ST),...Object.keys(SUB),"chat","orders"]).forEach(seg=>rsRoute(seg,"/",o[seg]===undefined?null:o[seg],false))}
+ }else{const seg=ps.shift();rsRoute(seg,"/"+ps.join("/"),data,patch)}
+ if(!RSgot){RSgot=true;RSW.splice(0).forEach(f=>f())}}
+async function rsOpen(){if(RS&&RS.readyState!==2&&RS._c===S.code)return;const g=++RSG;let t=null;try{t=await auTok()}catch(e){}
+ if(g!==RSG)return;if(RS){try{RS.close()}catch(e){}}RSgot=false;
+ let es;try{es=new EventSource(withAuth(`${base()}/rooms/${encodeURIComponent(S.code)}.json`,t))}catch(e){badge(false);return}
+ RS=es;es._c=S.code;
+ es.addEventListener("put",e=>{if(RS!==es)return;let d;try{d=JSON.parse(e.data)}catch(x){return}rsEv(d,false)});
+ es.addEventListener("patch",e=>{if(RS!==es)return;let d;try{d=JSON.parse(e.data)}catch(x){return}rsEv(d,true)});
+ es.addEventListener("auth_revoked",()=>{es.close();AU.tok=null;if(RS===es){RS=null;rsOpen()}});
+ es.addEventListener("cancel",()=>{es.close();if(RS===es)RS=null;badge(false);recheck()});
+ es.onopen=()=>badge(true);es.onerror=()=>badge(false)}
+function rsClose(){RSG++;RSgot=false;if(RS){try{RS.close()}catch(e){}RS=null}}
+function watch(key,fn){SUB[key]=fn;const g=EGEN;rsOpen();
+ return new Promise(res=>{let done=false;const fin=()=>{if(!done){done=true;res()}};setTimeout(fin,4000);
+  const go=()=>{if(g===EGEN&&SUB[key]===fn&&ST[key]&&ST[key].got)flush(key,fn);fin()};
+  if(RSgot)go();else RSW.push(go)})}
+function stopAll(){EGEN++;Object.keys(SUB).forEach(k=>delete SUB[k])}
 async function load(r){const _l=await load0(r);useCache(r==="care"?["care","dis"]:[r]);return _l}
 async function load0(r){stopAll();if(r==="ord"){await watch(PATHS.care,onRoom("care"));return}if(r==="calc"){await watch(PATHS.care,onRoom("care"));watch(PATHS.lab_fluid,onRoom("lab_fluid"));return}const pr=watch(PATHS[r],onRoom(r));if(r==="care")watch("discharged_patients",onDis);if(r==="lab_fluid")watch(PATHS.care,onRoom("care"));await pr}
 async function loadDis(){}
 function startPoll(){}
 const qSmall=()=>innerWidth<761;
-document.addEventListener("visibilitychange",()=>{if(document.hidden){stopAll();if(qSmall()&&Q.es)Object.keys(Q.es).forEach(k=>{try{Q.es[k].close()}catch(e){}delete Q.es[k]})}else if(OKD){load(S.room);if(Q.es&&!Q.es.chat){qListen("chat");qListen("ord")}}});
+document.addEventListener("visibilitychange",()=>{if(document.hidden){stopAll();if(qSmall())rsClose()}else if(OKD){rsOpen();load(S.room)}});
 
 async function put(key,o){
  QT[key]=Date.now()+60000;
@@ -911,24 +922,20 @@ const qMine=dp=>Object.entries(Q.ords).filter(([,o])=>o&&qActive(o,dp));
 const qWin=()=>{try{return sessionStorage.getItem("sbw")||""}catch(e){return""}};
 const qScreen=()=>{const w=qWin();if(w)return w==="auto"?(innerWidth>=1000?"clinic":"basic"):w;const v=qls("screen")||"auto";return v==="auto"?(innerWidth>=1000?"clinic":"basic"):v};
 function qApply(store,path,data,patch){const ks=path.split("/").filter(Boolean);
- if(!ks.length){const prev=new Set(Object.keys(store));if(patch)Object.entries(data||{}).forEach(([k,v])=>{if(v===null)delete store[k];else store[k]=v});else{Object.keys(store).forEach(k=>delete store[k]);Object.assign(store,data||{})}return Object.keys(store).filter(k=>!prev.has(k))}
+ if(!ks.length){const prev=new Set(Object.keys(store));if(patch)Object.entries(data||{}).forEach(([k,v])=>{if(k.includes("/")){qApply(store,"/"+k,v,false);return}if(v===null)delete store[k];else store[k]=v});else{Object.keys(store).forEach(k=>delete store[k]);Object.assign(store,data||{})}return Object.keys(store).filter(k=>!prev.has(k))}
  const k=ks[0],isNew=!store[k]&&ks.length===1&&data;
  if(ks.length===1){if(data===null)delete store[k];else if(patch)store[k]={...(store[k]||{}),...data};else store[k]=data}
  else{let o=store[k]=store[k]||{};for(let i=1;i<ks.length-1;i++)o=o[ks[i]]=o[ks[i]]||{};if(data===null)delete o[ks[ks.length-1]];else o[ks[ks.length-1]]=data}
  return isNew?[k]:[]}
-async function qListen(name){if(Q.es[name])Q.es[name].close();let t=null;try{t=await auTok()}catch(e){}
- const isO=name==="ord",store=isO?Q.ords:Q.chat,u=isO?`${QOR()}.json`:`${QCH()}.json?orderBy=%22$key%22&limitToLast=300`;
- const es=Q.es[name]=new EventSource(withAuth(u,t));
- const h=patch=>e=>{let d;try{d=JSON.parse(e.data)}catch(x){return}const nk=qApply(store,d.path||"/",d.data,patch),first=!Q.init[name];Q.init[name]=true;
+function qOn(name,path,data,patch){const isO=name==="ord",store=isO?Q.ords:Q.chat;
+ const nk=qApply(store,path||"/",data,patch),first=!Q.init[name];Q.init[name]=true;
   if(!first)nk.forEach(k=>{const m=store[k];if(!m||m.uid===AU.uid)return;
    if(isO){Q.fresh.add(k);const sc=Q.view||qScreen(),dp=sc==="lab"?"lab":sc==="xray"?"img":null,hit=!dp||qParts(m)[dp];
     if(hit&&qSndPlay("ord"))qBeep(m.urgent?"urg":"ord");if(!Q.view)toast(`🧪 ${m.urgent?"긴급 ":""}검사 오더 · ${m.pname||""} · ${(m.tests||[]).join(", ")}`);qNotify(`${m.urgent?"🚨 긴급 ":""}검사 오더 · ${m.pname||""}${m.chart?" #"+m.chart:""}`,(m.tests||[]).join(", "))}
    else{if(qSndPlay("chat"))qBeep("chat");if(Q.view!=="chat")toast(`💬 ${m.by||"직원"}: ${String(m.text||"").slice(0,40)}`);qNotify(`💬 ${m.by||"직원"}`,m.text)}});
-  qBadge();qRender();fcRender();if(isO&&S.room==="ord"&&!Q.view)softRender()};
- es.addEventListener("put",h(false));es.addEventListener("patch",h(true));
- es.addEventListener("auth_revoked",()=>{AU.tok=null;qListen(name)});es.addEventListener("cancel",()=>{es.close()})}
-function qStart(){fcShow();qListen("chat");qListen("ord");setTimeout(qPrune,10000)}
-document.addEventListener("visibilitychange",()=>{if(!document.hidden&&OKD)["chat","ord"].forEach(n=>{if(!Q.es[n]||Q.es[n].readyState===2)qListen(n)})});
+  qBadge();qRender();fcRender();if(isO&&S.room==="ord"&&!Q.view)softRender()}
+function qListen(){rsOpen()}
+function qStart(){fcShow();rsOpen();setTimeout(qPrune,10000)}
 function qNotify(t,b){if(!(qls("noti")==="1"&&window.Notification&&Notification.permission==="granted"&&document.hidden))return;try{new Notification(t,{body:b||"",icon:"icon-192.png"})}catch(e){}}
 function qBadge(){{const t=$("#ordTabN"),n=qMine(null).length;if(t)t.textContent=n?String(n):""}const seen=+(qls("chatSeen")||0),un=Object.values(Q.chat).filter(m=>m&&m.uid!==AU.uid&&(m.t||0)>seen).length,on=qMine(null).length,b=$("#qBtn");
  if(b)b.innerHTML="💬"+(un||on?`<span class="bdg">${un?un:on}</span>`:"");const bk=$("#scrBack");if(bk)bk.innerHTML=`🧪 오더 화면으로${on?` <i>${on}</i>`:""}`}
