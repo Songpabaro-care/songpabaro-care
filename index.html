@@ -275,7 +275,8 @@ body.scrpin:not(.scron) #scrBack{display:block}
 .qgrp{font-size:12px;font-weight:800;color:var(--mute);margin:8px 0 4px}
 .chip.qsel{background:#4655c9!important;border-color:#4655c9!important;color:#fff!important;opacity:1!important}
 @media(max-width:760px){.qbody.two{grid-template-columns:1fr}.qbody.two .qboard{display:none}.qbody.two.tab-ord .qboard{display:block}.qbody.two.tab-ord .qchat{display:none}.qgrid{grid-template-columns:1fr}}
-@media(min-width:761px){.qbody.two{grid-template-columns:minmax(320px,1fr) minmax(0,2fr)}}
+@media(min-width:761px){.qbody.two{grid-template-columns:minmax(340px,45fr) minmax(0,55fr)}}
+.qmsgs .ql{font-size:15px;line-height:1.5;white-space:pre-wrap;word-break:break-all;padding:3px 2px;border-bottom:1px dashed var(--line)}.qmsgs .ql .qw{color:var(--mute);font-weight:700;font-size:.82em}.qmsgs .ql.me,.qmsgs .ql.me .qw{color:var(--brand)}#scr.fs1 .qmsgs .ql{font-size:19px}#scr.fs2 .qmsgs .ql{font-size:23px}.qmsgs{gap:0;background:var(--card)}
 #scr.fs1 .qbub{font-size:19px;line-height:1.45;padding:9px 14px}#scr.fs1 .qm .who{font-size:14px}#scr.fs1 .qday{font-size:13px}#scr.fs1 .qcomp textarea{font-size:17px}
 #scr.fs1 .qbh h2{font-size:20px}#scr.fs1 .qgrid{grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}#scr.fs1 .qoc{padding:11px 13px;gap:7px}
 #scr.fs1 .qoc .pt{font-size:21px}#scr.fs1 .qoc .pt small{font-size:15px}#scr.fs1 .qtests span{font-size:16px;padding:2px 10px}#scr.fs1 .qoc .top,#scr.fs1 .qdp .dl{font-size:14px}#scr.fs1 .qoc .memo{font-size:15px}#scr.fs1 .qsb{height:34px;font-size:14px}
@@ -950,7 +951,7 @@ function qBoard(dp){const act=qMine(dp).sort((a,b)=>(b[1].urgent?1:0)-(a[1].urge
   <details class="qdone"><summary>오늘 완료 (${dn.length})</summary>${dn.map(([k,o])=>`<div class="di">✓ <b>${esc(o.pname||"")}</b>${o.chart?" #"+esc(o.chart):""} · ${esc((o.tests||[]).filter(x=>!dp||tDept(x)===dp).join(", "))} <button class="qsb" style="height:24px;padding:0 8px" data-act="qundo" data-k="${k}" data-d="${dp||""}">되돌리기</button></div>`).join("")}</details></div>`;
  Q.fresh.clear();return html}
 function qChatHtml(){const arr=Object.entries(Q.chat).filter(([,m])=>m).sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0);let prev="",h="";
- arr.forEach(([k,m])=>{const d=new Date(m.t),ds=`${d.getMonth()+1}월 ${d.getDate()}일`;if(ds!==prev){h+=`<div class="qday">${ds}</div>`;prev=ds}const me=m.uid===AU.uid;h+=`<div class="qm${me?" me":""}"><div class="who">${esc(m.by||"직원")} · ${hhmm(m.t)}</div><div class="qbub">${esc(m.text)}</div></div>`});
+ arr.forEach(([k,m])=>{const d=new Date(m.t),ds=`${d.getMonth()+1}월 ${d.getDate()}일`;if(ds!==prev){h+=`<div class="qday">${ds}</div>`;prev=ds}const me=m.uid===AU.uid;h+=`<div class="ql${me?" me":""}"><span class="qw">${esc(me?"나":m.by||"직원")} ${hhmm(m.t)}</span> ${esc(m.text)}</div>`});
  return `<div class="qchat"><div class="qmsgs" id="qmsgs">${h||'<div class="meta">아직 메시지가 없어요</div>'}</div><button class="qnew" id="qNew" hidden>↓ 새 메시지</button><div class="qcomp"><textarea id="qtxt" rows="1" placeholder="메시지 입력"></textarea><button class="btn" data-act="qsend">보내기</button></div></div>`}
 function qRender(){if(!Q.view)return;const el=$("#scr"),v=Q.view,on=qMine(null).length;el.classList.remove("fs1","fs2");if(qFs())el.classList.add("fs"+qFs());
  const keep=$("#qtxt")?$("#qtxt").value:"",foc=document.activeElement&&document.activeElement.id==="qtxt",ms=$("#qmsgs"),stick=!ms||ms.scrollHeight-ms.scrollTop-ms.clientHeight<80,oldTop=ms?ms.scrollTop:0;
