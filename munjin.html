@@ -146,10 +146,13 @@ function toText(d){const t=x=>String(x==null?"":x).replace(/\s+/g," ").trim(),L=
  if(pv.length||t(d.vac))L.push("- 예방: "+(pv.join(" · ")||"")+(t(d.vac)?(pv.length?" (마지막 "+t(d.vac)+")":t(d.vac)):""));
  if(t(d.etc))L.push("- 기타: "+t(d.etc));return L.join("\n")}
 
+/* 지금 쓰고 있는 번호와 겹치지 않게 번호를 먼저 찜합니다 (이미 있으면 DB가 거절 → 다시 뽑기) */
+async function reserveNo(){let no;for(let i=0;i<12;i++){no=String(Math.floor(1000+Math.random()*9000));
+ try{const r=await fetch(`${DB}/munjinNo/${no}.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({t:Date.now()})});if(r.ok)return no;if(r.status!==401&&r.status!==403)return no}catch(e){return no}}return no}
 async function submit(){
  grab();const v=F.v,er=$("#err");const bad=!v.name?"이름을 입력해 주세요":!v.sp?"종을 선택해 주세요":!F.sym.length&&!v.det?"방문 이유를 선택하거나 적어 주세요":"";
  if(bad){er.textContent=bad;er.classList.remove("hide");return}
- const no=String(Math.floor(1000+Math.random()*9000));
+ $("#send").disabled=true;$("#send").textContent="전송 중...";const no=await reserveNo();
  const d={no,t:Date.now(),name:v.name,sp:v.sp,br:v.br,age:v.age,bw:v.bw,sx:v.sx,sym:F.sym,det:v.det,med:v.med,hx:v.hx,food:v.food,vac:v.vac,etc:v.etc};
  FIELDS.forEach(([k])=>{if(v["s_"+k])d["s_"+k]=v["s_"+k]});
  ["p_vac","p_in","p_out","p_hw"].forEach(k=>{if(v[k])d[k]=v[k]});
