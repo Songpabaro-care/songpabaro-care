@@ -514,22 +514,39 @@ if ($Reception) {
     if (-not $r.no) { return $null }
     return [pscustomobject]$r
   }
-  function Care-Find($no) {
+  # 트래픽 절약: 전체 목록은 필요할 때만(최소 15분 간격) 받고, 나머지는 환축 1마리만 확인
+  $script:CI = @{}; $script:CT = [datetime]::MinValue; $script:DONE = @{}
+  function Load-Idx([int]$minAge) {
+    if (((Get-Date) - $script:CT).TotalMinutes -lt $minAge) { return }
+    $script:CT = Get-Date; $m = @{}
     $ps = Fb 'Get' "rooms/$ROOM/care_patients" $null
-    if ($ps) { foreach ($p in $ps.PSObject.Properties) { $v = $p.Value; if ($v -and ((("" + $v.chartNo) -replace '\D', '') -eq $no)) { return $v } } }
-    return $null
+    if ($ps) { foreach ($p in $ps.PSObject.Properties) { $v = $p.Value; $n = (("" + $v.chartNo) -replace '\D', ''); if ($v -and $n) { $m[$n] = $p.Name } } }
+    $script:CI = $m
   }
+  function Care-One($no) {
+    if (-not $script:CI.ContainsKey($no)) { return $null }
+    $x = Fb 'Get' "rooms/$ROOM/care_patients/$($script:CI[$no])" $null
+    if (-not $x) { $script:CI.Remove($no); return $null }
+    return $x
+  }
+  function Recent($k) { $script:DONE.ContainsKey($k) -and ((Get-Date) - $script:DONE[$k]).TotalMinutes -lt 30 }
   function Opd-Register($g) {
-    if (Care-Find $g.no) { Log "이미 케어 노트에 있음 · #$($g.no) $($g.name)"; return }
-    $id = "p-care-$(NowMs)"; $today = Get-Date -Format 'yyyy-MM-dd'; $tm = Get-Date -Format 'HH:mm'
+    $k = "$($g.no)|R"; if (Recent $k) { return }; $script:DONE[$k] = Get-Date
+    Load-Idx 15
+    if (Care-One $g.no) { Log "이미 케어 노트에 있음 · #$($g.no) $($g.name)"; return }
+    $id = "p-care-$(NowMs)"; $today = Get-Date -Format 'yyyy-MM-dd'
     $sp = if ($g.sp -eq 'Feline') { 'cat' } else { 'dog' }
     $info = (@($g.sex, $(if ($g.bw) { "$($g.bw)kg" }), $g.birth) | Where-Object { $_ }) -join ' · '
     $p = [ordered]@{ id = $id; name = $(if ($g.name) { $g.name } else { "#$($g.no)" }); room = ''; chartNo = $g.no; species = $sp; breed = $g.breed; owner = ''; dx = ''; category = '외래'; adm = $today; auto = 'intovet'; sex = $g.sex; bw = $g.bw; birth = $g.birth }
     Fb 'Put' "rooms/$ROOM/care_patients/$id" $p | Out-Null
+    $script:CI[$g.no] = $id; $script:DONE.Remove("$($g.no)|O")
     Log "✅ 외래 등록 · #$($g.no) $($p.name) ($($g.breed), $info)"
   }
   function Opd-Out($g) {
-    $x = Care-Find $g.no
+    $k = "$($g.no)|O"; if (Recent $k) { return }; $script:DONE[$k] = Get-Date
+    Load-Idx 15
+    $x = Care-One $g.no
+    if (-not $x) { Load-Idx 2; $x = Care-One $g.no }
     if (-not $x) { return }
     if ($x.category -ne '외래') { Log "입원·호텔 환축이라 자동 정리 안 함 · #$($g.no)"; return }
     $x | Add-Member -NotePropertyName dischargedAt -NotePropertyValue ((Get-Date -Format 'yyyy-MM-dd HH:mm')) -Force
@@ -537,6 +554,7 @@ if ($Reception) {
     $x | Add-Member -NotePropertyName autoOut -NotePropertyValue $g.st -Force
     Fb 'Put' "rooms/$ROOM/discharged_patients/$($x.id)" $x | Out-Null
     Fb 'Delete' "rooms/$ROOM/care_patients/$($x.id)" $null | Out-Null
+    $script:CI.Remove($g.no); $script:DONE.Remove("$($g.no)|R")
     Log "🧾 $($g.st) · 외래 정리 · #$($g.no) $($x.name)"
   }
   $last = ''
