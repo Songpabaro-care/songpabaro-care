@@ -786,21 +786,46 @@ function ingest(n,v,enrich){
 const save=r=>Promise.all((r==="lab_fluid"?[r,"care"]:[r]).map(sync));
 const saveDis=()=>sync("dis");
 function sync(n){if(S.cached&&S.cached[n]){toast("오프라인(보기 전용)이라 저장되지 않았어요");return Promise.resolve()}return WQ[n]=(WQ[n]||Promise.resolve()).then(()=>syncNow(n),()=>syncNow(n))}
+/* 같은 환축에 두 기기가 동시에 기록해도 사라지지 않게: 기록(logs)은 서버 최신본에 내 변경만 합쳐서 조건부로 저장 */
+const lgK=l=>l&&l.id?String(l.id):JSON.stringify(l),lgT=l=>{const m=/^l(\d+)/.exec(l&&l.id||"");return m?+m[1]:0};
+function lgMerge(srv,base,loc){srv=Array.isArray(srv)?srv.filter(Boolean):(srv&&typeof srv==="object"?Object.values(srv):[]);base=base||[];loc=loc||[];
+ const bm=new Map(base.map(l=>[lgK(l),l])),lm=new Map(loc.map(l=>[lgK(l),l])),rm=new Set([...bm.keys()].filter(k=>!lm.has(k)));
+ const out=srv.filter(l=>!rm.has(lgK(l))).map(l=>{const k=lgK(l),x=lm.get(k),b=bm.get(k);return x&&b&&sj(x)!==sj(b)?clone(x):l}),have=new Set(out.map(lgK));
+ loc.forEach(l=>{const k=lgK(l);if(!bm.has(k)&&!have.has(k)){out.push(clone(l));have.add(k)}});
+ return out.map((l,i)=>[l,i]).sort((x,y)=>(lgT(y[0])-lgT(x[0]))||(x[1]-y[1])).map(x=>x[0])}
+let LGNOET=false,LGCH=false;
+async function lgWrite(key,id,base,loc){const u=url(key+"/"+encodeURIComponent(id)+"/logs");
+ for(let i=0;i<5;i++){let g;
+  if(!LGNOET){try{g=await fetch(u,{headers:{"X-Firebase-ETag":"true"},cache:"no-store"})}catch(e){LGNOET=true}}
+  if(LGNOET)g=await fetch(u,{cache:"no-store"});
+  if(!g.ok)throw new Error("HTTP "+g.status);
+  const et=LGNOET?null:g.headers.get("ETag"),m=lgMerge(await g.json(),base,loc),h={"Content-Type":"application/json"};if(et)h["if-match"]=et;
+  let x;try{x=await fetch(u,{method:"PUT",headers:h,body:JSON.stringify(m.length?m:null)})}catch(e){if(!et)throw e;LGNOET=true;continue}
+  if(!x.ok&&x.status!==412)throw new Error("HTTP "+x.status);
+  if(x.ok){if(et)return m;
+   /* ETag을 못 쓰는 환경: 잠깐 뒤 다시 읽어 내 변경이 살아 있는지 확인, 덮였으면 다시 합쳐 저장 */
+   await new Promise(r=>setTimeout(r,250+Math.random()*350));const v=await fetch(u,{cache:"no-store"});if(!v.ok)return m;
+   const cur=await v.json(),ck=new Set((Array.isArray(cur)?cur:Object.values(cur||{})).filter(Boolean).map(lgK)),bk=new Set((base||[]).map(lgK)),lk=new Set((loc||[]).map(lgK));
+   if([...lk].every(k=>bk.has(k)||ck.has(k))&&[...bk].every(k=>lk.has(k)||!ck.has(k)))return m}}
+ throw new Error("logs conflict")}
 async function syncNow(n){
  const key=PK[n],cur=getL(n),old=SO[n]||(SO[n]={}),pd=PD[n]||(PD[n]=new Set()),ops=[],ids=new Set(cur.map(p=>p.id));
  pd.forEach(id=>{if(ids.has(id))pd.delete(id)});
  cur.forEach(p=>{const b=old[p.id],sent=clone(p);
   if(!b)ops.push({id:p.id,m:"PUT",body:sent,sent});
-  else if(sj(p)!==sj(b)){const body={};dfs(p,b,"",body);ops.push({id:p.id,m:"PATCH",body,sent})}});
+  else if(sj(p)!==sj(b)){const body={};dfs(p,b,"",body);let lg=null;if("logs" in body){delete body.logs;lg={base:clone(b.logs)||[],loc:clone(p.logs)||[]}}ops.push({id:p.id,m:"PATCH",body,sent,lg})}});
  Object.keys(old).forEach(id=>{if(!ids.has(id))pd.add(id)});
  pd.forEach(id=>ops.push({id,m:"DELETE"}));
  if(!ops.length)return;
- QT[key]=Date.now()+60000;let fail=false;
+ QT[key]=Date.now()+60000;let fail=false;LGCH=false;
  await Promise.all(ops.map(async o=>{try{
+  if(o.lg){const m=await lgWrite(key,o.id,o.lg.base,o.lg.loc);if(m.length)o.sent.logs=m;else delete o.sent.logs;
+   const lv=getL(n).find(x=>x.id===o.id);if(lv){const nl=lgMerge(m,o.lg.loc,lv.logs||[]);if(sj(nl)!==sj(lv.logs)){if(nl.length)lv.logs=nl;else delete lv.logs;LGCH=true}}}
+  if(o.m!=="PATCH"||!o.lg||Object.keys(o.body).length){
   const x=await fetch(url(key+"/"+encodeURIComponent(o.id)),{method:o.m,headers:{"Content-Type":"application/json"},body:o.m==="DELETE"?undefined:JSON.stringify(o.body)});
-  if(!x.ok)throw new Error("HTTP "+x.status);
+  if(!x.ok)throw new Error("HTTP "+x.status)}
   if(o.m==="DELETE"){delete old[o.id];pd.delete(o.id)}else old[o.id]=o.sent}catch(e){fail=true}}));
- QT[key]=Date.now()+1200;
+ QT[key]=Date.now()+1200;if(LGCH)softRender();
  if(fail){DIRTY.add(n);badge(false);clearTimeout(RETRY);RETRY=setTimeout(retryAll,6000)}else{DIRTY.delete(n);if(!DIRTY.size)badge(true)}}
 const retryAll=()=>{[...DIRTY].forEach(sync)};
 window.addEventListener("online",retryAll);
@@ -1354,7 +1379,7 @@ function copyOsub(id,catName){const p=find("checkup",id),c=OSC.find(x=>x.t===cat
  const ex=splitItems((p.soap||{}).o,ALLO).filter(v=>(c.x||[]).includes(v));
  copy(`[${p.name}]\n`+(catBlock(c,p,ex)||"-"),`${catName} 소견을 복사했어요`)}
 
-function discharge(id){const l=S.p.care,i=l.findIndex(p=>p.id===id);if(i<0)return;const[x]=l.splice(i,1);S.dis.unshift({...x,category:cat(x),dischargedAt:nowDT(),dischargedTs:Date.now()});render();save("care");saveDis();toast(`${x.name} 퇴원 처리 · 아래 명단에서 복원할 수 있어요`)}
+function discharge(id){const l=S.p.care,i=l.findIndex(p=>p.id===id);if(i<0)return;const[x]=l.splice(i,1);S.dis.unshift({...x,category:cat(x),dischargedAt:nowDT(),dischargedTs:Date.now()});render();save("care");saveDis();toast(`${x.name} 퇴원 처리했어요`,{label:"되돌리기",fn:()=>restore(x.id)})}
 function restore(id){const i=S.dis.findIndex(p=>p.id===id);if(i<0)return;const[x]=S.dis.splice(i,1);delete x.dischargedAt;delete x.dischargedTs;if(dup(x)){x.adm=x.adm||admOf(x);x.id="p-care-"+Date.now()}S.p.care.unshift({...x,category:cat(x)});render();save("care");saveDis();toast(`${x.name} 케어 룸으로 복원했어요`)}
 function setRoom(r){S.room=r;S.filter="ALL";S.sel[r]=null;render();load(r);if(r==="care")loadDis()}
 

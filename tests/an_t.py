@@ -100,7 +100,7 @@ async def main():
             await pg.screenshot(path=f'an_del_{name}.png')
             txt=await pg.evaluate("anText(find('care','h1'),anCur(find('care','h1')))")
             if name=="phone":print(txt)
-            await pg.click('[data-an=end]');await pg.wait_for_timeout(500)
+            await pg.click('[data-an=end]');await pg.wait_for_timeout(1500)
             cp=DB['rooms']['songpa-baro-care']['care_patients']['h1']
             print(name,'saved anes',len(cp.get('anes',[])),'end' in cp['anes'][-1],'log0',cp['logs'][0]['text'])
             await ctx.close()
