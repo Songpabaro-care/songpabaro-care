@@ -275,6 +275,14 @@ body.scrpin:not(.scron) #scrBack{display:block}
 .qgrp{font-size:12px;font-weight:800;color:var(--mute);margin:8px 0 4px}
 .chip.qsel{background:#4655c9!important;border-color:#4655c9!important;color:#fff!important;opacity:1!important}
 @media(max-width:760px){.qbody.two{grid-template-columns:1fr}.qbody.two .qboard{display:none}.qbody.two.tab-ord .qboard{display:block}.qbody.two.tab-ord .qchat{display:none}.qgrid{grid-template-columns:1fr}}
+@media(min-width:761px){.qbody.two{grid-template-columns:minmax(320px,1fr) minmax(0,2fr)}}
+#scr.fs1 .qbub{font-size:19px;line-height:1.45;padding:9px 14px}#scr.fs1 .qm .who{font-size:14px}#scr.fs1 .qday{font-size:13px}#scr.fs1 .qcomp textarea{font-size:17px}
+#scr.fs1 .qbh h2{font-size:20px}#scr.fs1 .qgrid{grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}#scr.fs1 .qoc{padding:11px 13px;gap:7px}
+#scr.fs1 .qoc .pt{font-size:21px}#scr.fs1 .qoc .pt small{font-size:15px}#scr.fs1 .qtests span{font-size:16px;padding:2px 10px}#scr.fs1 .qoc .top,#scr.fs1 .qdp .dl{font-size:14px}#scr.fs1 .qoc .memo{font-size:15px}#scr.fs1 .qsb{height:34px;font-size:14px}
+#scr.fs1 .qbd{font-size:13px;padding:1px 9px}#scr.fs1 .qdone summary{font-size:15px}#scr.fs2 .qbd{font-size:15px;padding:1px 10px}#scr.fs2 .qdone summary{font-size:17px}
+#scr.fs2 .qbub{font-size:24px;line-height:1.4;padding:10px 16px}#scr.fs2 .qm .who{font-size:16px}#scr.fs2 .qday{font-size:15px}#scr.fs2 .qcomp textarea{font-size:20px}
+#scr.fs2 .qbh h2{font-size:24px}#scr.fs2 .qgrid{grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}#scr.fs2 .qoc{padding:13px 15px;gap:8px}
+#scr.fs2 .qoc .pt{font-size:26px}#scr.fs2 .qoc .pt small{font-size:18px}#scr.fs2 .qtests span{font-size:19px;padding:3px 11px}#scr.fs2 .qoc .top,#scr.fs2 .qdp .dl{font-size:16px}#scr.fs2 .qoc .memo{font-size:18px}#scr.fs2 .qsb{height:38px;font-size:16px}
 .chip.qtc{height:auto;min-height:34px;padding:5px 12px;display:inline-flex;flex-direction:column;align-items:flex-start;justify-content:center;line-height:1.25;text-align:left}.chip.qtc small{font-size:10.5px;font-weight:500;opacity:.75;margin-top:1px}
 .qchem{display:grid;gap:5px;margin-top:8px;padding:8px;border:1px dashed var(--line);border-radius:12px}.qcr{display:grid;grid-template-columns:62px minmax(0,1fr);gap:6px;align-items:center}.qcr>span{font-size:12px;font-weight:800;color:var(--mute)}.chip.qmini{height:30px!important;min-height:0!important;padding:0 10px!important;font-size:12.5px;line-height:1}.chip.qpn{border-style:dashed}
 .qpc{height:26px;border-radius:99px;border:1.5px dashed #9aa3e6;background:transparent;color:#4655c9;font-size:11.5px;font-weight:800;padding:0 9px;align-self:center}.qpc.on{background:#eef0fd;border-style:solid}
@@ -871,7 +879,10 @@ function qCompress(sel){const chem=new Set([...sel].filter(x=>CHEMALL.includes(x
 const QDN={lab:"검사실",img:"영상"},tDept=x=>QTESTS["영상"].some(e=>e[0]===x)||/방사선|X-ray|초음파/.test(x)?"img":"lab";
 const Q={chat:{},ords:{},init:{},es:{},fresh:new Set(),sel:new Set(),pre:null,view:null,temp:false,tab:"chat"};
 const qls=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){return null}};
-const qSnd=k=>qls("snd_"+k)==="1";
+const QBC=window.BroadcastChannel?new BroadcastChannel("sb-q"):null;let QPEER=0;
+if(QBC){QBC.onmessage=e=>{if(e.data==="scr-alive")QPEER=Date.now()};setInterval(()=>{if(Q.view&&!Q.temp)QBC.postMessage("scr-alive")},4000)}
+const QFSN=["보통","크게","아주 크게"],qFs=()=>{const v=qls("qfs");return v===null?(innerWidth>=1200?1:0):+v||0};
+const qSnd=k=>qls("snd_"+k)==="1",qSndPlay=k=>qSnd(k)&&!(!(Q.view&&!Q.temp)&&Date.now()-QPEER<10000);
 let QAC=null;
 function qBeep(kind){try{QAC=QAC||new(window.AudioContext||window.webkitAudioContext)();if(QAC.state==="suspended")QAC.resume();
  const seq=kind==="urg"?[[1046,0],[1046,.22],[1046,.44],[1397,.66]]:kind==="ord"?[[880,0],[1175,.16],[1568,.32]]:[[988,0],[1319,.12]];
@@ -882,7 +893,8 @@ const qMe=()=>S.devName||"이름 없는 기기";
 const qParts=o=>o.parts||{};
 const qActive=(o,dp)=>{const p=qParts(o);return dp?(p[dp]&&p[dp].s!=="done"):Object.values(p).some(x=>x.s!=="done")};
 const qMine=dp=>Object.entries(Q.ords).filter(([,o])=>o&&qActive(o,dp));
-const qScreen=()=>{const v=qls("screen")||"auto";return v==="auto"?(innerWidth>=1000?"clinic":"basic"):v};
+const qWin=()=>{try{return sessionStorage.getItem("sbw")||""}catch(e){return""}};
+const qScreen=()=>{const w=qWin();if(w)return w==="auto"?(innerWidth>=1000?"clinic":"basic"):w;const v=qls("screen")||"auto";return v==="auto"?(innerWidth>=1000?"clinic":"basic"):v};
 function qApply(store,path,data,patch){const ks=path.split("/").filter(Boolean);
  if(!ks.length){const prev=new Set(Object.keys(store));if(patch)Object.entries(data||{}).forEach(([k,v])=>{if(v===null)delete store[k];else store[k]=v});else{Object.keys(store).forEach(k=>delete store[k]);Object.assign(store,data||{})}return Object.keys(store).filter(k=>!prev.has(k))}
  const k=ks[0],isNew=!store[k]&&ks.length===1&&data;
@@ -895,8 +907,8 @@ async function qListen(name){if(Q.es[name])Q.es[name].close();let t=null;try{t=a
  const h=patch=>e=>{let d;try{d=JSON.parse(e.data)}catch(x){return}const nk=qApply(store,d.path||"/",d.data,patch),first=!Q.init[name];Q.init[name]=true;
   if(!first)nk.forEach(k=>{const m=store[k];if(!m||m.uid===AU.uid)return;
    if(isO){Q.fresh.add(k);const sc=Q.view||qScreen(),dp=sc==="lab"?"lab":sc==="xray"?"img":null,hit=!dp||qParts(m)[dp];
-    if(hit&&qSnd("ord"))qBeep(m.urgent?"urg":"ord");if(!Q.view)toast(`🧪 ${m.urgent?"긴급 ":""}검사 오더 · ${m.pname||""} · ${(m.tests||[]).join(", ")}`);qNotify(`${m.urgent?"🚨 긴급 ":""}검사 오더 · ${m.pname||""}${m.chart?" #"+m.chart:""}`,(m.tests||[]).join(", "))}
-   else{if(qSnd("chat"))qBeep("chat");if(Q.view!=="chat")toast(`💬 ${m.by||"직원"}: ${String(m.text||"").slice(0,40)}`);qNotify(`💬 ${m.by||"직원"}`,m.text)}});
+    if(hit&&qSndPlay("ord"))qBeep(m.urgent?"urg":"ord");if(!Q.view)toast(`🧪 ${m.urgent?"긴급 ":""}검사 오더 · ${m.pname||""} · ${(m.tests||[]).join(", ")}`);qNotify(`${m.urgent?"🚨 긴급 ":""}검사 오더 · ${m.pname||""}${m.chart?" #"+m.chart:""}`,(m.tests||[]).join(", "))}
+   else{if(qSndPlay("chat"))qBeep("chat");if(Q.view!=="chat")toast(`💬 ${m.by||"직원"}: ${String(m.text||"").slice(0,40)}`);qNotify(`💬 ${m.by||"직원"}`,m.text)}});
   qBadge();qRender();fcRender();if(isO&&S.room==="ord"&&!Q.view)softRender()};
  es.addEventListener("put",h(false));es.addEventListener("patch",h(true));
  es.addEventListener("auth_revoked",()=>{AU.tok=null;qListen(name)});es.addEventListener("cancel",()=>{es.close()})}
@@ -932,11 +944,11 @@ function qBoard(dp){const act=qMine(dp).sort((a,b)=>(b[1].urgent?1:0)-(a[1].urge
 function qChatHtml(){const arr=Object.entries(Q.chat).filter(([,m])=>m).sort((a,b)=>(a[1].t||0)-(b[1].t||0));let prev="",h="";
  arr.forEach(([k,m])=>{const d=new Date(m.t),ds=`${d.getMonth()+1}월 ${d.getDate()}일`;if(ds!==prev){h+=`<div class="qday">${ds}</div>`;prev=ds}const me=m.uid===AU.uid;h+=`<div class="qm${me?" me":""}"><div class="who">${esc(m.by||"직원")} · ${hhmm(m.t)}</div><div class="qbub">${esc(m.text)}</div></div>`});
  return `<div class="qchat"><div class="qmsgs" id="qmsgs">${h||'<div class="meta">아직 메시지가 없어요</div>'}</div><div class="qcomp"><textarea id="qtxt" rows="1" placeholder="메시지 입력"></textarea><button class="btn" data-act="qsend">보내기</button></div></div>`}
-function qRender(){if(!Q.view)return;const el=$("#scr"),v=Q.view,on=qMine(null).length;
+function qRender(){if(!Q.view)return;const el=$("#scr"),v=Q.view,on=qMine(null).length;el.classList.remove("fs1","fs2");if(qFs())el.classList.add("fs"+qFs());
  const keep=$("#qtxt")?$("#qtxt").value:"",foc=document.activeElement&&document.activeElement.id==="qtxt",ms=$("#qmsgs"),stick=!ms||ms.scrollHeight-ms.scrollTop-ms.clientHeight<80;
  const head=`<div class="qh"><div class="t"><b>${QTITLE[v]}</b><span>${esc(qMe())}${Q.temp?"":" · 이 기기의 기본 화면"}</span></div>
   <button class="qtg${qSnd("chat")?" on":""}" data-act="qsnd" data-k="chat">🔔 채팅 소리</button><button class="qtg${qSnd("ord")?" on":""}" data-act="qsnd" data-k="ord">🧪 오더 소리</button>
-  <button class="qtg pri" data-act="qord">＋ 검사 오더</button><button class="qtg" data-act="${Q.temp?"scrclose":"scrhide"}">${Q.temp?"닫기":"케어 노트 보기"}</button><button class="qtg" data-act="qset">⚙</button></div>`;
+  <button class="qtg" data-act="qfs">가 글씨 ${QFSN[qFs()]}</button><button class="qtg pri" data-act="qord">＋ 검사 오더</button><button class="qtg" data-act="${Q.temp?"scrclose":"scrhide"}">${Q.temp?"닫기":"케어 노트 보기"}</button><button class="qtg" data-act="qset">⚙</button></div>`;
  let body;if(v==="chat")body=`<div class="qbody two ${Q.tab==="ord"?"tab-ord":""}">${qChatHtml()}${qBoard(null)}</div>${innerWidth<=760?`<div style="position:fixed;left:0;right:0;bottom:0"></div>`:""}`;
  else body=`<div class="qbody">${qBoard(v==="lab"?"lab":"img")}</div>`;
  el.innerHTML=head+(v==="chat"&&innerWidth<=760?`<div class="qh" style="padding:6px 10px"><button class="qtg${Q.tab!=="ord"?" on":""}" style="flex:1" data-act="qtab" data-v="chat">💬 채팅</button><button class="qtg${Q.tab==="ord"?" on":""}" style="flex:1" data-act="qtab" data-v="ord">🧪 오더 (${on})</button></div>`:"")+body;
@@ -968,7 +980,8 @@ async function qoSend(){const name=($("#qName").value||"").trim(),tests=qCompres
  try{await qPost(QOR(),o);$("#qom").classList.remove("open");Q.preRoom=Q.prePid="";toast(`${name} 검사 오더를 보냈어요`)}catch(e){toast("보내지 못했어요")}}
 /* ---- 떠 있는 채팅창: 끌어서 옮기고, 📌로 다른 프로그램 위에 항상 띄우기 (크롬·엣지) ---- */
 const FC={pip:null};
-function fcOn(){return qls("fchat")==="1"&&OKD&&Q.view!=="chat"}
+const fcPref=()=>{const v=qls("fchat");return v===null?innerWidth>=761:v==="1"};
+function fcOn(){return fcPref()&&OKD&&Q.view!=="chat"}
 function fcShow(){const el=$("#fchat");if(!el)return;if(FC.pip){fcRender();return}el.style.display=fcOn()?"flex":"none";if(!fcOn())return;
  if(qls("fcmin")!=="1"){const w=+(qls("fcw")||0),hh=+(qls("fch")||0);if(w)el.style.width=Math.min(w,innerWidth-8)+"px";if(hh)el.style.height=Math.min(hh,innerHeight-8)+"px"}
  el.classList.toggle("min",qls("fcmin")==="1");$("#fcMin").textContent=qls("fcmin")==="1"?"+":"–";
@@ -999,10 +1012,14 @@ fcInit();
 const QSCR=[["auto","자동","넓은 화면이면 진료실, 폰이면 일반"],["clinic","① 진료실","왼쪽 케어 노트 + 오른쪽 차트 복사 보드 · 환축 화면에서 바로 오더"],["chat","② 채팅·오더 모니터","왼쪽 채팅 + 오른쪽 전체 오더 보드"],["lab","③ 검사실","혈액·요·분변·기타 오더만 · 서버 PC 옆에 띄우기"],["xray","④ 영상실","X-ray·초음파 오더만"],["basic","⑤ 일반","케어 노트만"]];
 function qsRender(){const cur=qls("screen")||"auto",dk=document.documentElement.dataset.theme==="dark";
  $("#qsBody").innerHTML=`<div class="otitle" style="margin:0">이 기기의 기본 화면</div><div class="qopt">${QSCR.map(([v,t,d])=>`<button class="${cur===v?"sel":""}" data-act="qscr" data-v="${v}"><b>${t}</b><span>${d}</span></button>`).join("")}</div>
+ ${qWin()?`<div class="meta" style="margin-top:6px">이 창은 따로 띄운 창이라 <b>${(QSCR.find(x=>x[0]===qWin())||[])[1]||""}</b> 화면으로 고정돼 있어요.</div>`:""}
+ <div class="otitle">이 PC에서 창 하나 더 띄우기 <span class="meta" style="font-weight:500">· 모니터 두 대에 따로 놓기</span></div>
+ <div class="row" style="flex-wrap:wrap;gap:6px">${[["chat","② 채팅·오더"],["lab","③ 검사실"],["xray","④ 영상실"],["clinic","① 케어 노트"]].map(([v,t])=>`<button class="qtg" data-act="qwin" data-v="${v}">↗ ${t} 창</button>`).join("")}</div>
+ <div class="meta">새 창을 다른 모니터로 끌어다 놓으면 돼요. 두 창이 같이 열려 있으면 알림음은 오더 화면 창에서만 나요.</div>
  <div class="otitle">알림음 <span class="meta" style="font-weight:500">· 이 기기에서만 · 기본은 꺼짐</span></div>
  <div class="row" style="flex-wrap:wrap;gap:6px"><button class="qtg${qSnd("chat")?" on":""}" data-act="qsnd" data-k="chat">🔔 채팅 소리 ${qSnd("chat")?"켬":"끔"}</button><button class="qtg${qSnd("ord")?" on":""}" data-act="qsnd" data-k="ord">🧪 오더 소리 ${qSnd("ord")?"켬":"끔"}</button><button class="qtg${qls("noti")==="1"?" on":""}" data-act="qnoti">🖥 화면 알림 ${qls("noti")==="1"?"켬":"끔"}</button></div>
  <div class="otitle">떠 있는 채팅창 <span class="meta" style="font-weight:500">· 이 기기에서만</span></div>
- <div class="row" style="flex-wrap:wrap;gap:6px"><button class="qtg${qls("fchat")==="1"?" on":""}" data-act="qfchat">💬 떠 있는 채팅창 ${qls("fchat")==="1"?"켬":"끔"}</button></div>
+ <div class="row" style="flex-wrap:wrap;gap:6px"><button class="qtg${fcPref()?" on":""}" data-act="qfchat">💬 떠 있는 채팅창 ${fcPref()?"켬":"끔"}</button></div>
  <div class="meta">화면 위에 작은 채팅창이 떠요. 위쪽 띠를 끌어서 옮기고, 📌를 누르면 인투벳 같은 다른 프로그램 위에도 항상 떠 있어요 (PC 크롬·엣지).</div>
  <div class="meta">검사실·영상실 화면에서는 그 부서 오더에만 소리가 나요. 소리는 페이지를 연 뒤 화면을 한 번 눌러야 나기 시작해요.</div>
  <div class="otitle">기타</div><div class="row" style="flex-wrap:wrap;gap:6px"><button class="qtg" data-act="tropen">🗑 최근 지운 항목</button><button class="qtg" id="themeBtn" data-act="theme">${dk?"☀️ 밝은 화면":"🌙 어두운 화면"}</button><button class="qtg" data-act="shareweb">🔗 링크 공유</button></div>`}
@@ -1691,8 +1708,10 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
  qchat:()=>scrOpen("chat",true),scrclose:scrClose,scrhide:scrClose,scrback:()=>scrOpen(qScreen(),false),
  qset:()=>{qsRender();$("#qs").classList.add("open")},qsclose:()=>$("#qs").classList.remove("open"),
  qscr:()=>{if(d.v==="auto")qls("screen",null);else qls("screen",d.v);if(d.v==="clinic")qls("pcboard","1");qsRender();$("#qs").classList.remove("open");if(Q.view)scrClose();qScreenApply();toast(`이 기기 화면: ${(QSCR.find(x=>x[0]===d.v)||[])[1]}`)},
+ qfs:()=>{const n=(qFs()+1)%3;qls("qfs",String(n));qRender();toast(`글씨 ${QFSN[n]} (이 기기만)`)},
  qsnd:()=>{const on=!qSnd(d.k);qls("snd_"+d.k,on?"1":"0");if(on)qBeep(d.k==="ord"?"ord":"chat");qsRender();qRender();toast(`${d.k==="chat"?"채팅":"오더"} 알림음 ${on?"켬":"끔"} (이 기기만)`)},
- qfchat:()=>{qls("fchat",qls("fchat")==="1"?"0":"1");qsRender();fcShow()},
+ qwin:()=>{const w=window.open(`${location.pathname}?w=${d.v}`,"sb_"+d.v,"popup,width=1280,height=820");if(!w)toast("팝업이 막혔어요. 주소창 오른쪽에서 팝업 허용을 눌러 주세요");$("#qs").classList.remove("open")},
+ qfchat:()=>{qls("fchat",fcPref()?"0":"1");qsRender();fcShow()},
  qnoti:async()=>{if(!window.Notification){toast("이 브라우저는 화면 알림을 지원하지 않아요");return}if(qls("noti")==="1"){qls("noti","0")}else{const p=await Notification.requestPermission();if(p==="granted")qls("noti","1");else toast("브라우저에서 알림 권한을 허용해 주세요")}qsRender()},
  qord:()=>{const p=id&&find(S.room,id);qomOpen(p?{pid:p.id,name:p.name,room:p.room||"",chart:p.chartNo||""}:null)},qomclose:()=>$("#qom").classList.remove("open"),
  qtest:()=>{Q.sel.has(d.v)?Q.sel.delete(d.v):Q.sel.add(d.v);const t=$("#qTests");if(t)t.innerHTML=qTestsHtml()},
@@ -1792,7 +1811,8 @@ async function startGate(){
  $("#gateBody").innerHTML=gateView(st);$("#gate").classList.add("open");
  if(st.dev&&st.dev.name)GPOLL=setInterval(()=>{if(!document.hidden)startGate()},20000)}
 function openApp(online){$("#gate").classList.remove("open");$("#dvBtn").style.display=S.adm?"":"none";if(OKD)return;OKD=true;
- render();load("care");loadDis();startPoll();mjPoll();{const m=(location.search.match(/[?&]screen=(\w+)/)||[])[1];if(m&&["auto","clinic","chat","lab","xray","basic"].includes(m)){if(m==="auto")qls("screen",null);else qls("screen",m);history.replaceState(null,"",location.pathname)}}qStart();qScreenApply();clearInterval(MJI);MJI=setInterval(mjPoll,90000)}
+ render();load("care");loadDis();startPoll();mjPoll();{const w=(location.search.match(/[?&]w=(\w+)/)||[])[1];if(w&&["clinic","chat","lab","xray","basic"].includes(w)){try{sessionStorage.setItem("sbw",w)}catch(e){}history.replaceState(null,"",location.pathname)}}
+ {const m=(location.search.match(/[?&]screen=(\w+)/)||[])[1];if(m&&["auto","clinic","chat","lab","xray","basic"].includes(m)){if(m==="auto")qls("screen",null);else qls("screen",m);history.replaceState(null,"",location.pathname)}}qStart();qScreenApply();clearInterval(MJI);MJI=setInterval(mjPoll,90000)}
 let RCK=0;async function recheck(){if(Date.now()-RCK<15000)return;RCK=Date.now();try{const st=await devState();if(!st.ok){OKD=false;startGate()}}catch(e){}}
 async function devLoad(){const box=$("#dvList");box.innerHTML='<div class="meta">불러오는 중...</div>';
  try{const [dr,ar]=await Promise.all([fetch(`${DBH}/devices.json`),fetch(`${DBH}/admins.json`)]);if(!dr.ok)throw 0;const ds=await dr.json()||{},as=(ar.ok?await ar.json():null)||{};
