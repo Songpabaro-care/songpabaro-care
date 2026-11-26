@@ -250,10 +250,35 @@ function Decode([byte[]]$b) {
   if ($t.Contains([char]0xFFFD)) { try { $t = [Text.Encoding]::GetEncoding(949).GetString($b) } catch {} }
   return $t
 }
+# 기록 줄 해석: "[시각] [기계이름]" 다음 줄에 장비 원문이 16진수로 남음 → 풀어서 동물번호 찾기
+$script:LUNIT = @{}
+$IDRX = @(
+  'R,[^,]*,\d{4}-\d{2}-\d{2},\d{1,2}:\d{2},[^,]*,\s*(?<id>\d+)\s*,',   # 후지 FDC (NX700·AU10V)
+  'O\|\d*\|(?<id>\d+)\|',                                               # ASTM
+  'OBR\|\d*\|(?<id>\d+)\|',                                             # HL7
+  'PID\|\d*\|(?<id>\d+)\|'
+)
+function Parse-LogText([string]$p, [string]$txt) {
+  $out = @()
+  foreach ($line in ($txt -split "`r?`n")) {
+    if ($line -match '\]\s*\[(?<u>(FDC|BC-|TTAni|[iI]-Smart)[^\]]*)\]\s*$') { $script:LUNIT[$p] = $Matches['u'].Trim(); continue }
+    $m = [regex]::Match($line, '\]\s*\[\s*(?<h>(?:[0-9A-Fa-f]{2}\s+)+[0-9A-Fa-f]{2})\s*\]')
+    if ($m.Success) {
+      $bytes = [byte[]]($m.Groups['h'].Value.Trim() -split '\s+' | ForEach-Object { [Convert]::ToByte($_, 16) })
+      $asc = [Text.Encoding]::ASCII.GetString($bytes)
+      if ($Diag) { Log "[진단] 풀어 쓴 원문 ($($script:LUNIT[$p])): $($asc -replace '[\x00-\x1F]', '·')" }
+      foreach ($rx in $IDRX) { $mm = [regex]::Match($asc, $rx); if ($mm.Success -and $script:LUNIT[$p]) { $out += [pscustomobject]@{ u = $script:LUNIT[$p]; d = ''; tm = ''; id = $mm.Groups['id'].Value.TrimStart('0') }; break } }
+      continue
+    }
+    $m2 = [regex]::Match($line, $LRX)
+    if ($m2.Success) { $out += [pscustomobject]@{ u = $m2.Groups['u'].Value; d = $m2.Groups['d'].Value; tm = $m2.Groups['tm'].Value; id = $m2.Groups['id'].Value } }
+  }
+  return $out
+}
 function LogFiles {
   $day = (Get-Date).Day.ToString()
   $fs = @()
-  foreach ($d in $LOGDIRS) { if (Test-Path $d) { foreach ($n in "${day}_Rcv.Log", "$day.Log") { $p = Join-Path $d $n; if (Test-Path $p) { $fs += $p } } } }
+  foreach ($d in $LOGDIRS) { if (Test-Path $d) { foreach ($n in @("$day.Log")) { $p = Join-Path $d $n; if (Test-Path $p) { $fs += $p } } } }
   return $fs
 }
 function Tail-Logs([switch]$init) {
@@ -263,7 +288,7 @@ function Tail-Logs([switch]$init) {
       $len = (Get-Item $p).Length
       if ($init -or -not $script:LPOS.ContainsKey($p)) {
         $script:LPOS[$p] = $len
-        if ($Diag) {
+        if ($Diag -and $false) {
           $fsx = [IO.File]::Open($p, 'Open', 'Read', 'ReadWrite'); $st0 = [Math]::Max(0, $len - 1500); $fsx.Seek($st0, 'Begin') | Out-Null
           $buf = New-Object byte[] ($len - $st0); [void]$fsx.Read($buf, 0, $buf.Length); $fsx.Close()
           $lines = (Decode $buf) -split "`r?`n" | Where-Object { $_.Trim() } | Select-Object -Last 4
@@ -279,7 +304,7 @@ function Tail-Logs([switch]$init) {
       $script:LPOS[$p] = $len
       $txt = Decode $buf
       if ($Diag) { foreach ($l in ($txt -split "`r?`n" | Where-Object { $_.Trim() } | Select-Object -First 6)) { Log "[진단] 기록: $l" } }
-      foreach ($m in [regex]::Matches($txt, $LRX)) { $found += [pscustomobject]@{ u = $m.Groups['u'].Value; d = $m.Groups['d'].Value; tm = $m.Groups['tm'].Value; id = $m.Groups['id'].Value } }
+      $found += @(Parse-LogText $p $txt)
     } catch { Log "기록 파일 읽기 실패: $p · $($_.Exception.Message)" }
   }
   return $found
