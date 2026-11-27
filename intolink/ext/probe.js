@@ -31,13 +31,30 @@ async function probe() {
     if (tgt) await dbg(tgt, 'Page.navigate', { url: 'https://intolink.co.kr/plus/waitList' });
     await wait(6000);
     let s = await look(); out.push('1) 진료대기: ' + s.path);
-    // 첫 줄 누르기
+    // 줄을 누르면 어디로 가는지: 화면 안 프로그램에서 해당 부분 (한글·숫자는 가림)
+    const [cd] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, world: 'MAIN', func: () => {
+      const M = t => t.replace(/[가-힣]+/g, '가').replace(/\d{3,}/g, '000');
+      const hits = [];
+      for (const sc of document.querySelectorAll('script:not([src])')) {
+        const lines = sc.textContent.split(/\n/);
+        lines.forEach((l, i) => { if (/location\.href|location\.replace|window\.open|\.click\(|on\(['"]click|onclick|goChart|chart|pet_?idx|cust_?idx|animal/i.test(l) && l.trim().length < 400) hits.push(M(l.trim())); });
+      }
+      const tr = [...document.querySelectorAll('#waitListTable tr')].find(r => r.querySelector('td') && r.textContent.trim());
+      const attrs = tr ? [...tr.attributes, ...[...tr.querySelectorAll('*')].flatMap(e => [...e.attributes])].filter(a => a.name !== 'class' && a.name !== 'style').map(a => a.name + '=' + M(a.value).slice(0, 80)) : [];
+      return { hits: [...new Set(hits)].slice(0, 25), attrs: attrs.slice(0, 10) };
+    } });
+    out.push('   줄에 붙은 속성: ' + (cd.result.attrs.join(' ') || '(없음)'));
+    out.push('   화면 안 프로그램에서 찾은 부분:');
+    cd.result.hits.forEach(h => out.push('     ' + h.slice(0, 220)));
+    // 첫 환축 줄 누르기 (칸 제목 줄은 건너뜀)
     STEP = '2 줄 누름';
     const [c] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, world: 'MAIN', func: () => {
-      const tr = document.querySelector('#waitListTable tbody tr'); if (!tr) return '첫 줄 없음';
-      const td = tr.querySelector('td') || tr; td.click(); return '눌렀음';
+      const tr = [...document.querySelectorAll('#waitListTable tr')].find(r => r.querySelector('td') && r.textContent.trim()); if (!tr) return '환축 줄 없음';
+      const td = tr.querySelector('td');
+      for (const el of [td, tr]) { ['pointerdown', 'mousedown', 'touchstart', 'pointerup', 'mouseup', 'touchend'].forEach(t => { try { el.dispatchEvent(new Event(t, { bubbles: true })); } catch (e) {} }); }
+      td.click(); return '눌렀음';
     } });
-    out.push('2) 첫 줄 ' + c.result);
+    out.push('2) 첫 환축 줄 ' + c.result);
     await wait(6000);
     const opened = await chrome.tabs.query({}).then(ts => ts.filter(x => x.openerTabId === tab.id));
     if (opened.length) out.push('   → 새 탭으로 열림 ' + opened.length + '개 (이 방식은 다음 버전에서 따라가게 고칠게요)');
@@ -45,6 +62,7 @@ async function probe() {
     out.push('   → 주소: ' + purl('https://intolink.co.kr' + s.path + s.search));
     out.push('   → 화면: 차트정보 ' + (s.has.차트정보 ? '있음' : '없음') + ' · 고객번호 글자 ' + (s.has.고객번호 ? '있음' : '없음') + ' · 동물번호 글자 ' + (s.has.동물번호 ? '있음' : '없음'));
     out.push('   → 오른쪽 아래 버튼 후보: ' + (s.fixed.join(', ') || '(못 찾음)'));
+    if (s.path === '/plus/waitList' && !s.has.차트정보) throw new Error('줄을 눌러도 차트로 넘어가지 않음 (위 "화면 안 프로그램" 부분으로 방법을 찾을게요)');
     // 오른쪽 아래 '보호자 • 동물' 버튼 누르기
     STEP = '3 버튼 누름';
     const [c2] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, world: 'MAIN', func: () => {
