@@ -169,11 +169,37 @@ function Try-Update {
     if ((Get-FileHash $tmp -Algorithm SHA256).Hash -eq (Get-FileHash $SELF -Algorithm SHA256).Hash) { return }
     Copy-Item $tmp $SELF -Force
     Log '새 버전을 받았어요 · 다시 시작합니다'
-    try { $script:MTX.ReleaseMutex() } catch {}
-    $args2 = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ('"' + $SELF + '"')); if ($Reception) { $args2 += '-Reception' }; if ($Diag) { $args2 += '-Diag' } else { $args2 = @('-WindowStyle', 'Minimized') + $args2 }
-    Start-Process powershell -ArgumentList $args2
-    exit
+    Restart-Self
   } catch { Log "업데이트 확인 실패: $($_.Exception.Message)" }
+}
+function Restart-Self {
+  try { $script:MTX.ReleaseMutex() } catch {}
+  $args2 = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ('"' + $SELF + '"')); if ($Reception) { $args2 += '-Reception' }; if ($Diag) { $args2 += '-Diag' } else { $args2 = @('-WindowStyle', 'Minimized') + $args2 }
+  Start-Process powershell -ArgumentList $args2
+  exit
+}
+# 같은 오류가 계속되면 스스로 회복: 3번째 실패 → 로그인 새로 받기, 약 2분 계속 → 프로그램 다시 시작 (10분에 한 번까지)
+$script:FAILS = 0
+function On-Ok { if ($script:FAILS -ge 3) { Log "✔ 다시 정상으로 연결됐어요" }; $script:FAILS = 0 }
+function On-Fail($er) {
+  $script:FAILS++
+  Log "오류: $(ErrTxt $er) · 10초 후 다시 시도"
+  if ($script:FAILS -eq 3) {
+    Log "↻ 계속 실패해서 로그인을 새로 받아요"
+    $script:tok = $null; $script:exp = [datetime]::MinValue; $script:A = $null
+  }
+  if ($script:FAILS -ge 12) {
+    $rf = Join-Path $DIR 'restart.txt'; $last = [datetime]::MinValue
+    try { if (Test-Path $rf) { $last = [datetime](Get-Content $rf -Raw).Trim() } } catch {}
+    if (((Get-Date) - $last).TotalMinutes -ge 10) {
+      try { Set-Content -Path $rf -Value (Get-Date -Format 'o') } catch {}
+      Log "↻ 2분 넘게 계속 실패해서 프로그램을 다시 시작합니다"
+      Restart-Self
+    } elseif ($script:FAILS -eq 12) {
+      Log "⚠ 다시 시작해도 계속 실패해요 · 이 창 사진을 보내 주세요 (계속 재시도 중)"
+      try { Toast "⚠ 송파바로 LIS 연동 오류" "자동 회복이 안 돼요. LIS 창 사진을 보내 주세요" } catch {}
+    }
+  }
 }
 
 # ---------- 로그인 (케어 노트와 같은 기기 승인 방식) ----------
@@ -687,8 +713,9 @@ while ($true) {
       Fb 'Patch' "rooms/$ROOM/lis" (@{ hb = @{ '.sv' = 'timestamp' }; st = $st; dev = $code }) | Out-Null
       $lastHb = Get-Date
     }
+    On-Ok
   } catch {
-    Log "오류: $(ErrTxt $_) · 10초 후 다시 시도"
+    On-Fail $_
     Start-Sleep -Seconds 7
   }
   Start-Sleep -Milliseconds 1500
