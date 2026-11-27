@@ -89,11 +89,17 @@ async function apiDiag() {
     return r; };
   for (const p of ['/plus/main', '/plus/receiptCompleted', '/plus/waitList']) {
     try {
-      const d = await getDoc(p), all = scan(d._raw || '');
+      const d = await getDoc(p), all = scan(d._raw || ''), code = [];
       const srcs = [...d.querySelectorAll('script[src]')].map(e => e.getAttribute('src')).filter(u => u && !LIB.test(u) && (u.includes('intolink.co.kr') || !/^(https?:)?\/\//.test(u)));
       for (const u of srcs) { if (seenJs.has(u) || jsN >= 20) continue; seenJs.add(u); jsN++;
-        try { const t = await (await fetch(new URL(u, H + p).href, { credentials: 'include' })).text(); scan(t).forEach((v, k) => all.set(k, (all.get(k) || '') + v)); } catch (e) {} }
-      out[p] = { js: srcs.map(u => u.replace(/\?.*$/, '')), urls: [...all].map(([u, k]) => u + (k ? '  ← ' + k.trim() : '')) };
+        try { const rr = await fetch(new URL(u, H + p).href, { credentials: 'include' }); const t = await rr.text(); if (!rr.ok) code.push(`(${u.replace(/^.*\//, '')} 못 받음 ${rr.status})`);
+          scan(t).forEach((v, k) => all.set(k, (all.get(k) || '') + v));
+          // 이 화면 전용 스크립트: 데이터를 받아 오는 코드 부분을 그대로 (한글은 가, 숫자는 0)
+          if (/ge_plus|\/wait\/|receipt|status_client/i.test(u)) { const re2 = /\$\.ajax|\$\.post|\$\.get|axios|fetch\(|url\s*:|\.post\(|\.get\(/g; let m2, n2 = 0, last = -999;
+            while ((m2 = re2.exec(t)) && n2 < 10) { if (m2.index - last < 160) continue; last = m2.index; n2++; code.push(`[${u.replace(/^.*\//, '')}] ` + t.slice(Math.max(0, m2.index - 60), m2.index + 220).replace(/\s+/g, ' ').replace(/[가-힣]+/g, '가').replace(/\d/g, '0')); }
+            if (!n2) code.push(`[${u.replace(/^.*\//, '')}] 데이터 받는 코드 못 찾음 · 길이 ${t.length} · 앞부분: ` + t.slice(0, 200).replace(/\s+/g, ' ').replace(/[가-힣]+/g, '가').replace(/\d/g, '0')); }
+        } catch (e) { code.push(`(${u.replace(/^.*\//, '')} 받기 실패: ${e.message})`); } }
+      out[p] = { js: srcs.map(u => u.replace(/\?.*$/, '')), urls: [...all].map(([u, k]) => u + (k ? '  ← ' + k.trim() : '')), code };
     } catch (e) { out[p] = { err: e.message }; }
   }
   return out;
