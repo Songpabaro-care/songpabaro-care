@@ -40,7 +40,7 @@ async function mobileTab(tabId) {
   return tgt;
 }
 async function diag() {
-  const out = ['== 인투링크 진단 0.3 ' + new Date().toLocaleString('ko-KR') + ' =='];
+  const out = ['== 인투링크 진단 0.4 ' + new Date().toLocaleString('ko-KR') + ' =='];
   const tab = await chrome.tabs.create({ url: 'about:blank', active: true });
   let tgt;
   try { tgt = await mobileTab(tab.id); } catch (e) { out.push('폰 모드 켜기 실패: ' + e.message); }
@@ -53,6 +53,41 @@ async function diag() {
   chrome.debugger.onEvent.addListener(on);
   try { if (tgt) await dbg(tgt, 'Page.navigate', { url: 'https://intolink.co.kr/plus/waitList' }); else await chrome.tabs.update(tab.id, { url: 'https://intolink.co.kr/plus/waitList' }); } catch (e) { out.push('열기 실패: ' + e.message); }
   await new Promise(r => setTimeout(r, 10000));
+  // 화면 뒤 데이터 (Vue) · 페이지 안 스크립트 변수: 칸 이름과 값 모양만
+  let vue = null;
+  try {
+    const [r] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, world: 'MAIN', func: () => {
+      const KEYS = 60;
+      const sh = (v, d) => {
+        if (d > 4) return '…';
+        if (Array.isArray(v)) return v.length ? `[${v.length}개] ` + sh(v[0], d + 1) : '[]';
+        if (v && typeof v === 'object') return '{' + Object.keys(v).filter(k => !k.startsWith('_') && !k.startsWith('$')).slice(0, KEYS).map(k => k + ':' + sh(v[k], d + 1)).join(', ') + '}';
+        if (typeof v === 'string') return '"' + v.replace(/[가-힣]/g, '가').replace(/[0-9]/g, '0').replace(/[A-Za-z]/g, 'a').slice(0, 16) + '"';
+        return typeof v;
+      };
+      const out = [];
+      const seen = new Set();
+      for (const el of document.querySelectorAll('*')) {
+        const vm = el.__vue__;
+        if (vm && !seen.has(vm)) { seen.add(vm); try { const d = vm.$data || {}; if (Object.keys(d).length) out.push('Vue2 ' + (el.id ? '#' + el.id : el.tagName.toLowerCase()) + ' → ' + sh(d, 0).slice(0, 1500)); } catch (e) {} }
+        const app = el.__vue_app__;
+        if (app && !seen.has(app)) { seen.add(app); try { const inst = app._instance; const d = inst && (inst.data || inst.setupState) || {}; out.push('Vue3 ' + (el.id ? '#' + el.id : el.tagName.toLowerCase()) + ' → ' + sh(Object.assign({}, inst.data || {}, inst.setupState || {}), 0).slice(0, 1500)); } catch (e) {} }
+        if (out.length > 6) break;
+      }
+      // 페이지 안 스크립트의 변수 이름
+      const vars = [];
+      for (const s of document.querySelectorAll('script:not([src])')) {
+        const t = s.textContent;
+        for (const m of t.matchAll(/(?:var|let|const)\s+([A-Za-z_$][\w$]*)\s*=\s*([\[{'"])/g)) vars.push(m[1] + (m[2] === '[' ? '=[…]' : m[2] === '{' ? '={…}' : '=글자'));
+      }
+      // 표 첫 줄에 붙은 클릭 동작 이름
+      const tr = document.querySelector('#waitListTable tbody tr');
+      let click = '';
+      if (tr) { const vm = tr.__vue__ || (tr.closest('[id]') || {}).__vue__; click = [...tr.attributes].map(a => a.name).join(',') + (tr.__vnode ? ' (vnode)' : '') + (vm ? ' vm' : ''); }
+      return { out, vars: [...new Set(vars)].slice(0, 40), click, inlineLen: [...document.querySelectorAll('script:not([src])')].map(s => s.textContent.length) };
+    } });
+    vue = r.result;
+  } catch (e) { out.push('화면 뒤 데이터 읽기 실패: ' + e.message); }
   let page = null;
   try {
     const [r] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => {
@@ -97,10 +132,18 @@ async function diag() {
         s.tds.forEach((c, k) => out.push(`    칸${k + 1}: ${mask(c.t)}` + (c.a.length ? '  {' + c.a.map(as => as.map(([n, v]) => n + '=' + am(v)).join(' ')).join(' | ') + '}' : '')));
       });
     });
-    out.push('-- 탭·메뉴 글자 --');
-    out.push('  ' + page.tabs.map(x => '[' + mask(x) + ']').join(' '));
+    out.push('-- 탭·메뉴 글자 (화면 메뉴라 그대로, 숫자만 가림) --');
+    out.push('  ' + page.tabs.map(x => '[' + x.replace(/[0-9]/g, '0') + ']').join(' '));
     out.push('-- 화면 안 주소 --');
     out.push('  ' + page.links.join('  '));
+  }
+  if (vue) {
+    out.push('-- 화면 뒤 데이터 (칸 이름, 값은 가림) --');
+    if (!vue.out.length) out.push('  (Vue 데이터 없음)');
+    vue.out.forEach(x => out.push('  ' + x));
+    out.push('  스크립트 변수: ' + (vue.vars.join(' ') || '(없음)'));
+    out.push('  스크립트 길이: ' + vue.inlineLen.join(', '));
+    out.push('  표 첫 줄: ' + (vue.click || '(못 찾음)'));
   }
   out.push('-- 화면이 받은 데이터 (주소만) --');
   let n = 0;
