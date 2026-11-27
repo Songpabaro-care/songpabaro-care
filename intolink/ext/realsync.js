@@ -93,8 +93,10 @@ async function runSync(why) {
     }
     // 외래 대기에서 빠진 환축: 입원·호텔로 갔으면 위에서 처리됨. 그 밖엔 접수 취소 → 기록 없으면 지우고, 기록·오더 있으면 퇴원 목록으로
     const gone = Object.keys(st.seen).filter(k => st.seen[k].d === td && !nowOpd.has(k) && !nowInp.has(k));
+    // 전에 자동 등록돼 쌓여 있던 외래 카드도: 지금 인투링크 외래 대기·입원·호텔 어디에도 없으면 같은 규칙으로 정리
+    Object.values(cBy).forEach(c => { const k = digits(c.chartNo); if ((c.category || '외래') === '외래' && (c.auto === 'intolink' || c.auto === 'intovet') && !nowOpd.has(k) && !nowInp.has(k) && !gone.includes(k)) gone.push(k); });
     if (gone.length && d.items.some(i => i.kind !== '외래' && !i.psno)) done.push(`⏳ 입원·호텔 중 번호 못 찾은 환축이 있어 외래 정리는 다음 차례로 미룸`);
-    else if (gone.length > 5) done.push(`⚠ 외래 대기에서 ${gone.length}마리가 한꺼번에 빠져 이번엔 정리 안 함 (읽기 오류일 수 있음)`);
+    else if (gone.length > 3 && !nowOpd.size) done.push(`⚠ 인투링크 외래 대기가 비어 보여 이번엔 정리 안 함 (읽기 오류일 수 있음 · 정리 대상 ${gone.length}마리)`);
     else if (gone.length) {
       const ords = (await fb('GET', P('orders'))) || {};
       for (const k of gone) {
