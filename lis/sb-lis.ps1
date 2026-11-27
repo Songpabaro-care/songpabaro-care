@@ -181,6 +181,7 @@ $script:A = $null; $script:tok = $null; $script:exp = [datetime]::MinValue
 function Get-Tok {
   if ($script:tok -and (Get-Date) -lt $script:exp) { return $script:tok }
   if (-not $script:A -and (Test-Path $AUTHF)) { $script:A = Get-Content $AUTHF -Raw -Encoding UTF8 | ConvertFrom-Json }
+  $script:STEP = '로그인 갱신'
   if ($script:A) {
     $r = Invoke-RestMethod -Method Post -Uri "https://securetoken.googleapis.com/v1/token?key=$KEY" -ContentType 'application/x-www-form-urlencoded' -Body "grant_type=refresh_token&refresh_token=$($script:A.rt)"
     $script:A.rt = $r.refresh_token; $script:tok = $r.id_token; $script:exp = (Get-Date).AddSeconds([int]$r.expires_in - 120)
@@ -194,11 +195,19 @@ function Get-Tok {
 }
 function Fb([string]$method, [string]$path, $body) {
   $u = "$DB/$path.json?auth=$(Get-Tok)"
+  $script:STEP = "$method $path"
   if ($null -ne $body) {
     $j = if ($body -is [string]) { $body } else { $body | ConvertTo-Json -Depth 8 -Compress }
     return Invoke-RestMethod -Method $method -Uri $u -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes($j))
   }
   return Invoke-RestMethod -Method $method -Uri $u
+}
+function ErrTxt($er) {
+  $m = "$($er.Exception.Message)"
+  if ($script:STEP) { $m = "[$($script:STEP)] $m" }
+  $d = "$($er.ErrorDetails.Message)" -replace '\s+', ' '
+  if ($d) { $m += " · 서버: " + $d.Substring(0, [Math]::Min(200, $d.Length)) }
+  return $m
 }
 function JsonStr([string]$s) { ($s | ConvertTo-Json -Compress) }
 
@@ -618,7 +627,7 @@ if ($Reception) {
         }
       }
       if (((Get-Date) - $lastUp).TotalMinutes -ge 60) { $lastUp = Get-Date; Try-Update }
-    } catch { Log "오류: $($_.Exception.Message)"; $script:GEC = $null; Start-Sleep -Seconds 7 }
+    } catch { Log "오류: $(ErrTxt $_)"; $script:GEC = $null; Start-Sleep -Seconds 7 }
     if ($script:GEC) { Start-Sleep -Milliseconds 1500 } else { Start-Sleep -Seconds 4 }
   }
 }
@@ -629,6 +638,7 @@ $script:lastUia = [datetime]::MinValue
 $seen = @{}; $first = $true; $lastHb = [datetime]::MinValue; $st = 'nolis'; $lastTxt = ''
 while ($true) {
   try {
+    $script:STEP = $null
     # 1순위: LIS 기록 파일
     foreach ($r in (Tail-Logs)) {
       $key = "$($r.u)|$($r.d)|$($r.tm)|$($r.id)"
@@ -674,11 +684,11 @@ while ($true) {
     if (((Get-Date) - $lastUp).TotalMinutes -ge 60) { $lastUp = Get-Date; Try-Update }
     if (((Get-Date) - $script:lastBk).TotalMinutes -ge 30) { $script:lastBk = Get-Date; Try-Backup }
     if (((Get-Date) - $lastHb).TotalSeconds -ge 60) {
-      Fb 'Put' "rooms/$ROOM/lis" (@{ hb = @{ '.sv' = 'timestamp' }; st = $st; dev = $code }) | Out-Null
+      Fb 'Patch' "rooms/$ROOM/lis" (@{ hb = @{ '.sv' = 'timestamp' }; st = $st; dev = $code }) | Out-Null
       $lastHb = Get-Date
     }
   } catch {
-    Log "오류: $($_.Exception.Message) · 10초 후 다시 시도"
+    Log "오류: $(ErrTxt $_) · 10초 후 다시 시도"
     Start-Sleep -Seconds 7
   }
   Start-Sleep -Milliseconds 1500
