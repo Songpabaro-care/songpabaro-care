@@ -97,7 +97,11 @@ public static class SbDock {
     List<string> o = new List<string>();
     o.Add("== 송파바로 채팅 자리 비키기 진단 " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " ==");
     IntPtr main = FindMain(); o.Add("인투벳 창: " + (main == IntPtr.Zero ? "못 찾음" : Cls(main)));
-    IntPtr chat = FindChat(); o.Add("채팅 창: " + (chat == IntPtr.Zero ? "못 찾음 (📌로 띄웠는지 확인)" : Cls(chat)));
+    bool running = false; try { Mutex.OpenExisting("SongpaBaroChatDock").Close(); running = true; } catch {}
+    o.Add("자리 비키기 실행 중: " + (running ? "예" : "아니오 (Win+R → %LOCALAPPDATA%\\songpabaro-intovet\\sbdock.exe)"));
+    o.Add("우측 하단 고정: " + (File.Exists(Path.Combine(dir, "dock-off.flag")) ? "끔" : "켬"));
+    o.Add("자동 실행 등록: " + (File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "SongpaBaro Chat Dock.lnk")) ? "있음" : "없음"));
+    IntPtr chat = FindChat(); o.Add("채팅 창: " + (chat == IntPtr.Zero ? "못 찾음 (📌로 띄웠는지 확인)" : Cls(chat) + " " + Rect(chat).L + "," + Rect(chat).T));
     EnumWindows(delegate(IntPtr h, IntPtr l) {
       if (IsWindowVisible(h) && Cls(h).StartsWith("Chrome_WidgetWin") && (GetWindowLong(h, -20) & 0x8) != 0) { RECT r = Rect(h); o.Add("  크롬 맨 위 창: '" + Title(h) + "' " + (r.R - r.L) + "x" + (r.B - r.T)); }
       return true; }, IntPtr.Zero);
