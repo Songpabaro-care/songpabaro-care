@@ -166,3 +166,4 @@ async function diag() {
 
 importScripts('find.js');
 importScripts('probe.js');
+importScripts('probe2.js');
