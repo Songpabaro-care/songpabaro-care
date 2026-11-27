@@ -38,7 +38,8 @@ public static class SbDock {
     EnumWindows(delegate(IntPtr h, IntPtr l) {
       if (!IsWindowVisible(h)) return true;
       string t = Title(h);
-      if (t.IndexOf("송파바로 채팅", StringComparison.Ordinal) >= 0) { hit = h; return false; }
+      bool top = (GetWindowLong(h, -20) & 0x8) != 0;
+      if (t.IndexOf("송파바로 채팅", StringComparison.Ordinal) >= 0 || (top && Cls(h).StartsWith("Chrome_WidgetWin") && t.IndexOf("케어 노트", StringComparison.Ordinal) >= 0)) { hit = h; return false; }
       return true; }, IntPtr.Zero);
     return hit;
   }
@@ -73,7 +74,9 @@ public static class SbDock {
   }
   static IntPtr FindPopup(IntPtr main) {
     int budget = 400; DateTime now = DateTime.Now;
-    foreach (IntPtr h in Cands(main)) {
+    List<IntPtr> cs = Cands(main);
+    foreach (IntPtr h in cs) if (Cls(h).IndexOf("CID", StringComparison.OrdinalIgnoreCase) >= 0) return h;
+    foreach (IntPtr h in cs) {
       DateTime until; if (NO.TryGetValue(h, out until) && until > now) continue;
       if (HasKey(h, ref budget)) return h;
       NO[h] = now.AddSeconds(15);
