@@ -159,11 +159,11 @@ public static class SbDock {
   }
 
   // 화면 맨 아래에서 띄우는 높이 (인투벳 맨 아래 상태줄 아이콘이 보이게). dock-gap.txt에 숫자를 넣으면 바꿀 수 있음
-  static int gapV = 20; static DateTime gapT = DateTime.MinValue;
+  static int gapV = 8; static DateTime gapT = DateTime.MinValue;
   static int Gap(string dir) {
     if ((DateTime.Now - gapT).TotalSeconds < 5) return gapV;
     gapT = DateTime.Now; int g;
-    try { string f = Path.Combine(dir, "dock-gap.txt"); gapV = File.Exists(f) && int.TryParse(File.ReadAllText(f).Trim(), out g) && g >= 0 && g < 400 ? g : 20; } catch { gapV = 20; }
+    try { string f = Path.Combine(dir, "dock-gap.txt"); gapV = File.Exists(f) && int.TryParse(File.ReadAllText(f).Trim(), out g) && g >= 0 && g < 400 ? g : 8; } catch { gapV = 8; }
     return gapV;
   }
   static Mutex MX;
@@ -202,7 +202,7 @@ public static class SbDock {
             else if (c.L != tx || c.T != ty) Move(chat, tx, ty);
           }
           docked = false; userMoved = false;
-          Thread.Sleep(400); continue;
+          Thread.Sleep(120); continue;
         }
         if (pop != IntPtr.Zero && chat != IntPtr.Zero) {
           RECT p = Rect(pop), c = Rect(chat);
