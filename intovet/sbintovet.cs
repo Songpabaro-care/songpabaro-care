@@ -8,7 +8,12 @@ public static class SbIntoVet {
   [DllImport("user32.dll")] static extern bool ShowWindow(IntPtr h, int c);
   [DllImport("user32.dll")] static extern bool SetForegroundWindow(IntPtr h);
   [DllImport("user32.dll")] static extern void keybd_event(byte v, byte s, uint f, UIntPtr e);
-  [STAThread] public static void Main() {
+  [STAThread] public static void Main(string[] a) {
+    if (a.Length > 0 && a[0].IndexOf("diag", StringComparison.OrdinalIgnoreCase) >= 0) {
+      string dir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+      try { System.Diagnostics.Process.Start(System.IO.Path.Combine(dir, "sbdock.exe"), "diag"); } catch {}
+      return;
+    }
     IntPtr hit = IntPtr.Zero;
     EnumWindows(delegate(IntPtr h, IntPtr l) {
       if (!IsWindowVisible(h)) return true;
