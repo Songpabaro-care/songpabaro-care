@@ -7,6 +7,7 @@ function npQuery(u) {
 }
 function npBody(b) {
   if (!b) return '';
+  if (/Content-Disposition/i.test(b)) return '(폼) 칸 이름: ' + [...b.matchAll(/name="([^"]+)"/g)].map(m => m[1]).join(', ');
   try { const j = JSON.parse(b); return '(JSON) ' + Object.keys(j).map(k => k + '=' + npMask(typeof j[k] === 'object' ? JSON.stringify(j[k]) : j[k]).slice(0, 12)).join('&'); } catch (e) {}
   try { return [...new URLSearchParams(b)].map(([k, v]) => k + '=' + npMask(v).slice(0, 12)).join('&'); } catch (e) { return npMask(b).slice(0, 160); }
 }
@@ -17,7 +18,7 @@ async function netProbe(path) {
   let tgt = null;
   const on = async (src, m, p) => {
     if (!tgt || src.tabId !== tab.id) return;
-    if (m === 'Network.requestWillBeSent' && /intolink/.test(p.request.url) && ['XHR', 'Fetch'].includes(p.type))
+    if (m === 'Network.requestWillBeSent' && /intolink/.test(p.request.url) && !/sso\.intolink|\/api\/frame|login|token|google/i.test(p.request.url) && ['XHR', 'Fetch'].includes(p.type))
       reqs[p.requestId] = { url: p.request.url, method: p.request.method, post: p.request.postData || '', ty: p.type };
     if (m === 'Network.responseReceived' && reqs[p.requestId]) { reqs[p.requestId].st = p.response.status; reqs[p.requestId].mt = p.response.mimeType; }
     if (m === 'Network.loadingFinished' && reqs[p.requestId]) {
@@ -30,7 +31,18 @@ async function netProbe(path) {
   try {
     tgt = await mobileTab(tab.id);
     await dbg(tgt, 'Page.navigate', { url: 'https://intolink.co.kr' + path });
-    await new Promise(r => setTimeout(r, 9000));
+    await new Promise(r => setTimeout(r, 8000));
+    // 화면 뒤 Vue 앱의 함수 이름·데이터 칸 이름, 그리고 '조회/검색' 버튼이 있으면 한 번 눌러 봄 (값은 안 읽음)
+    try {
+      const ev = await dbg(tgt, 'Runtime.evaluate', { returnByValue: true, expression: `(() => { const o = [];
+        document.querySelectorAll('[id]').forEach(el => { const vm = el.__vue__; if (vm && vm.$options && !o.some(x => x.vm === vm)) o.push({ vm, id: el.id }); });
+        const info = o.slice(0, 4).map(x => '#' + x.id + ' 함수: ' + Object.keys(x.vm.$options.methods || {}).join(', ') + ' · 데이터 칸: ' + Object.keys(x.vm.$data || {}).join(', '));
+        const b = [...document.querySelectorAll('button, a, input[type=button], input[type=submit]')].find(e => /조회|검색|오늘|search/i.test((e.textContent || e.value || '').trim()) && e.offsetParent);
+        if (b) b.click();
+        return info.join('\n') + '\n누른 버튼: ' + (b ? (b.textContent || b.value || '').trim().replace(/[가-힣]+/g, m => /조회|검색|오늘/.test(m) ? m : '가').slice(0, 20) : '없음'); })()` });
+      out.push((ev.result && ev.result.value) || '(Vue 정보 없음)');
+    } catch (e) { out.push('Vue 정보 읽기 실패: ' + e.message); }
+    await new Promise(r => setTimeout(r, 6000));
     const ids = Object.keys(reqs);
     out.push(`화면이 보낸 데이터 요청 ${ids.length}개`);
     ids.forEach((id, i) => { const q = reqs[id];

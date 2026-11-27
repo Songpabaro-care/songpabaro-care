@@ -56,6 +56,6 @@ async function load() {
   DATA = await chrome.runtime.sendMessage({ t: 'collect' });
   render();
 }
-async function np(path) { const o = $('#npo'); o.style.display = 'block'; o.textContent = '인투링크 화면을 잠깐 열어서 확인하는 중… (10초쯤, 새 탭이 잠깐 생겼다 닫혀요)'; try { o.textContent = await chrome.runtime.sendMessage({ t: 'netprobe', path }); } catch (e) { o.textContent = '실패: ' + e.message; } }
+async function np(path) { const o = $('#npo'); o.style.display = 'block'; o.textContent = '인투링크 화면을 잠깐 열어서 확인하는 중… (15초쯤, 새 탭이 잠깐 생겼다 닫혀요)'; try { o.textContent = await chrome.runtime.sendMessage({ t: 'netprobe', path }); } catch (e) { o.textContent = '실패: ' + e.message; } }
 $('#np').onclick = () => np('/plus/receiptCompleted');
 $('#real').onchange = render; $('#again').onclick = load; load();
