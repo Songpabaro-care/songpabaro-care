@@ -660,7 +660,7 @@ if ($Reception) {
             $last = $key
             if ($Diag) { Log "[진단] 읽음 · 번호 $($g.no) / 이름 $($g.name) / 상태 $($g.st) / $($g.sp) $($g.breed) $($g.sex) $($g.bw)kg" }
             if ($g.st -match '수납\s*완료|진료\s*완료|귀가') { Opd-Out $g }
-            elseif ($g.st -match '미용|약\s*처방|전화\s*문의|수납\s*대기|면회') { if ($Diag) { Log "[진단] 외래 제외 항목($($g.st)) · #$($g.no) · 등록 안 함" } }
+            elseif ($g.st -match '약\s*처방|전화\s*문의|수납\s*대기|면회') { if ($Diag) { Log "[진단] 외래 제외 항목($($g.st)) · #$($g.no) · 등록 안 함" } }
             elseif ($g.st -match '입원') { Opd-Cat $g '입원' }
             elseif ($g.st -match '호텔') { Opd-Cat $g '호텔' }
             elseif ($g.st -match '접수') { Opd-Register $g }
