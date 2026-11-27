@@ -585,17 +585,29 @@ if ($Reception) {
     return $x
   }
   function Recent($k) { $script:DONE.ContainsKey($k) -and ((Get-Date) - $script:DONE[$k]).TotalMinutes -lt 30 }
-  function Opd-Register($g) {
+  function Opd-Register($g, $c = '외래') {
     $k = "$($g.no)|R"; if (Recent $k) { return }; $script:DONE[$k] = Get-Date
     Load-Idx 15
     if (Care-One $g.no) { Log "이미 케어 노트에 있음 · #$($g.no) $($g.name)"; return }
     $id = "p-care-$(NowMs)"; $today = Get-Date -Format 'yyyy-MM-dd'
     $sp = if ($g.sp -eq 'Feline') { 'cat' } else { 'dog' }
     $info = (@($g.sex, $(if ($g.bw) { "$($g.bw)kg" }), $g.birth) | Where-Object { $_ }) -join ' · '
-    $p = [ordered]@{ id = $id; name = $(if ($g.name) { $g.name } else { "#$($g.no)" }); room = ''; chartNo = $g.no; species = $sp; breed = $g.breed; owner = ''; dx = ''; category = '외래'; adm = $today; auto = 'intovet'; sex = $g.sex; bw = $g.bw; birth = $g.birth }
+    $p = [ordered]@{ id = $id; name = $(if ($g.name) { $g.name } else { "#$($g.no)" }); room = ''; chartNo = $g.no; species = $sp; breed = $g.breed; owner = ''; dx = ''; category = $c; adm = $today; auto = 'intovet'; sex = $g.sex; bw = $g.bw; birth = $g.birth }
     Fb 'Put' "rooms/$ROOM/care_patients/$id" $p | Out-Null
     $script:CI[$g.no] = $id; $script:DONE.Remove("$($g.no)|O")
-    Log "✅ 외래 등록 · #$($g.no) $($p.name) ($($g.breed), $info)"
+    Log "✅ $c 등록 · #$($g.no) $($p.name) ($($g.breed), $info)"
+  }
+  # 인투벳 상태가 입원·호텔이면 케어 노트 구분을 자동으로 바꿈 (없으면 그 구분으로 등록)
+  function Opd-Cat($g, $c) {
+    $k = "$($g.no)|C$c"; if (Recent $k) { return }; $script:DONE[$k] = Get-Date
+    Load-Idx 15
+    $x = Care-One $g.no
+    if (-not $x) { Load-Idx 2; $x = Care-One $g.no }
+    if ($x) {
+      if ($x.category -ne $c) { Fb 'Patch' "rooms/$ROOM/care_patients/$($x.id)" (@{ category = $c; catBy = 'intovet'; catAt = @{ '.sv' = 'timestamp' } }) | Out-Null; Log "🏥 $c(으)로 바꿈 · #$($g.no) $($x.name)" }
+      return
+    }
+    Opd-Register $g $c
   }
   function Opd-Out($g) {
     $k = "$($g.no)|O"; if (Recent $k) { return }; $script:DONE[$k] = Get-Date
@@ -648,6 +660,8 @@ if ($Reception) {
             $last = $key
             if ($Diag) { Log "[진단] 읽음 · 번호 $($g.no) / 이름 $($g.name) / 상태 $($g.st) / $($g.sp) $($g.breed) $($g.sex) $($g.bw)kg" }
             if ($g.st -match '수납\s*완료|진료\s*완료|귀가') { Opd-Out $g }
+            elseif ($g.st -match '입원') { Opd-Cat $g '입원' }
+            elseif ($g.st -match '호텔') { Opd-Cat $g '호텔' }
             elseif ($g.st -match '접수') { Opd-Register $g }
           }
         }
