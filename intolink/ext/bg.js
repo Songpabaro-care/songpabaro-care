@@ -1,5 +1,5 @@
 const UA = 'Mozilla/5.0 (Linux; Android 14; SM-S918N) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/25.0 Chrome/121.0.0.0 Mobile Safari/537.36';
-const KEEP = ['진료대기', '대기', '입원', '호텔', '접수', '수납', '수납완료', '완료', '진료중', '진료', '외래', '퇴원', '미수', '보호자', '고객', '고객명', '동물', '동물명', '환자', '이름', '번호', '차트', '상태', '시간', '오늘', '전체', '검색', '종', '품종', '체중', '나이', '성별', '담당', '수의사', '방', '룸', '입원실', '호텔실', '메모', '예약', '대기자', '목록', 'Canine', 'Feline', '중성화', '수컷', '암컷'];
+const KEEP = ['입원호텔', '진료완료', '수납대기', '접수대기', '진료대기', '대기', '입원', '호텔', '접수', '수납', '수납완료', '완료', '진료중', '진료', '외래', '퇴원', '미수', '보호자', '고객', '고객명', '동물', '동물명', '환자', '이름', '번호', '차트', '상태', '시간', '오늘', '전체', '검색', '종', '품종', '체중', '나이', '성별', '담당', '수의사', '방', '룸', '입원실', '호텔실', '메모', '예약', '대기자', '목록', 'Canine', 'Feline', '중성화', '수컷', '암컷'];
 // 글자 모양만 남기고 가리기: 한글 → 가, 숫자 → 0, 영문 → a (아는 화면 낱말은 그대로)
 function mask(s) {
   return String(s).replace(/\s+/g, ' ').trim().split(' ').map(w => {
@@ -40,7 +40,7 @@ async function mobileTab(tabId) {
   return tgt;
 }
 async function diag() {
-  const out = ['== 인투링크 진단 0.2 ' + new Date().toLocaleString('ko-KR') + ' =='];
+  const out = ['== 인투링크 진단 0.3 ' + new Date().toLocaleString('ko-KR') + ' =='];
   const tab = await chrome.tabs.create({ url: 'about:blank', active: true });
   let tgt;
   try { tgt = await mobileTab(tab.id); } catch (e) { out.push('폰 모드 켜기 실패: ' + e.message); }
@@ -67,21 +67,47 @@ async function diag() {
         }
       };
       walk(document.body, 0);
-      return { url: location.pathname, title: document.title, len: document.body.innerText.length, lines, frames: document.querySelectorAll('iframe').length };
+      // 표: 칸 제목(화면 낱말), 줄 수, 첫 두 줄의 칸 구조와 속성 이름
+      const tables = [...document.querySelectorAll('table')].map(t => {
+        const ths = [...t.querySelectorAll('thead th, tr:first-child th')].map(x => x.textContent.trim().slice(0, 15));
+        const rows = [...t.querySelectorAll('tbody tr')];
+        const sample = rows.slice(0, 2).map(tr => ({
+          attrs: [...tr.attributes].map(a => [a.name, a.value]),
+          tds: [...tr.children].map(td => ({ t: td.textContent.trim(), a: [...td.querySelectorAll('[onclick],[href],[data-idx],[data-id]')].slice(0, 2).map(e => [...e.attributes].filter(x => x.name !== 'class' && x.name !== 'style').map(x => [x.name, x.value])) }))
+        }));
+        const box = t.closest('[id],[class]');
+        return { cls: t.className, box: box ? (box.id ? '#' + box.id : '.' + String(box.className).split(' ')[0]) : '', ths, n: rows.length, sample };
+      });
+      // 탭·메뉴 주소 (주소의 값은 이름만)
+      const links = [...new Set([...document.querySelectorAll('a[href]')].map(a => { try { const u = new URL(a.href, location.href); return u.host.endsWith('intolink.co.kr') ? u.pathname + (u.search ? '?' + [...u.searchParams.keys()].join('&') : '') : ''; } catch (e) { return ''; } }).filter(Boolean))].slice(0, 40);
+      const tabs = [...document.querySelectorAll('.sub-menu, .category, .text, .title')].map(e => e.textContent.trim().replace(/\s+/g, ' ').slice(0, 20)).slice(0, 30);
+      return { url: location.pathname, title: document.title, len: document.body.innerText.length, lines, frames: document.querySelectorAll('iframe').length, tables, links, tabs };
     } });
     page = r.result;
   } catch (e) { out.push('화면 읽기 실패: ' + e.message); }
+  const am = v => String(v).replace(/[가-힣]/g, '가').replace(/[0-9]/g, '0').replace(/[A-Za-z]/g, 'a').slice(0, 50);
   if (page) {
     out.push('화면: ' + page.url + ' · 제목 ' + mask(page.title) + ' · 글자 ' + page.len + ' · iframe ' + page.frames);
-    out.push('-- 화면 구조 (글자는 가림) --');
-    for (const [d, tag, t] of page.lines.slice(0, 110)) out.push(' '.repeat(Math.min(d, 12)) + tag.slice(0, 40) + ' : ' + mask(t));
+    out.push('-- 표 --');
+    page.tables.forEach((t, i) => {
+      out.push(`표${i + 1} class="${t.cls}" 위치 ${t.box} · 줄 ${t.n}개`);
+      out.push('  칸 제목: ' + (t.ths.length ? t.ths.map(h => '[' + h + ']').join(' ') : '(없음)'));
+      t.sample.forEach((s, j) => {
+        out.push(`  ${j + 1}번째 줄 속성: ` + (s.attrs.map(([k, v]) => k + '=' + (k === 'class' ? v : am(v))).join(' ') || '(없음)'));
+        s.tds.forEach((c, k) => out.push(`    칸${k + 1}: ${mask(c.t)}` + (c.a.length ? '  {' + c.a.map(as => as.map(([n, v]) => n + '=' + am(v)).join(' ')).join(' | ') + '}' : '')));
+      });
+    });
+    out.push('-- 탭·메뉴 글자 --');
+    out.push('  ' + page.tabs.map(x => '[' + mask(x) + ']').join(' '));
+    out.push('-- 화면 안 주소 --');
+    out.push('  ' + page.links.join('  '));
   }
-  out.push('-- 화면이 받은 데이터 --');
+  out.push('-- 화면이 받은 데이터 (주소만) --');
   let n = 0;
   for (const q of res) {
     const u = new URL(q.url); const p = u.host + u.pathname + (u.search ? ' ?' + [...u.searchParams.keys()].join('&') : '');
     let line = q.ty + ' ' + q.st + ' ' + p;
-    if ((q.ty === 'XHR' || q.ty === 'Fetch') && n < 8 && tgt) {
+    if (false) {
       n++;
       try { const b = await dbg(tgt, 'Network.getResponseBody', { requestId: q.id }); const txt = b.base64Encoded ? atob(b.body) : b.body;
         try { line += '\n    → ' + shape(JSON.parse(txt), 0).slice(0, 1200); } catch (e) { line += '\n    → (JSON 아님) 길이 ' + txt.length; } } catch (e) { line += ' (내용 못 읽음)'; }
