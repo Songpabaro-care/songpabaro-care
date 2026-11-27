@@ -1,14 +1,40 @@
 {
   "manifest_version": 3,
   "name": "송파바로 인투링크 연동",
-  "version": "1.0",
-  "description": "인투링크 진료대기·입원/호텔 목록을 케어 노트와 연동 (1.0: 구조 진단·화면 찾기만, 아무것도 보내지 않음)",
-  "permissions": ["declarativeNetRequest", "webRequest", "tabs", "scripting", "storage", "debugger"],
-  "host_permissions": ["https://intolink.co.kr/*", "https://*.intolink.co.kr/*"],
-  "background": { "service_worker": "bg.js" },
-  "content_scripts": [{
-    "matches": ["https://intolink.co.kr/*", "https://*.intolink.co.kr/*"],
-    "js": ["ua.js"], "run_at": "document_start", "world": "MAIN", "all_frames": true
-  }],
-  "action": { "default_title": "송파바로 인투링크 연동", "default_popup": "popup.html" }
+  "version": "1.1",
+  "description": "인투링크 진료대기·입원/호텔 목록을 케어 노트와 연동 (1.1: 연동 미리보기, 케어 노트로는 아직 보내지 않음)",
+  "permissions": [
+    "declarativeNetRequest",
+    "webRequest",
+    "tabs",
+    "scripting",
+    "storage",
+    "debugger",
+    "offscreen"
+  ],
+  "host_permissions": [
+    "https://intolink.co.kr/*",
+    "https://*.intolink.co.kr/*"
+  ],
+  "background": {
+    "service_worker": "bg.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://intolink.co.kr/*",
+        "https://*.intolink.co.kr/*"
+      ],
+      "js": [
+        "ua.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": true
+    }
+  ],
+  "action": {
+    "default_title": "송파바로 인투링크 연동",
+    "default_popup": "popup.html"
+  }
 }
