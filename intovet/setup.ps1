@@ -155,6 +155,7 @@ public static class SbDock {
   }
 
   static Mutex MX;
+  static string lastMark = "";
   [STAThread] public static void Main(string[] a) {
     try { SetProcessDPIAware(); } catch {}
     string dir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
@@ -174,10 +175,19 @@ public static class SbDock {
         if (!File.Exists(Path.Combine(dir, "dock-off.flag"))) {
           if (chat != IntPtr.Zero && (GetAsyncKeyState(0x01) & 0x8000) == 0) {
             RECT c = Rect(chat); int w = c.R - c.L, hh = c.B - c.T, tx, ty;
+            // 케어 노트가 제목에 [sb:가로x세로]를 붙이면 그 크기로 키움 (최소화 → 원래 크기, 화면 아래에 붙어 있어 크롬이 못 키울 때)
+            string tt = Title(chat); int mi = tt.IndexOf("[sb:", StringComparison.Ordinal);
+            if (mi >= 0 && tt != lastMark) {
+              lastMark = tt;
+              string[] wh = tt.Substring(mi + 4).TrimEnd(']').Split('x');
+              int nw, nh;
+              if (wh.Length == 2 && int.TryParse(wh[0], out nw) && int.TryParse(wh[1].Split(']')[0], out nh) && nw > 100 && nh > 60) { w = nw; hh = nh; c.L = -99999; }
+            } else if (mi < 0) lastMark = "";
             if (pop != IntPtr.Zero) { RECT p = Rect(pop); tx = p.R - w; ty = p.T - hh - 2; }
             else { RECT wa = Work(main); tx = wa.R - w; ty = wa.B - hh; }
             if (ty < 0) ty = 0;
-            if (c.L != tx || c.T != ty) Move(chat, tx, ty);
+            if (c.L == -99999) SetWindowPos(chat, IntPtr.Zero, tx, ty, w, hh, 0x0004 | 0x0010);
+            else if (c.L != tx || c.T != ty) Move(chat, tx, ty);
           }
           docked = false; userMoved = false;
           Thread.Sleep(400); continue;

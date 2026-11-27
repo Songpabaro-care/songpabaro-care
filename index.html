@@ -1108,7 +1108,9 @@ function fcInit(){const el=$("#fchat"),h=$("#fcH");
  $("#fcT").onfocus=()=>{qls("chatSeen",String(Date.now()));qBadge();fcRender()};
  $("#fcMin").onclick=e=>{e.stopPropagation();
   if(FC.pip){const w=FC.pip;FC.pmin=!FC.pmin;el.classList.toggle("min",FC.pmin);el.querySelector("#fcMin").textContent=FC.pmin?"+":"–";
-   try{if(FC.pmin){FC.ph=w.outerHeight;w.resizeTo(w.outerWidth,Math.max(60,w.outerHeight-w.innerHeight+44))}else w.resizeTo(w.outerWidth,FC.ph||+(qls("fph")||440))}catch(x){}fcRender();return}
+   try{if(FC.pmin){FC.ph=w.outerHeight;w.resizeTo(w.outerWidth,Math.max(60,w.outerHeight-w.innerHeight+44))}else{const H=FC.ph||+(qls("fph")||440),r=w.devicePixelRatio||1;w.resizeTo(w.outerWidth,H);
+    /* 화면 아래에 붙어 있으면 크롬이 못 키움 → 자리 비키기 프로그램에 제목으로 크기 요청 */
+    const base=document.title.replace(/ \[sb:[^\]]*\]$/,"");document.title=base+` [sb:${Math.round(w.outerWidth*r)}x${Math.round(H*r)}]`;clearTimeout(FC.tt);FC.tt=setTimeout(()=>{document.title=base},2500)}}catch(x){}fcRender();return}
   qls("fcmin",qls("fcmin")==="1"?"0":"1");fcShow()};
  $("#fcHome").onclick=e=>{e.stopPropagation();try{window.focus()}catch(x){}if(Q.view&&Q.temp)scrClose();
   setTimeout(()=>{if(document.hasFocus()||!FC.pip)return;const d=FC.pip.document,hn=d.createElement("div");hn.className="fhint";hn.textContent="창이 안 올라오면 이 작은 창 맨 위의 '탭으로 돌아가기' 아이콘을 누르거나, 작업표시줄에서 케어 노트를 눌러 주세요";el.appendChild(hn);setTimeout(()=>hn.remove(),5000)},600)};
