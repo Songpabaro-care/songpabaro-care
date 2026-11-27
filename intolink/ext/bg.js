@@ -170,3 +170,4 @@ importScripts('probe2.js');
 importScripts('probe3.js');
 importScripts('bgsync.js');
 importScripts('netprobe.js');
+importScripts('realsync.js');

@@ -587,7 +587,7 @@ if ($Reception) {
   function Recent($k) { $script:DONE.ContainsKey($k) -and ((Get-Date) - $script:DONE[$k]).TotalMinutes -lt 30 }
   function Opd-Register($g, $c = '외래') {
     $k = "$($g.no)|R"; if (Recent $k) { return }; $script:DONE[$k] = Get-Date
-    Load-Idx 15
+    Load-Idx 0   # 인투링크 연동이 방금 등록했을 수 있어 등록 전엔 항상 새로 확인 (중복 카드 방지)
     if (Care-One $g.no) { Log "이미 케어 노트에 있음 · #$($g.no) $($g.name)"; return }
     $id = "p-care-$(NowMs)"; $today = Get-Date -Format 'yyyy-MM-dd'
     $sp = if ($g.sp -eq 'Feline') { 'cat' } else { 'dog' }

@@ -61,7 +61,7 @@ async function searchPet(q) {
     const d = await getDoc('/plus/main?searchText=' + encodeURIComponent(q));
     const rs = [...d.querySelectorAll('tr.status_data_row')];
     SLOG.push({ rows: rs.length, hit: rs.filter(r => (r.textContent || '').replace(/\s+/g, '').includes(nz(q))).length });
-    return [...d.querySelectorAll('tr.status_data_row')].map(r => { const c = cells(r); return { owner: c[0], phone: c[1], pet: c[2], visit: c[3], psno: r.getAttribute('data-psno'), csno: r.getAttribute('data-csno'), st: (r.children[2] || {}).className || '', via: 'search' }; });
+    return [...d.querySelectorAll('tr.status_data_row')].map(r => { const c = cells(r); return { owner: c[0], phone: c[1], pet: c[2], visit: c[3], psno: r.getAttribute('data-psno'), csno: r.getAttribute('data-csno'), hidx: r.getAttribute('data-hsptl_idx'), st: (r.children[2] || {}).className || '', via: 'search' }; });
   } catch (e) { return []; }
 }
 // 검색창 모양 (이름·값은 안 읽음: 칸 이름과 선택지 글자만)
@@ -104,14 +104,15 @@ async function apiDiag() {
   }
   return out;
 }
-async function collect() {
+async function collect(opt = {}) {
+  const deep = opt.deep !== false, diag = !!opt.diag;
   const res = { at: Date.now(), err: [], opd: [], pets: [], paid: [], dumps: {} };
   const now = new Date(), yy = String(now.getFullYear()).slice(2), mm = String(now.getMonth() + 1).padStart(2, '0'), dd = String(now.getDate()).padStart(2, '0');
   const today = `${yy}.${mm}.${dd}`;
   try {
     const w = await getDoc('/plus/waitList');
     if (w._login) res.err.push('인투링크 로그인 필요');
-    res.opd = [...w.querySelectorAll('#waitListTable tr')].filter(r => r.querySelector('td')).map(r => { const c = cells(r); return { owner: c[0], pet: c[1], time: c[2], vet: c[3], room: c[4], all: c.join(' ') + ' ' + [...r.attributes].filter(x => !/^data-sbon/.test(x.name)).map(x => x.value).join(' '), cl: clues(r) }; });
+    res.opd = [...w.querySelectorAll('#waitListTable tr')].filter(r => r.querySelector('td')).map(r => { const c = cells(r); return { owner: c[0], pet: c[1], time: c[2], vet: c[3], room: c[4], cls: [r.className, ...[...r.querySelectorAll('[class*=status], [class*=color]')].map(e => e.className)].filter(Boolean).join(' ').slice(0, 120), all: c.join(' ') + ' ' + [...r.attributes].filter(x => !/^data-sbon/.test(x.name)).map(x => x.value).join(' '), cl: clues(r) }; });
     const ymd = `${now.getFullYear()}-${mm}-${dd}`;
     res.opdOld = res.opd.filter(o => !String(o.time || '').startsWith(ymd)).length;
     res.opd = res.opd.filter(o => String(o.time || '').startsWith(ymd));
@@ -126,13 +127,14 @@ async function collect() {
     let until = today;
     (res.inp || []).forEach(o => { const m = String(o.dt || '').match(/^\d{2}(\d{2})-(\d{2})-(\d{2})/); if (m) { const v = `${m[1]}.${m[2]}.${m[3]}`; if (v < until) until = v; } });
     res.until = until;
-    for (let pg = 1; pg <= (until < today ? 25 : 8); pg++) {
+    if (!deep) until = today;
+    for (let pg = 1; pg <= (until < today ? 25 : 10); pg++) {
       const d = await getDoc('/plus/main?page=' + pg);
-      if (pg === 1) res.form = formDiag(d);
+      if (pg === 1 && diag) res.form = formDiag(d);
       const rows = [...d.querySelectorAll('tr.status_data_row')];
       if (!rows.length) break;
       let older = false;
-      rows.forEach(r => { const c = cells(r); const rec = { owner: c[0], phone: c[1], pet: c[2], visit: c[3], psno: r.getAttribute('data-psno'), csno: r.getAttribute('data-csno'), st: (r.children[2] || {}).className || '' }; res.pets.push(rec); if (rec.visit && rec.visit < until) older = true; });
+      rows.forEach(r => { const c = cells(r); const rec = { owner: c[0], phone: c[1], pet: c[2], visit: c[3], psno: r.getAttribute('data-psno'), csno: r.getAttribute('data-csno'), hidx: r.getAttribute('data-hsptl_idx'), st: (r.children[2] || {}).className || '' }; res.pets.push(rec); if (rec.visit && rec.visit < until) older = true; });
       res.pages = pg;
       if (older) break;
     }
@@ -142,7 +144,7 @@ async function collect() {
     const need = [...res.opd, ...(res.inp || [])].filter(o => o.pet && !have.has(nz(o.owner) + '|' + nz(o.pet)));
     let n = 0; res.searched = 0; SLOG.length = 0; res.slog = SLOG;
     for (const o of need) {
-      if (n++ >= 12) break;
+      if (!diag || n++ >= 12) break;
       const hits = await searchPet(o.owner || o.pet);
       res.searched++;
       hits.forEach(h => { const k = nz(h.owner) + '|' + nz(h.pet); if (!have.has(k)) { have.add(k); res.pets.push(h); } });
@@ -155,8 +157,30 @@ async function collect() {
     res.paidRaw = prow.length; res.paidHead = prow.slice(0, 3).map(c => c[0].replace(/[가-힣]/g, '가'));
     res.paid = prow.filter(c => /\d{1,2}:\d{2}/.test(c[0]) && (!/\d{4}-\d{2}-\d{2}/.test(c[0]) || c[0].includes(ymd2))).map(c => ({ time: c[0], owner: c[1], pet: c[2] }));
   } catch (e) { res.err.push('수납완료 읽기 실패: ' + e.message); }
-  try { res.api = await apiDiag(); } catch (e) { res.err.push('API 찾기 실패: ' + e.message); }
+  if (diag) { try { res.api = await apiDiag(); } catch (e) { res.err.push('API 찾기 실패: ' + e.message); } }
+  // 실제 연동용: 줄마다 동물번호 붙이기
+  try { const M = sbMatch(res);
+    res.items = [...res.opd.map(o => { const p = M.findP(o); return { kind: '외래', psno: p ? String(p.psno) : '', csno: p && p.csno || '', hidx: p && p.hidx || '', pet: o.pet, hold: sbSkipOf(o), cls: o.cls || '', time: o.time }; }),
+      ...(res.inp || []).map(o => { const p = M.inpNo(o); return { kind: o.kind, psno: p ? String(p.psno) : '', csno: p && p.csno || '', hidx: p && p.hidx || '', pet: o.pet, sp: o.sp, room: o.room, full: o.full, dt: o.dt }; })];
+  } catch (e) { res.err.push('번호 맞추기 실패: ' + e.message); }
   res.today = today;
   return res;
 }
-chrome.runtime.onMessage.addListener((m, s, send) => { if (m.t === 'collect' && m.to === 'off') { collect().then(send, e => send({ err: [e.message] })); return true; } });
+// 새로 등록할 환축의 종·품종·성별·생일·체중 (차트 상세 화면 글자에서)
+async function petInfo(q) {
+  const out = {};
+  try { const d = await getDoc(`/plus/petChart?hsptl_idx=${encodeURIComponent(q.hidx || '')}&pet_no=${encodeURIComponent(q.psno)}&c_no=${encodeURIComponent(q.csno || '')}`);
+    const L = [...d.querySelectorAll('body *')].filter(e => !e.children.length && e.textContent.trim()).map(e => e.textContent.replace(/\s+/g, ' ').trim());
+    const g = lab => { for (let i = 0; i < L.length; i++) { const x = L[i].replace(/\s/g, ''); if (x === lab || x === lab + ':' || x.startsWith(lab + ':')) { const rest = L[i].replace(new RegExp('^\\s*' + lab.split('').join('\\s*') + '\\s*:?\\s*'), ''); return (rest || L[i + 1] || '').trim(); } } return ''; };
+    const sp = g('종'), all = L.join(' ');
+    out.sp = /Feline|고양이/i.test(sp) || (!sp && /Feline/.test(all) && !/Canine/.test(all)) ? 'cat' : 'dog';
+    out.breed = g('품종').slice(0, 30); out.sex = g('성별').slice(0, 20);
+    out.birth = (g('생년월일').match(/\d{4}-\d{2}-\d{2}/) || [''])[0]; out.bw = (g('체중').match(/[\d.]+/) || [''])[0]; out.name = g('동물이름').slice(0, 20);
+    out.found = !!sp;
+  } catch (e) { out.err = e.message; }
+  return out;
+}
+chrome.runtime.onMessage.addListener((m, s, send) => {
+  if (m.t === 'collect' && m.to === 'off') { collect(m.opt || { diag: true }).then(send, e => send({ err: [e.message] })); return true; }
+  if (m.t === 'petinfo' && m.to === 'off') { petInfo(m.q).then(send, e => send({ err: e.message })); return true; }
+});
