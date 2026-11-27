@@ -35,17 +35,31 @@ async function probe() {
     const [cd] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, world: 'MAIN', func: () => {
       const M = t => t.replace(/[가-힣]+/g, '가').replace(/\d{3,}/g, '000');
       const hits = [];
+      // 화면 안 프로그램에서 낱말 앞뒤 문맥 (긴 줄도 잘라서)
+      const KW = /chartModal|chart-modal|waitListTable|result_table|\$\.ajax|\$\.post|\$\.get\(|axios|fetch\(|url\s*:|pet_?idx|cust_?idx|animal|chart_?no|ani_?idx|getChart|showChart/gi;
       for (const sc of document.querySelectorAll('script:not([src])')) {
-        const lines = sc.textContent.split(/\n/);
-        lines.forEach((l, i) => { if (/location\.href|location\.replace|window\.open|\.click\(|on\(['"]click|onclick|goChart|chart|pet_?idx|cust_?idx|animal/i.test(l) && l.trim().length < 400) hits.push(M(l.trim())); });
+        const t = sc.textContent; let m;
+        while ((m = KW.exec(t)) && hits.length < 40) hits.push('[' + m[0] + '] ' + M(t.slice(Math.max(0, m.index - 150), m.index + 260).replace(/\s+/g, ' ')));
       }
       const tr = [...document.querySelectorAll('#waitListTable tr')].find(r => r.querySelector('td') && r.textContent.trim());
+      // jQuery에 등록된 클릭 동작 (표·줄·문서)
+      try {
+        const jq = window.jQuery || window.$;
+        if (jq && jq._data) {
+          const targets = [['document', document], ['body', document.body], ['table', document.querySelector('#waitListTable')], ['tr', tr], ['td', tr && tr.querySelector('td')]];
+          for (const [nm, el] of targets) {
+            if (!el) continue;
+            const ev = jq._data(el, 'events') || {};
+            for (const type of ['click', 'touchstart', 'touchend', 'tap']) for (const h of (ev[type] || [])) hits.push(`[jQuery ${type} @${nm}${h.selector ? ' ' + h.selector : ''}] ` + M(String(h.handler).replace(/\s+/g, ' ').slice(0, 500)));
+          }
+        } else hits.push('(jQuery 없음)');
+      } catch (e) { hits.push('(jQuery 읽기 실패 ' + e.message + ')'); }
       const attrs = tr ? [...tr.attributes, ...[...tr.querySelectorAll('*')].flatMap(e => [...e.attributes])].filter(a => a.name !== 'class' && a.name !== 'style').map(a => a.name + '=' + M(a.value).slice(0, 80)) : [];
-      return { hits: [...new Set(hits)].slice(0, 25), attrs: attrs.slice(0, 10) };
+      return { hits: [...new Set(hits)].slice(0, 45), attrs: attrs.slice(0, 10) };
     } });
     out.push('   줄에 붙은 속성: ' + (cd.result.attrs.join(' ') || '(없음)'));
     out.push('   화면 안 프로그램에서 찾은 부분:');
-    cd.result.hits.forEach(h => out.push('     ' + h.slice(0, 220)));
+    cd.result.hits.forEach(h => out.push('     ' + h.slice(0, 520)));
     // 첫 환축 줄 누르기 (칸 제목 줄은 건너뜀)
     STEP = '2 줄 누름';
     const [c] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, world: 'MAIN', func: () => {
