@@ -1,4 +1,4 @@
-// 🔄 실제 연동: 2분마다 인투링크 진료대기·입원/호텔을 읽어 케어 노트(Firebase)에 반영.
+// 🔄 실제 연동: 2~3분마다 인투링크 진료대기·입원/호텔을 읽어 케어 노트(Firebase)에 반영.
 // 인투링크에는 아무것도 쓰지 않음(읽기만). 케어 노트에는 동물번호·동물 이름·종·품종 정도만 저장(보호자 이름·전화 저장 안 함).
 const RS = { KEY: 'AIzaSyB7SmDVueDq1ghmIbNTjcHGxMM2vpHSvWw', DB: 'https://songpabaro-default-rtdb.asia-southeast1.firebasedatabase.app', ROOM: 'songpa-baro-care', NAME: '접수실 인투링크 연동', tok: null, exp: 0, busy: false };
 const rsGet = async k => (await chrome.storage.local.get(k))[k];
@@ -135,12 +135,16 @@ async function runSync(why) {
     return { err: e.message };
   } finally { RS.busy = false; }
 }
-async function rsArm() { const on = await rsGet('rsOn'); if (on) chrome.alarms.create('sbsync', { periodInMinutes: 2, delayInMinutes: 0.1 }); else chrome.alarms.clear('sbsync'); }
-chrome.alarms.onAlarm.addListener(a => { if (a.name === 'sbsync') runSync('alarm'); });
-chrome.runtime.onStartup.addListener(rsArm); chrome.runtime.onInstalled.addListener(rsArm);
+// 읽는 간격: 2~3분 사이에서 매번 무작위 (사람이 보는 것처럼 일정하지 않게)
+const rsNextMin = () => 2 + Math.random();
+async function rsArm(first) { const on = await rsGet('rsOn'); await chrome.alarms.clear('sbsync'); if (on) chrome.alarms.create('sbsync', { delayInMinutes: first ? 0.2 : rsNextMin() }); }
+chrome.alarms.onAlarm.addListener(async a => { if (a.name !== 'sbsync') return; try { await runSync('alarm'); } finally { await rsArm(false); } });
+// 서비스 워커가 깨어났는데 예약이 없으면 다시 예약 (크롬 재시작·업데이트 대비)
+chrome.alarms.get('sbsync').then(x => { if (!x) rsArm(true); });
+chrome.runtime.onStartup.addListener(() => rsArm(true)); chrome.runtime.onInstalled.addListener(() => rsArm(true));
 chrome.runtime.onMessage.addListener((m, s, send) => {
   if (m.t === 'rs-status') { (async () => { let code = ''; try { const a = await rsGet('rsAuth'); code = a ? a.uid.slice(-6).toUpperCase() : ''; } catch (e) {}
     send({ on: !!(await rsGet('rsOn')), code, last: await rsGet('rsLast'), log: ((await rsGet('rsLog')) || []).slice(0, 40) }); })(); return true; }
-  if (m.t === 'rs-toggle') { (async () => { const on = !(await rsGet('rsOn')); await rsSet('rsOn', on); await rsLog(on ? '🔄 실제 연동 켬' : '⏹ 실제 연동 끔'); await rsArm(); if (on) runSync('on'); send({ on }); })(); return true; }
+  if (m.t === 'rs-toggle') { (async () => { const on = !(await rsGet('rsOn')); await rsSet('rsOn', on); await rsLog(on ? '🔄 실제 연동 켬' : '⏹ 실제 연동 끔'); await rsArm(true); send({ on }); })(); return true; }
   if (m.t === 'rs-run') { runSync('manual').then(send); return true; }
 });

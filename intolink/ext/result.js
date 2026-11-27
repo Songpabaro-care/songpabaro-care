@@ -1,1 +1,0 @@
-chrome.storage.session.get('diag').then(r=>{document.getElementById('o').textContent=r.diag||'(결과 없음)'});
