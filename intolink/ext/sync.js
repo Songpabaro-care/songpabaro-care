@@ -18,13 +18,14 @@ function render() {
     const act = sk ? `<b style="color:#b26a00">보류 (${sk}) · 외래 카드는 퇴원 목록으로 (지우지 않음)</b>` : paid.has(k) ? '✅ 수납완료 → 정리' : '외래 등록 (퇴원 목록에 있으면 복원)';
     return `<tr${sk ? ' style="background:#fff6e5"' : ''}><td>${show(o.owner)}</td><td>${show(o.pet)}</td><td>${o.time || ''}</td><td>${o.room || ''}</td><td>${p ? '#' + p.psno : '<b style="color:#c33">못 찾음</b>'}</td><td>${act}</td><td style="color:#888">${p ? p.st : ''}</td></tr>`; }).join('');
   $('#out').innerHTML = `
-  <p>읽은 시각 ${new Date(d.at).toLocaleTimeString('ko-KR')} · 오늘 ${d.today} · 환축 목록 ${d.pages || 0}쪽 + 이름 검색 ${d.searched || 0}번 · 번호 아는 환축 ${d.pets.length}마리 · 수납완료 ${d.paid.length}건(표 ${d.paidRaw ?? '?'}줄${d.paidHead && d.paidHead.length ? ', 예: ' + d.paidHead.join(' / ') : ''}) · 오늘 아닌 옛 대기 줄 ${d.opdOld || 0}개 (제외)</p>
+  <p>읽은 시각 ${new Date(d.at).toLocaleTimeString('ko-KR')} · 오늘 ${d.today} · 환축 목록 ${d.pages || 0}쪽(${d.until || ''}까지) + 이름 검색 ${d.searched || 0}번 · 번호 아는 환축 ${d.pets.length}마리 · 수납완료 ${d.paid.length}건(표 ${d.paidRaw ?? '?'}줄${d.paidHead && d.paidHead.length ? ', 예: ' + d.paidHead.join(' / ') : ''}) · 오늘 아닌 옛 대기 줄 ${d.opdOld || 0}개 (제외)</p>
   ${d.err.length ? `<p style="color:#c33">⚠ ${d.err.join(' / ')}</p>` : ''}
   <h3>외래대기 ${d.opd.length}마리 · 동물번호 찾음 ${found} · 보류(약처방·전화문의·수납대기·면회) ${skipped}</h3><p style="color:#666">인투벳에서 접수 취소돼 대기 목록에서 사라진 환축은 실제 연동(1.3)에서 케어 노트에서도 지워요.</p>
   <table><tr><th>고객명</th><th>동물명</th><th>접수일시</th><th>진료실</th><th>동물번호</th><th>케어 노트에서</th><th>상태 표시</th></tr>${rows}</table>
   <h3>입원·호텔 ${(d.inp || []).length}마리 · 동물번호 찾음 <span id="inF"></span> · 퇴원 안 눌린 옛 기록 ${(d.inpOld || []).length}개 (제외)</h3>
   <table><tr><th>구분</th><th>고객명</th><th>동물명</th><th>입원 일시</th><th>종</th><th>입원실</th><th>동물번호</th><th>케어 노트에서</th></tr>${(d.inp || []).map(o => { const p = findP(o); if (p) inFound++; return `<tr><td>${o.kind}</td><td>${show(o.owner)}</td><td>${show(o.pet)}</td><td>${o.dt || ''}</td><td>${o.sp || ''}</td><td>${show(o.room)}</td><td>${p ? '#' + p.psno + (p.via === 'search' ? ' <small>(검색)</small>' : '') : '<b style="color:#c33">못 찾음</b>'}</td><td>${o.kind} 카드로 등록·구분 맞춤</td></tr>`; }).join('')}</table>
   <details open><summary>🔎 이름 검색 진단 (동물번호 못 찾는 이유)</summary><pre>${(d.slog || []).map((x, i) => `검색 ${i + 1}: 결과 ${x.rows}줄 · 검색어 들어간 줄 ${x.hit}`).join('\n') || '검색 안 함'}\n\n${(d.form || []).join('\n')}</pre></details>
+  <details open><summary>🧭 인투링크 데이터 주소 찾기 (환자 정보 없음 · 주소 글자만)</summary><pre>${Object.entries(d.api || {}).map(([p, v]) => `[${p}]${v.err ? ' 실패: ' + v.err : ''}\n스크립트: ${(v.js || []).join(', ') || '-'}\n${(v.urls || []).map(u => ' ' + u).join('\n')}`).join('\n\n')}</pre></details>
   <details><summary>입원·호텔 부분 모양 (가림)</summary><h3>입원·호텔 부분 모양 (가림)</h3>
   <pre>[전체]\n${(d.dumps.all || []).join('\n')}\n[입원]\n${(d.dumps.inp || []).join('\n')}\n[호텔]\n${(d.dumps.hot || []).join('\n')}</pre></details>`;
   $('#inF').textContent = inFound;

@@ -7,7 +7,7 @@ async function getDoc(p) {
   // 읽기만 하므로 onclick 같은 인라인 실행 코드를 미리 지워 둠 (크롬 보안 경고 방지)
   const safe = t.replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '').replace(/(href|src|action)\s*=\s*(["'])\s*javascript:[^"']*\2/gi, '$1="#"');
   const d = new DOMParser().parseFromString(safe, 'text/html');
-  d._len = t.length; d._raw = safe; d._login = /인투통합회원|signIn|LOGIN/.test(t) && !/chartSearchTable|waitListTable|mReceiptCompletedTable/.test(t);
+  d._len = t.length; d._raw = t; d._login = /인투통합회원|signIn|LOGIN/.test(t) && !/chartSearchTable|waitListTable|mReceiptCompletedTable/.test(t);
   return d;
 }
 function cells(tr) { return [...tr.children].map(td => td.textContent.replace(/\s+/g, ' ').trim()); }
@@ -65,8 +65,26 @@ function formDiag(d) {
       f.querySelectorAll('input,select,textarea').forEach(e => out.push(` - ${e.tagName.toLowerCase()} ${e.type || ''} name=${e.name || '-'}` + (e.tagName === 'SELECT' ? ' [' + [...e.options].map(o => o.value + ':' + o.text.trim()).join(', ') + ']' : '')));
     } else if (inp) out.push('form 없음 (스크립트로 검색)');
     const raw = d._raw || '', re = /searchText|chartSearch|searchKeyword|search_text/g; let m, k = 0;
-    while ((m = re.exec(raw)) && k++ < 6) out.push('… ' + raw.slice(Math.max(0, m.index - 90), m.index + 110).replace(/\s+/g, ' ').replace(/[가-힣]+/g, '가'));
+    while ((m = re.exec(raw)) && k++ < 6) out.push('… ' + raw.slice(Math.max(0, m.index - 90), m.index + 110).replace(/\s+/g, ' ').replace(/[가-힣]+/g, '가').replace(/\d/g, '0').replace(/>[^<]{1,40}</g, '>…<'));
   } catch (e) { out.push('진단 실패: ' + e.message); }
+  return out;
+}
+// 화면이 뒤에서 데이터를 받아 오는 주소(API) 찾기: 스크립트 속 '/주소' 글자만 모음 (숫자는 0으로)
+async function apiDiag() {
+  const out = {}, seenJs = new Set(); let jsN = 0;
+  const LIB = /jquery|vue(\.min)?\.js|bootstrap|moment|lodash|axios|swiper|select2|datepicker|polyfill|chart\.js|fontawesome|gtag|analytics/i;
+  const scan = txt => { const r = new Map(), re = /()['"`]((?:https?:\/\/[a-z0-9.\-]*intolink[a-z0-9.\-]*)?\/[A-Za-z][A-Za-z0-9_\-]*(?:\/[A-Za-z0-9_\.\-]*)*)(\?[^'"`\s]{0,40})?['"`]/gi; let m;
+    while ((m = re.exec(txt))) { const u = (m[2] + (m[3] || '')).replace(/\d/g, '0').replace(/[가-힣]+/g, '가'); if (/\.(css|png|jpe?g|gif|svg|ico|woff2?|ttf|eot|map|html?|js)$/i.test(m[2]) || /^\/(img|images|css|fonts?|static\/img)\//i.test(m[2]) || r.size >= 120) continue; const k = ((txt.slice(Math.max(0, m.index - 60), m.index).match(/\b(post|get|ajax|axios|fetch|url|action|href|location)\b/gi) || []).pop() || '').toLowerCase(); r.set(u, (r.get(u) || '') + (k && !(r.get(u) || '').includes(k) ? k + ' ' : '')); }
+    return r; };
+  for (const p of ['/plus/main', '/plus/receiptCompleted', '/plus/waitList']) {
+    try {
+      const d = await getDoc(p), all = scan(d._raw || '');
+      const srcs = [...d.querySelectorAll('script[src]')].map(e => e.getAttribute('src')).filter(u => u && !LIB.test(u) && (u.includes('intolink.co.kr') || !/^(https?:)?\/\//.test(u)));
+      for (const u of srcs) { if (seenJs.has(u) || jsN >= 20) continue; seenJs.add(u); jsN++;
+        try { const t = await (await fetch(new URL(u, H + p).href, { credentials: 'include' })).text(); scan(t).forEach((v, k) => all.set(k, (all.get(k) || '') + v)); } catch (e) {} }
+      out[p] = { js: srcs.map(u => u.replace(/\?.*$/, '')), urls: [...all].map(([u, k]) => u + (k ? '  ← ' + k.trim() : '')) };
+    } catch (e) { out[p] = { err: e.message }; }
+  }
   return out;
 }
 async function collect() {
@@ -87,13 +105,17 @@ async function collect() {
     res.dumps.hot = dumpSec(w.getElementById('fixedWaitTab2Tab3'));
   } catch (e) { res.err.push('진료대기 읽기 실패: ' + e.message); }
   try {
-    for (let pg = 1; pg <= 8; pg++) {
+    // 오늘 온 환축 + 지금 입원·호텔 중인 환축의 입원일까지 거슬러 읽기 (최대 25쪽)
+    let until = today;
+    (res.inp || []).forEach(o => { const m = String(o.dt || '').match(/^\d{2}(\d{2})-(\d{2})-(\d{2})/); if (m) { const v = `${m[1]}.${m[2]}.${m[3]}`; if (v < until) until = v; } });
+    res.until = until;
+    for (let pg = 1; pg <= (until < today ? 25 : 8); pg++) {
       const d = await getDoc('/plus/main?page=' + pg);
       if (pg === 1) res.form = formDiag(d);
       const rows = [...d.querySelectorAll('tr.status_data_row')];
       if (!rows.length) break;
       let older = false;
-      rows.forEach(r => { const c = cells(r); const rec = { owner: c[0], phone: c[1], pet: c[2], visit: c[3], psno: r.getAttribute('data-psno'), csno: r.getAttribute('data-csno'), st: (r.children[2] || {}).className || '' }; res.pets.push(rec); if (rec.visit && rec.visit < today) older = true; });
+      rows.forEach(r => { const c = cells(r); const rec = { owner: c[0], phone: c[1], pet: c[2], visit: c[3], psno: r.getAttribute('data-psno'), csno: r.getAttribute('data-csno'), st: (r.children[2] || {}).className || '' }; res.pets.push(rec); if (rec.visit && rec.visit < until) older = true; });
       res.pages = pg;
       if (older) break;
     }
@@ -116,6 +138,7 @@ async function collect() {
     res.paidRaw = prow.length; res.paidHead = prow.slice(0, 3).map(c => c[0].replace(/[가-힣]/g, '가'));
     res.paid = prow.filter(c => /\d{1,2}:\d{2}/.test(c[0]) && (!/\d{4}-\d{2}-\d{2}/.test(c[0]) || c[0].includes(ymd2))).map(c => ({ time: c[0], owner: c[1], pet: c[2] }));
   } catch (e) { res.err.push('수납완료 읽기 실패: ' + e.message); }
+  try { res.api = await apiDiag(); } catch (e) { res.err.push('API 찾기 실패: ' + e.message); }
   res.today = today;
   return res;
 }
