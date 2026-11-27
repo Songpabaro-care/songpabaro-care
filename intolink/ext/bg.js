@@ -25,24 +25,40 @@ async function uaRule(tabIds) {
     condition: { requestDomains: ['intolink.co.kr'], tabIds } }] });
 }
 chrome.runtime.onMessage.addListener(m => { if (m.t === 'diag') diag(); });
+async function dbg(tgt, m, p) { return chrome.debugger.sendCommand(tgt, m, p || {}); }
+// 개발자 도구 '폰 화면 모드'와 같은 방식
+async function mobileTab(tabId) {
+  const tgt = { tabId };
+  await chrome.debugger.attach(tgt, '1.3');
+  await dbg(tgt, 'Network.enable');
+  await dbg(tgt, 'Page.enable');
+  await dbg(tgt, 'Emulation.setUserAgentOverride', { userAgent: UA, platform: 'Linux armv8l', acceptLanguage: 'ko-KR',
+    userAgentMetadata: { brands: [{ brand: 'Chromium', version: '121' }, { brand: 'Samsung Internet', version: '25' }], fullVersion: '121.0.0.0',
+      platform: 'Android', platformVersion: '14.0.0', architecture: '', model: 'SM-A556N', mobile: true } });
+  await dbg(tgt, 'Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+  await dbg(tgt, 'Emulation.setDeviceMetricsOverride', { width: 412, height: 915, deviceScaleFactor: 2.6, mobile: true });
+  return tgt;
+}
 async function diag() {
+  const out = ['== 인투링크 진단 0.2 ' + new Date().toLocaleString('ko-KR') + ' =='];
   const tab = await chrome.tabs.create({ url: 'about:blank', active: true });
-  await uaRule([tab.id, -1]);
-  const reqs = [];
-  const lis = d => { if (d.tabId === tab.id && d.type !== 'image' && d.type !== 'font' && d.type !== 'stylesheet' && d.type !== 'media') reqs.push({ m: d.method, u: d.url, ty: d.type }); };
-  chrome.webRequest.onBeforeRequest.addListener(lis, { urls: ['https://intolink.co.kr/*', 'https://*.intolink.co.kr/*'] });
-  await chrome.tabs.update(tab.id, { url: 'https://intolink.co.kr/plus/waitList#sbm' });
+  let tgt;
+  try { tgt = await mobileTab(tab.id); } catch (e) { out.push('폰 모드 켜기 실패: ' + e.message); }
+  const res = [];
+  const on = (src, m, p) => {
+    if (!tgt || src.tabId !== tab.id) return;
+    if (m === 'Network.responseReceived' && /intolink/.test(p.response.url) && !['Image', 'Font', 'Stylesheet', 'Media'].includes(p.type))
+      res.push({ id: p.requestId, url: p.response.url, ty: p.type, st: p.response.status, mt: p.response.mimeType });
+  };
+  chrome.debugger.onEvent.addListener(on);
+  try { if (tgt) await dbg(tgt, 'Page.navigate', { url: 'https://intolink.co.kr/plus/waitList' }); else await chrome.tabs.update(tab.id, { url: 'https://intolink.co.kr/plus/waitList' }); } catch (e) { out.push('열기 실패: ' + e.message); }
   await new Promise(r => setTimeout(r, 10000));
-  chrome.webRequest.onBeforeRequest.removeListener(lis);
-  const out = [];
-  const now = new Date();
-  out.push('== 인투링크 진단 ' + now.toLocaleString('ko-KR') + ' ==');
   let page = null;
   try {
     const [r] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => {
       const lines = []; const seen = new Set();
       const walk = (el, depth) => {
-        if (lines.length > 140 || depth > 25) return;
+        if (lines.length > 160 || depth > 25) return;
         for (const c of el.children) {
           if (['SCRIPT', 'STYLE', 'SVG', 'NOSCRIPT'].includes(c.tagName)) continue;
           const own = [...c.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join(' ').trim();
@@ -51,33 +67,30 @@ async function diag() {
         }
       };
       walk(document.body, 0);
-      return { url: location.pathname, title: document.title, len: document.body.innerText.length, ua: navigator.userAgent.slice(0, 40), lines, frames: document.querySelectorAll('iframe').length };
+      return { url: location.pathname, title: document.title, len: document.body.innerText.length, lines, frames: document.querySelectorAll('iframe').length };
     } });
     page = r.result;
   } catch (e) { out.push('화면 읽기 실패: ' + e.message); }
   if (page) {
     out.push('화면: ' + page.url + ' · 제목 ' + mask(page.title) + ' · 글자 ' + page.len + ' · iframe ' + page.frames);
-    out.push('UA: ' + page.ua);
     out.push('-- 화면 구조 (글자는 가림) --');
-    for (const [d, tag, t] of page.lines.slice(0, 90)) out.push(' '.repeat(Math.min(d, 12)) + tag.slice(0, 40) + ' : ' + mask(t));
+    for (const [d, tag, t] of page.lines.slice(0, 110)) out.push(' '.repeat(Math.min(d, 12)) + tag.slice(0, 40) + ' : ' + mask(t));
   }
-  out.push('-- 화면이 부른 주소 --');
-  const apis = [];
-  for (const q of reqs) {
-    const u = new URL(q.u); const p = u.origin.replace('https://', '') + u.pathname + (u.search ? ' ?' + [...u.searchParams.keys()].join('&') : '');
-    out.push(q.m + ' ' + q.ty + ' ' + p);
-    if (q.ty === 'xmlhttprequest' && q.m === 'GET' && apis.length < 6) apis.push(q.u);
+  out.push('-- 화면이 받은 데이터 --');
+  let n = 0;
+  for (const q of res) {
+    const u = new URL(q.url); const p = u.host + u.pathname + (u.search ? ' ?' + [...u.searchParams.keys()].join('&') : '');
+    let line = q.ty + ' ' + q.st + ' ' + p;
+    if ((q.ty === 'XHR' || q.ty === 'Fetch') && n < 8 && tgt) {
+      n++;
+      try { const b = await dbg(tgt, 'Network.getResponseBody', { requestId: q.id }); const txt = b.base64Encoded ? atob(b.body) : b.body;
+        try { line += '\n    → ' + shape(JSON.parse(txt), 0).slice(0, 1200); } catch (e) { line += '\n    → (JSON 아님) 길이 ' + txt.length; } } catch (e) { line += ' (내용 못 읽음)'; }
+    }
+    out.push(line);
   }
-  out.push('-- 데이터 모양 (값은 가림) --');
-  for (const u of apis) {
-    try {
-      const res = await fetch(u, { credentials: 'include' });
-      const ct = res.headers.get('content-type') || '';
-      if (ct.includes('json')) out.push(new URL(u).pathname + ' → ' + shape(await res.json(), 0).slice(0, 900));
-      else out.push(new URL(u).pathname + ' → ' + res.status + ' ' + ct);
-    } catch (e) { out.push(new URL(u).pathname + ' → 실패 ' + e.message); }
-  }
-  await chrome.declarativeNetRequest.updateSessionRules({ removeRuleIds: [1] });
+  chrome.debugger.onEvent.removeListener(on);
+  try { if (tgt) await chrome.debugger.detach(tgt); } catch (e) {}
   await chrome.storage.session.set({ diag: out.join('\n') });
   await chrome.tabs.create({ url: chrome.runtime.getURL('result.html') });
+  try { await chrome.tabs.remove(tab.id); } catch (e) {}
 }
