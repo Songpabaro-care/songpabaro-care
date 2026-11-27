@@ -985,7 +985,7 @@ function qOn(name,path,data,patch){const isO=name==="ord",store=isO?Q.ords:Q.cha
   if(!first)nk.forEach(k=>{const m=store[k];if(!m||m.uid===AU.uid)return;
    if(isO){Q.fresh.add(k);const sc=Q.view||qScreen(),dp=sc==="lab"?"lab":sc==="xray"?"img":null,hit=!dp||qParts(m)[dp];
     if(hit&&qSndPlay("ord"))qBeep(m.urgent?"urg":"ord");if(!Q.view)toast(`🧪 ${m.urgent?"긴급 ":""}검사 오더 · ${m.pname||""} · ${(m.tests||[]).join(", ")}`);qNotify(`${m.urgent?"🚨 긴급 ":""}검사 오더 · ${m.pname||""}${m.chart?" #"+m.chart:""}`,(m.tests||[]).join(", "))}
-   else{if(qSndPlay("chat"))qBeep("chat");if(Q.view!=="chat")toast(`💬 ${m.by||"직원"}: ${String(m.text||"").slice(0,40)}`);qNotify(`💬 ${m.by||"직원"}`,m.text)}});
+   else{if(qSndPlay("chat"))qBeep("chat");if(Q.view!=="chat")toast(`💬 ${m.by||"직원"}: ${String(m.text||"").slice(0,40)}`)}});
   qBadge();qRender();fcRender();if(isO&&S.room==="ord"&&!Q.view)softRender()}
 function qListen(){rsOpen()}
 function qStart(){fcShow();rsOpen();setTimeout(qPrune,10000)}
