@@ -25,6 +25,27 @@ function dumpSec(sec) {
   });
   return out;
 }
+// 입원·호텔 칸(div.wait-inner) 읽기: 글자칸 순서대로
+function readInner(sec, kind) {
+  if (!sec) return [];
+  return [...sec.querySelectorAll('.wait-inner')].map(it => {
+    const t = [...it.querySelectorAll('*')].filter(e => !e.children.length && e.textContent.trim() && !e.classList.contains('slash')).map(e => e.textContent.replace(/\s+/g, ' ').trim());
+    const first = t[0] || '';
+    let owner = '', pet = '';
+    let m = first.match(/^(.+?)\s*\/\s*(.+)$/);
+    if (m) { owner = m[1]; pet = m[2]; } else if ((m = first.match(/^(.+?)\((.+?)\)\s*\d*$/))) { pet = m[1]; owner = m[2]; } else pet = first;
+    const dt = t.find(x => /^\d{4}-\d{2}-\d{2}/.test(x)) || '';
+    const sp = t.find(x => /^(Canine|Feline|Exotic|Avian|Rabbit|Other)/i.test(x)) || '';
+    return { kind, owner, pet, first, dt, sp, room: t[t.length - 1] || '', texts: t.length };
+  });
+}
+// 이름으로 /plus/main 검색해서 동물번호 찾기
+async function searchPet(q) {
+  try {
+    const d = await getDoc('/plus/main?searchText=' + encodeURIComponent(q));
+    return [...d.querySelectorAll('tr.status_data_row')].map(r => { const c = cells(r); return { owner: c[0], phone: c[1], pet: c[2], visit: c[3], psno: r.getAttribute('data-psno'), csno: r.getAttribute('data-csno'), st: (r.children[2] || {}).className || '', via: 'search' }; });
+  } catch (e) { return []; }
+}
 async function collect() {
   const res = { at: Date.now(), err: [], opd: [], pets: [], paid: [], dumps: {} };
   const now = new Date(), yy = String(now.getFullYear()).slice(2), mm = String(now.getMonth() + 1).padStart(2, '0'), dd = String(now.getDate()).padStart(2, '0');
@@ -33,6 +54,10 @@ async function collect() {
     const w = await getDoc('/plus/waitList');
     if (w._login) res.err.push('인투링크 로그인 필요');
     res.opd = [...w.querySelectorAll('#waitListTable tr')].filter(r => r.querySelector('td')).map(r => { const c = cells(r); return { owner: c[0], pet: c[1], time: c[2], vet: c[3], room: c[4], all: c.join(' ') + ' ' + [...r.attributes].map(x => x.value).join(' ') }; });
+    const ymd = `${now.getFullYear()}-${mm}-${dd}`;
+    res.opdOld = res.opd.filter(o => !String(o.time || '').startsWith(ymd)).length;
+    res.opd = res.opd.filter(o => String(o.time || '').startsWith(ymd));
+    res.inp = [...readInner(w.getElementById('fixedWaitTab2Tab2'), '입원'), ...readInner(w.getElementById('fixedWaitTab2Tab3'), '호텔')];
     res.dumps.all = dumpSec(w.getElementById('fixedWaitTab2Tab1'));
     res.dumps.inp = dumpSec(w.getElementById('fixedWaitTab2Tab2'));
     res.dumps.hot = dumpSec(w.getElementById('fixedWaitTab2Tab3'));
@@ -48,6 +73,17 @@ async function collect() {
       if (older) break;
     }
   } catch (e) { res.err.push('환축 목록 읽기 실패: ' + e.message); }
+  try {
+    const have = new Set(res.pets.map(p => nz(p.owner) + '|' + nz(p.pet)));
+    const need = [...res.opd, ...(res.inp || [])].filter(o => o.pet && !have.has(nz(o.owner) + '|' + nz(o.pet)));
+    let n = 0; res.searched = 0;
+    for (const o of need) {
+      if (n++ >= 12) break;
+      const hits = await searchPet(o.owner || o.pet);
+      res.searched++;
+      hits.forEach(h => { const k = nz(h.owner) + '|' + nz(h.pet); if (!have.has(k)) { have.add(k); res.pets.push(h); } });
+    }
+  } catch (e) { res.err.push('이름 검색 실패: ' + e.message); }
   try {
     const rc = await getDoc('/plus/receiptCompleted');
     res.paid = [...rc.querySelectorAll('#mReceiptCompletedTable tbody tr')].map(cells).filter(c => c.length >= 3 && /^\d{1,2}:\d{2}$/.test(c[0])).map(c => ({ time: c[0], owner: c[1], pet: c[2] }));
