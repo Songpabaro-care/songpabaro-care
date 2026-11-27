@@ -106,7 +106,7 @@ public static class SbDock {
       if (IsWindowVisible(h) && Cls(h).StartsWith("Chrome_WidgetWin") && (GetWindowLong(h, -20) & 0x8) != 0) { RECT r = Rect(h); o.Add("  크롬 맨 위 창: '" + Title(h) + "' " + (r.R - r.L) + "x" + (r.B - r.T)); }
       return true; }, IntPtr.Zero);
     if (main != IntPtr.Zero) {
-      RECT m = Rect(main); o.Add("인투벳 위치: " + m.L + "," + m.T + " ~ " + m.R + "," + m.B);
+      RECT m = Rect(main); o.Add("인투벳 위치: " + m.L + "," + m.T + " ~ " + m.R + "," + m.B); IntPtr vc = FindVaccine(main); o.Add("백신 칸: " + (vc == IntPtr.Zero ? "못 찾음 (접힌 상자는 맨 아래에 붙음)" : "찾음 " + Rect(vc).L + "," + Rect(vc).T));
       int budget = 3000;
       foreach (IntPtr h in Cands(main)) { RECT r = Rect(h); int b = 300; bool k = HasKey(h, ref b); o.Add("  후보 " + Cls(h) + " " + r.L + "," + r.T + " " + (r.R - r.L) + "x" + (r.B - r.T) + (k ? "  ← 수신시간 있음" : "")); if (--budget <= 0) break; }
       IntPtr p = FindPopup(main); o.Add("수신 창: " + (p == IntPtr.Zero ? "못 찾음" : "찾음"));
@@ -122,6 +122,16 @@ public static class SbDock {
     gapT = DateTime.Now; int g;
     try { string f = Path.Combine(dir, "dock-gap.txt"); gapV = File.Exists(f) && int.TryParse(File.ReadAllText(f).Trim(), out g) && g >= 0 && g < 400 ? g : 16; } catch { gapV = 16; }
     return gapV;
+  }
+  // 인투벳 Vaccine 칸 (T폼_vaccine). 5초마다 다시 찾음, 숨겨져 있으면 없음
+  static IntPtr vacH = IntPtr.Zero; static DateTime vacT = DateTime.MinValue;
+  static IntPtr FindVaccine(IntPtr main) {
+    if (vacH != IntPtr.Zero && IsWindow(vacH) && (DateTime.Now - vacT).TotalSeconds < 5) return IsWindowVisible(vacH) ? vacH : IntPtr.Zero;
+    vacT = DateTime.Now; IntPtr hit = IntPtr.Zero;
+    EnumChildWindows(main, delegate(IntPtr h, IntPtr l) {
+      if (IsWindowVisible(h) && Cls(h).IndexOf("vaccine", StringComparison.OrdinalIgnoreCase) >= 0) { hit = h; return false; }
+      return true; }, IntPtr.Zero);
+    vacH = hit; return hit;
   }
   static Mutex MX;
   static string lastMark = "";
@@ -152,7 +162,9 @@ public static class SbDock {
               int nw, nh;
               if (wh.Length == 2 && int.TryParse(wh[0], out nw) && int.TryParse(wh[1].Split(']')[0], out nh) && nw > 100 && nh > 60) { w = nw; hh = nh; c.L = -99999; }
             } else if (mi < 0) lastMark = "";
+            IntPtr vac = (c.L != -99999 && hh < 150) ? FindVaccine(main) : IntPtr.Zero;
             if (pop != IntPtr.Zero) { RECT p = Rect(pop); tx = p.R - w; ty = p.T - hh - 2; }
+            else if (vac != IntPtr.Zero) { RECT v = Rect(vac); tx = v.R - w; ty = v.T - hh; }   // 접힌 💬 상자: 백신 목록 바로 위 (목록은 안 가림)
             else { RECT wa = Work(main); tx = wa.R - w; ty = wa.B - hh - Gap(dir); }
             if (ty < 0) ty = 0;
             if (c.L == -99999) SetWindowPos(chat, IntPtr.Zero, tx, ty, w, hh, 0x0004 | 0x0010);
