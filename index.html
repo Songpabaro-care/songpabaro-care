@@ -1026,9 +1026,13 @@ const NETB=document.createElement("div");NETB.id="netBan";NETB.innerHTML='<span>
 setInterval(()=>{if(!OKD||document.hidden){NETB.classList.remove("on");return}const n=Date.now(),idle=n-(Q.lastEv||n);
  if(!navigator.onLine||(Q.down&&n-Q.down>15000)||idle>90000){NETB.classList.add("on");if(idle>90000||!RS||RS.readyState===2){Q.lastEv=n;try{RS&&RS.close()}catch(e){}RS=null;rsOpen()}}else NETB.classList.remove("on")},5000);
 function qNotify(t,b){if(!(qls("noti")==="1"&&window.Notification&&Notification.permission==="granted"&&document.hidden))return;try{new Notification(t,{body:b||"",icon:"icon-192.png"})}catch(e){}}
-function qBadge(){{const t=$("#ordTabN"),n=qMine(null).length;if(t)t.textContent=n?String(n):""}const seen=+(qls("chatSeen")||0),un=Object.values(Q.chat).filter(m=>m&&m.uid!==AU.uid&&(m.t||0)>seen).length,on=qMine(null).length,b=$("#qBtn");
+function qBadge(){{const t=$("#ordTabN"),n=qMine(null).length;if(t)t.textContent=n?String(n):""}const seen=+(qls("chatSeen")||0),un=Object.values(Q.chat).filter(m=>m&&m.uid!==AU.uid&&(m.t||0)>Math.max(seen,qMid())).length,on=qMine(null).length,b=$("#qBtn");
  if(b)b.innerHTML="💬"+(un||on?`<span class="bdg">${un?un:on}</span>`:"");const bk=$("#scrBack");if(bk)bk.innerHTML=`🧪 오더 화면으로${on?` <i>${on}</i>`:""}`}
-async function qPrune(){const lim=Date.now()-7*864e5;Object.entries(Q.chat).forEach(([k,m])=>{if(m&&(m.t||0)<lim)fetch(`${QCH()}/${k}.json`,{method:"DELETE"}).catch(()=>{})});
+/* 채팅은 매일 자정에 그 전 글을 모두 정리 (오더는 7일) */
+function qMid(){const d=new Date();d.setHours(0,0,0,0);return d.getTime()}
+setInterval(()=>{if(Q.prT)return;if(Object.values(Q.chat).some(m=>m&&(m.t||0)<qMid()))Q.prT=setTimeout(()=>{Q.prT=0;qPrune()},Math.random()*60000)},300000);
+async function qPrune(){const lim=Date.now()-7*864e5,mid=qMid(),del={};Object.entries(Q.chat).forEach(([k,m])=>{if(m&&(m.t||0)<mid)del[k]=null});
+ if(Object.keys(del).length)fetch(`${QCH()}.json`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(del)}).catch(()=>{});
  Object.entries(Q.ords).forEach(([k,o])=>{if(o&&!qActive(o)){const lt=Math.max(...Object.values(qParts(o)).map(x=>x.t||0),o.t||0);if(lt<lim)fetch(`${QOR()}/${k}.json`,{method:"DELETE"}).catch(()=>{})}})}
 async function qPost(url,m){m.t={".sv":"timestamp"};m.by=qMe();m.uid=AU.uid;const r=await fetch(`${url}.json`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(m)});if(!r.ok)throw 0}
 /* ---- 화면 ---- */
@@ -1071,7 +1075,7 @@ function qBoard(dp){const act=qMine(dp).sort((a,b)=>(b[1].urgent?1:0)-(a[1].urge
  const html=`<div class="qboard"><div class="qbh"><h2>진행 중 오더 <b>${act.length}건</b></h2></div><div class="qgrid">${act.map(([k,o])=>qCard(k,o,dp)).join("")||'<div class="meta" style="padding:8px">진행 중인 오더가 없어요</div>'}</div>
   <details class="qdone"><summary>오늘 완료 (${dn.length})</summary>${dn.map(([k,o])=>`<div class="di">✓ <b>${esc(o.pname||"")}</b>${o.chart?" #"+esc(o.chart):""} · ${esc((o.tests||[]).filter(x=>!dp||tDept(x)===dp).join(", "))} <button class="qsb" style="height:24px;padding:0 8px" data-act="qundo" data-k="${k}" data-d="${dp||""}">되돌리기</button></div>`).join("")}</details></div>`;
  Q.fresh.clear();return html}
-function qChatHtml(){const arr=Object.entries(Q.chat).filter(([,m])=>m).sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0);let prev="",h="";
+function qChatHtml(){const mid=qMid(),arr=Object.entries(Q.chat).filter(([,m])=>m&&(m.t||0)>=mid).sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0);let prev="",h="";
  arr.forEach(([k,m])=>{const d=new Date(m.t),ds=`${d.getMonth()+1}월 ${d.getDate()}일`;if(ds!==prev){h+=`<div class="qday">${ds}</div>`;prev=ds}const me=m.uid===AU.uid;h+=`<div class="ql${me?" me":""}"><span class="qw">${esc(me?"나":m.by||"직원")} ${hhmm(m.t)}</span> ${esc(m.text)}</div>`});
  return `<div class="qchat"><div class="qmsgs" id="qmsgs">${h||'<div class="meta">아직 메시지가 없어요</div>'}</div><button class="qnew" id="qNew" hidden>↓ 새 메시지</button><div class="qcomp"><textarea id="qtxt" rows="1" placeholder="메시지 입력"></textarea><button class="btn" data-act="qsend">보내기</button></div></div>`}
 function qRender(){if(!Q.view)return;if(Q.drag){Q.pend=true;return}const el=$("#scr"),v=Q.view,on=qMine(null).length;el.classList.remove("fs1","fs2","fs3","fs4","cfs");el.classList.toggle("vchat",v==="chat");if(qFs())el.classList.add("fs"+qFs(),"cfs");
@@ -1125,9 +1129,9 @@ async function fcPipOpen(){const el=$("#fchat");if(FC.pip||!window.documentPictu
   FC.pmin=false;let rt;w.addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{if(FC.pmin)return;qls("fpw",String(w.innerWidth));qls("fph",String(w.innerHeight))},400)});
   w.addEventListener("pagehide",()=>{if(!FC.unloading)qls("fcpip","0");el.classList.remove("pip");document.body.appendChild(el);FC.pip=null;fcShow()})}catch(x){toast("띄우지 못했어요")}}
 function fcRender(){const m=$("#fcM",FC.pip),root=FC.pip?FC.pip.document:document,box=root.getElementById("fcM");if(!box)return;
- const arr=Object.entries(Q.chat).filter(([,c])=>c).sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0).map(([,c])=>c).slice(-40),stick=box.scrollHeight-box.scrollTop-box.clientHeight<60;
+ const mid=qMid(),arr=Object.entries(Q.chat).filter(([,c])=>c&&(c.t||0)>=mid).sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0).map(([,c])=>c).slice(-40),stick=box.scrollHeight-box.scrollTop-box.clientHeight<60;
  box.innerHTML=arr.map(c=>`<div class="ln${c.uid===AU.uid?" me":""}"><span class="lw">${esc(c.uid===AU.uid?"나":c.by||"직원")} ${hhmm(c.t)}</span> ${esc(c.text)}</div>`).join("")||'<div class="w">아직 메시지가 없어요</div>';{const nb=root.getElementById("fcNew"),cn=Object.keys(Q.chat).length,jump=Date.now()-(FC.jump||0)<6000;if(stick||jump){box.scrollTop=box.scrollHeight;FC.nb=0}else if(FC.lastN!=null&&cn>FC.lastN)FC.nb=(FC.nb||0)+cn-FC.lastN;FC.lastN=cn;if(nb){const sh=()=>{nb.hidden=!FC.nb;nb.textContent=`↓ 새 메시지 ${FC.nb}`};sh();nb.onclick=e=>{e.stopPropagation();box.scrollTop=box.scrollHeight;FC.nb=0;sh()};box.onscroll=()=>{if(box.scrollHeight-box.scrollTop-box.clientHeight<60&&FC.nb){FC.nb=0;sh()}}}}
- const seen=+(qls("chatSeen")||0),un=Object.values(Q.chat).filter(c=>c&&c.uid!==AU.uid&&(c.t||0)>seen).length,u=root.getElementById("fcU");if(u)u.textContent=(qls("fcmin")==="1"||FC.pip)&&un?un:""}
+ const seen=+(qls("chatSeen")||0),un=Object.values(Q.chat).filter(c=>c&&c.uid!==AU.uid&&(c.t||0)>Math.max(seen,qMid())).length,u=root.getElementById("fcU");if(u)u.textContent=(qls("fcmin")==="1"||FC.pip)&&un?un:""}
 async function fcSend(){const root=FC.pip?FC.pip.document:document,t=root.getElementById("fcT"),v=(t.value||"").trim();if(!v)return;FC.jump=Date.now();t.value="";try{await qPost(QCH(),{text:v.slice(0,1000)})}catch(e){t.value=v;toast("보내지 못했어요")}}
 function fcInit(){const el=$("#fchat"),h=$("#fcH");
  $("#fcS").onclick=fcSend;$("#fcT").onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();fcSend()}};
