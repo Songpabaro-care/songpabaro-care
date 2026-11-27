@@ -10,7 +10,7 @@ try { $Host.UI.RawUI.WindowTitle = 'SongpaBaro LIS' } catch {}
 $KEY  = 'AIzaSyB7SmDVueDq1ghmIbNTjcHGxMM2vpHSvWw'
 $DB   = 'https://songpabaro-default-rtdb.asia-southeast1.firebasedatabase.app'
 $ROOM = 'songpa-baro-care'
-$NAME = if ($Reception) { '접수실 인투벳 연동' } else { '서버PC LIS 연동' }
+$NAME = if ($Reception) { "인투벳 차트 읽기 · $env:COMPUTERNAME" } else { '서버PC LIS 연동' }
 $DIR  = Join-Path $env:APPDATA 'songpabaro-lis'
 New-Item -ItemType Directory -Force -Path $DIR | Out-Null
 $AUTHF = Join-Path $DIR $(if ($Reception) { 'auth-r.json' } else { 'auth.json' })
@@ -647,14 +647,17 @@ if ($Reception) {
     return $g
   }
   $last = ''
+  $script:rHb = [datetime]::MinValue; $script:readMs = $null; $script:geSeen = $null
   while ($true) {
     try {
       # 키보드·마우스를 쓰는 중이면(1초 안) 이번 차례는 쉬고 다음에 읽음 → 입력할 때 버벅임 없음
       $busy = $false; try { $busy = [SbW32]::IdleMs() -lt 1000 } catch {}
       $w = if ($busy) { $null } else { Find-GE }
       if ($w) {
+        $script:geSeen = Get-Date
         $g = Read-GE $w
         if ($g) {
+          $script:readMs = NowMs
           $key = "$($g.no)|$($g.st)"
           if ($key -ne $last) {
             $last = $key
@@ -668,6 +671,13 @@ if ($Reception) {
         }
       }
       if (((Get-Date) - $lastUp).TotalMinutes -ge 60) { $lastUp = Get-Date; Try-Update }
+      # 상태 신호 (1분마다): 케어 노트 설정에서 PC별로 '살아 있음 / 마지막으로 차트를 읽은 시각'을 보고, 오래 못 읽으면 경고
+      if (((Get-Date) - $script:rHb).TotalSeconds -ge 60) {
+        $script:rHb = Get-Date
+        $hb = [ordered]@{ hb = @{ '.sv' = 'timestamp' }; pc = "$env:COMPUTERNAME"; ge = $(if ($script:geSeen -and ((Get-Date) - $script:geSeen).TotalMinutes -lt 5) { 'ok' } else { 'noge' }) }
+        if ($script:readMs) { $hb.read = $script:readMs }
+        Fb 'Patch' "rooms/$ROOM/rcp/$code" $hb | Out-Null
+      }
     } catch { Log "오류: $(ErrTxt $_)"; $script:GEC = $null; Start-Sleep -Seconds 7 }
     if ($script:GEC) { Start-Sleep -Milliseconds 1500 } else { Start-Sleep -Seconds 4 }
   }

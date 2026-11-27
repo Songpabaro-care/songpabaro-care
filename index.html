@@ -717,7 +717,7 @@ let EGEN=0,RSG=0,RS=null,RSgot=false;const SUB={},RSW=[];
 /* 방 전체를 실시간 연결 1개로 받고, 하위 경로별로 나눠 전달 */
 function rsRoute(seg,path,data,patch){
  if(seg==="chat"||seg==="orders"){qOn(seg==="orders"?"ord":"chat",path,data,patch);return}
- const st=ST[seg]||(ST[seg]={v:null});applyEv(st,{path,data},patch);st.got=true;if(SUB[seg])flush(seg,SUB[seg]);if(seg==="lis")lisOn()}
+ const st=ST[seg]||(ST[seg]={v:null});applyEv(st,{path,data},patch);st.got=true;if(SUB[seg])flush(seg,SUB[seg]);if(seg==="lis")lisOn();if(seg==="rcp"||seg==="config")rcpUpd()}
 function rsEv(d,patch){Q.lastEv=Date.now();Q.down=0;const ps=String(d.path||"/").split("/").filter(Boolean),data=d.data;
  if(!ps.length){
   if(patch)Object.entries(data||{}).forEach(([k,v])=>{const ks=k.split("/").filter(Boolean),seg=ks.shift();if(!seg)return;if(!ks.length)rsRoute(seg,"/",v,false);else rsRoute(seg,"/",{[ks.join("/")]:v},true)});
@@ -1248,9 +1248,32 @@ function qsRender(){const cur=qls("screen")||"auto",dk=document.documentElement.
  <div class="row" style="flex-wrap:wrap;gap:6px"><button class="qtg${qSnd("chat")?" on":""}" data-act="qsnd" data-k="chat">🔔 채팅 소리 ${qSnd("chat")?"켬":"끔"}</button><button class="qtg${qSnd("ord")?" on":""}" data-act="qsnd" data-k="ord">🧪 오더 소리 ${qSnd("ord")?"켬":"끔"}</button><button class="qtg${qls("noti")==="1"?" on":""}" data-act="qnoti">🖥 화면 알림 ${qls("noti")==="1"?"켬":"끔"}</button></div>
  <div class="otitle">떠 있는 채팅창 <span class="meta" style="font-weight:500">· 이 기기에서만</span></div>
  <div class="row" style="flex-wrap:wrap;gap:6px"><button class="qtg${fcPref()?" on":""}" data-act="qfchat">💬 떠 있는 채팅창 ${fcPref()?"켬":"끔"}</button><button class="qtg" data-act="listest">🔔 결과 알림 테스트 (모든 PC)</button><a class="qtg" href="intovet/songpabaro-intovet-install.bat" download style="text-decoration:none">🏥 인투벳 버튼·자리 비키기 설치 파일</a><a class="qtg" href="startup/songpabaro-care-startup.bat" download style="text-decoration:none" title="이 PC를 켜면 케어 노트가 크롬으로 자동으로 열려요. 받은 파일을 한 번 실행하세요.">🚀 PC 켜면 케어 노트 자동 열기 파일</a><button class="qtg${qls("dockfix")==="0"?"":" on"}" data-act="dockfix">📍 우측 하단 고정 ${qls("dockfix")==="0"?"끔":"켬"}</button><button class="qtg" data-act="dockdiag">🩺 자리 비키기 진단</button></div>
- <div class="meta">화면 위에 작은 채팅창이 떠요. 위쪽 띠를 끌어서 옮기고, 📌를 누르면 인투벳 같은 다른 프로그램 위에도 항상 떠 있어요 (PC 크롬·엣지).</div>  <div class="meta">🏥를 누르면 인투벳 창이 앞으로 와요. PC마다 설치 파일을 한 번 받아서 더블클릭해 주세요. 같은 파일로 자리 기능도 깔려요: 📌 채팅창이 순정 채팅처럼 오른쪽 아래에 붙어 있다가, 전화 수신 창이 뜨면 그 위로 올라가고 닫히면 내려와요 (📍로 끄면 겹칠 때만 비켜 가요).</div>  <div class="otitle">인투링크 연동 <span class="meta" style="font-weight:500">· 접수실 PC 크롬</span></div>  <div class="row" style="flex-wrap:wrap;gap:6px"><a class="qtg" href="intolink/songpabaro-intolink.zip" download style="text-decoration:none">🔗 인투링크 연동 확장 받기</a></div>  <div class="meta">압축을 풀고 크롬 chrome://extensions → 개발자 모드 켜기 → "압축해제된 확장 프로그램 로드" → 풀린 폴더 안 ext 폴더 선택. 지금은 구조 진단만 하고 아무것도 보내지 않아요.</div>
+ <div class="meta">화면 위에 작은 채팅창이 떠요. 위쪽 띠를 끌어서 옮기고, 📌를 누르면 인투벳 같은 다른 프로그램 위에도 항상 떠 있어요 (PC 크롬·엣지).</div>  <div class="meta">🏥를 누르면 인투벳 창이 앞으로 와요. PC마다 설치 파일을 한 번 받아서 더블클릭해 주세요. 같은 파일로 자리 기능도 깔려요: 📌 채팅창이 순정 채팅처럼 오른쪽 아래에 붙어 있다가, 전화 수신 창이 뜨면 그 위로 올라가고 닫히면 내려와요 (📍로 끄면 겹칠 때만 비켜 가요).</div>  <div class="otitle">자동 등록 연동 <span class="meta" style="font-weight:500">· 병원 전체 설정</span></div><div id="syncBox">${syncHtml()}</div>
  <div class="meta">검사실·영상실 화면에서는 그 부서 오더에만 소리가 나요. 소리는 페이지를 연 뒤 화면을 한 번 눌러야 나기 시작해요.</div>
  <div class="otitle">기타</div><div class="row" style="flex-wrap:wrap;gap:6px"><button class="qtg" data-act="tropen">🗑 최근 지운 항목</button><button class="qtg" id="themeBtn" data-act="theme">${dk?"☀️ 밝은 화면":"🌙 어두운 화면"}</button><button class="qtg" data-act="shareweb">🔗 링크 공유</button></div>`}
+/* ---- 자동 등록 연동: 방식 스위치(인투링크+차트 읽기 / 차트 읽기만) · PC별 차트 읽기(LIS) 상태 · 멈춤 경고 ---- */
+const syncMode=()=>{const c=ST.config&&ST.config.v&&ST.config.v.sync;return c&&c.mode==="lis"?"lis":"both"};
+const agoTxt=t=>{if(!t)return"기록 없음";const m=Math.round((Date.now()-t)/60000);return m<1?"방금":m<60?`${m}분 전`:m<1440?`${Math.floor(m/60)}시간 전`:`${Math.floor(m/1440)}일 전`};
+function rcpList(){const r=ST.rcp&&ST.rcp.v||{};return Object.entries(r).filter(([k,v])=>v&&v.hb&&Date.now()-v.hb<7*86400000).map(([k,v])=>({k,...v})).sort((a,b)=>String(a.pc||a.k).localeCompare(String(b.pc||b.k)))}
+function rcpHtml(){const L=rcpList();if(!L.length)return `<div class="meta">아직 차트 읽기(LIS)가 깔린 PC가 없어요. 위 설치 파일을 PC마다 한 번씩 실행해 주세요.</div>`;
+ return `<div style="display:grid;gap:4px">${L.map(x=>{const alive=Date.now()-x.hb<180000,st=!alive?["#c93a3a","● 꺼짐"]:x.ge==="ok"?["#0f8a7e","● 켜짐"]:["#b7791f","● 인투벳 창 없음"];
+  return `<div class="meta" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b style="color:var(--ink)">${esc(x.pc||x.k)}</b><b style="color:${st[0]}">${st[1]}</b><span>신호 ${agoTxt(x.hb)}</span><span>· 마지막으로 차트 읽음 ${agoTxt(x.read)}</span></div>`}).join("")}</div>`}
+function syncHtml(){const m=syncMode(),c=ST.config&&ST.config.v&&ST.config.v.sync||{};
+ const btn=(v,t)=>`<button class="qtg${m===v?" on":""}" data-act="syncmode" data-v="${v}"${S.adm?"":" disabled"}>${t}</button>`;
+ return `<div class="row" style="flex-wrap:wrap;gap:6px">${btn("both","🔗 인투링크 + 차트 읽기")}${btn("lis","🧾 차트 읽기(LIS)만")}</div>
+ <div class="meta">${m==="lis"?"지금: <b>차트 읽기(LIS)만</b> · 인투링크는 읽지 않아요. 직원이 인투벳에서 차트를 열 때 외래·입원·호텔이 등록·구분되고 수납완료면 외래 카드가 정리돼요.":"지금: <b>인투링크 + 차트 읽기</b> · 접수실 크롬 확장이 3분마다 인투링크 진료대기를 읽고, 차트 읽기(LIS)도 함께 돌아요."}${c.by?` · 바꾼 기기 ${esc(c.by)} ${c.at?agoTxt(c.at):""}`:""}${c.extSeen?` · 접수실 확장 마지막 확인 ${agoTxt(c.extSeen)}`:""}${S.adm?"":" · 관리자 기기에서만 바꿀 수 있어요"}</div>
+ <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px"><a class="qtg" href="lis/songpabaro-lis-setup.bat" download style="text-decoration:none" title="받은 파일을 한 번 실행하면 설치와 자동 실행 등록까지 끝나요">🧾 차트 읽기(LIS) 설치 파일</a><a class="qtg" href="intolink/songpabaro-intolink.zip" download style="text-decoration:none">🔗 인투링크 연동 확장 받기</a></div>
+ <div class="meta">차트 읽기(LIS): 인투벳이 깔린 PC마다 설치 파일을 받아 한 번 실행하세요. 진단 창이 뜨면 🔐 기기 관리에서 "인투벳 차트 읽기 · PC이름"을 승인하고, 진단 창에 차트 정보가 읽히는지 확인한 뒤 PC를 다시 시작하면 그다음부터 조용히 자동으로 돌아요. 다시 실행하면 최신 버전으로 바뀌어요.</div>
+ <div class="otitle" style="font-size:13px">PC별 차트 읽기 상태</div><div id="rcpBox">${rcpHtml()}</div>`}
+function rcpWarnTxt(){const L=rcpList(),h=new Date().getHours();if(!L.length||h<9||h>=20)return"";
+ if(!L.some(x=>Date.now()-x.hb<600000))return"⚠ 인투벳 차트 읽기(LIS)가 모든 PC에서 꺼져 있어요";
+ const last=Math.max(0,...L.map(x=>x.read||0));if(Date.now()-last>3600000)return"⚠ 1시간 넘게 어느 PC도 인투벳 차트를 못 읽었어요 · 인투벳 화면이 바뀌었거나 창이 꺼져 있을 수 있어요";return""}
+function rcpUpd(){const b=$("#syncBox");if(b&&$("#qs").classList.contains("open"))b.innerHTML=syncHtml();
+ const t=rcpWarnTxt();let w=document.getElementById("rcpWarn");
+ if(!t){if(w)w.remove();return}
+ if(!w){w=document.createElement("button");w.id="rcpWarn";w.type="button";w.dataset.act="qset";w.style.cssText="position:fixed;left:12px;bottom:12px;z-index:60;max-width:min(92vw,520px);text-align:left;border:1px solid #f5c2bf;background:#fff4f3;color:#b42318;font-weight:700;font-size:12.5px;border-radius:12px;padding:8px 12px;box-shadow:0 4px 14px rgba(0,0,0,.12);cursor:pointer";document.body.appendChild(w)}
+ w.textContent=t+" · 눌러서 확인"}
+setInterval(()=>{if(!document.hidden)rcpUpd()},60000);
 S.ordF="all";
 function ordView(){const f=S.ordF,dp=f==="all"?null:f,cnt=d=>qMine(d).length;
  return `<div class="card" style="display:grid;gap:10px"><div class="row" style="align-items:center;gap:6px;flex-wrap:wrap">${[["all","전체",cnt(null)],["lab","검사실",cnt("lab")],["img","영상",cnt("img")]].map(([k,t,n])=>`<button type="button" class="chip ${f===k?"sel":""}" data-act="ordf" data-k="${k}">${t} ${n}</button>`).join("")}<span style="flex:1"></span><button class="btn" style="background:#4655c9" data-act="qord">＋ 검사 오더</button></div>
@@ -1937,7 +1960,10 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
  mjopen:()=>{$("#mj").classList.add("open");mjLoad()},
  alopen:()=>alOpen(id),
  qchat:()=>scrOpen("chat",true),scrclose:scrClose,scrhide:scrClose,scrback:()=>scrOpen(qScreen(),false),
- qset:()=>{qsRender();$("#qs").classList.add("open")},qsclose:()=>$("#qs").classList.remove("open"),
+ qset:()=>{qsRender();$("#qs").classList.add("open")},
+ syncmode:async()=>{if(!S.adm){toast("관리자 기기에서만 바꿀 수 있어요");return}const v=d.v==="lis"?"lis":"both";if(v===syncMode())return;
+  if(!confirm(v==="lis"?"인투링크 읽기를 멈추고 차트 읽기(LIS)만 쓸까요?\n접수실 확장은 다음 차례(3분 안)부터 인투링크를 읽지 않아요.":"인투링크 읽기를 다시 켤까요?\n접수실 크롬 확장이 켜져 있어야 실제로 읽어요."))return;
+  try{const r=await fetch(`${base()}/rooms/${encodeURIComponent(S.code)}/config/sync.json`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:v,by:qMe(),at:{".sv":"timestamp"}})});if(!r.ok)throw 0;toast(v==="lis"?"차트 읽기(LIS)만 쓰도록 바꿨어요":"인투링크 + 차트 읽기로 바꿨어요")}catch(x){toast("저장하지 못했어요. 다시 눌러 주세요")}},qsclose:()=>$("#qs").classList.remove("open"),
  qscr:()=>{if(d.v==="auto")qls("screen",null);else qls("screen",d.v);if(d.v==="clinic")qls("pcboard","1");qsRender();$("#qs").classList.remove("open");if(Q.view)scrClose();qScreenApply();toast(`이 기기 화면: ${(QSCR.find(x=>x[0]===d.v)||[])[1]}`)},
  qofs:()=>{const n=(qOfs()+1)%QOFN.length;qls("qofs",String(n));qRender();toast(`오더 글씨 ${QOFN[n]} (이 기기만)`)},
  qfs:()=>{const n=(qFs()+1)%QFSN.length;qls("qfs",String(n));qRender();toast(`채팅 글씨 ${QFSN[n]} (이 기기만)`)},

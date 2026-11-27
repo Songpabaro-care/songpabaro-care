@@ -43,16 +43,6 @@ async function rsCollect(deep) {
   await bgRule(true); await ensureOff();
   return chrome.runtime.sendMessage({ t: 'collect', to: 'off', opt: { deep, diag: false } });
 }
-// 1단계 로그인 자동 연장: 인투링크 화면을 뒤쪽 탭으로 잠깐 열어 인투링크가 원래 하는 로그인 연장이 돌게 함 (비밀번호 안 씀)
-async function rsRevive() {
-  const last = (await rsGet('rsReviveAt')) || 0; if (Date.now() - last < 10 * 60000) return false;
-  await rsSet('rsReviveAt', Date.now());
-  let tab = null;
-  try { tab = await chrome.tabs.create({ url: 'about:blank', active: false, pinned: true }); await uaRule([tab.id]);
-    await chrome.tabs.update(tab.id, { url: 'https://intolink.co.kr/plus/main' }); await new Promise(r => setTimeout(r, 12000));
-  } catch (e) {} finally { if (tab) try { await chrome.tabs.remove(tab.id); } catch (e) {} }
-  return true;
-}
 async function runSync(why) {
   if (RS.busy) return { skip: '이미 도는 중' }; RS.busy = true;
   const done = [];
@@ -60,10 +50,15 @@ async function runSync(why) {
     if (!(await rsGet('rsOn')) && why !== 'test') return { skip: '꺼짐' };
     const dv = await rsDevice();
     if (!dv.ok) { await rsSet('rsLast', { t: Date.now(), msg: `승인 대기 · 케어 노트 🔐 기기 관리에서 '${RS.NAME}' (코드 ${dv.code}) 승인 필요` }); return { wait: dv.code }; }
+    // 케어 노트 ⚙ 설정의 연동 방식: 'LIS만'이면 인투링크를 읽지 않고 쉼 (휴대폰에서도 끄고 켤 수 있음)
+    let mode = 'both';
+    try { const cf = await fb('GET', P('config/sync')); if (cf && cf.mode === 'lis') mode = 'lis'; } catch (e) {}
+    try { await fb('PATCH', P('config/sync'), { extSeen: { '.sv': 'timestamp' } }); } catch (e) {}
+    if (mode === 'lis') { await rsSet('rsLast', { t: Date.now(), msg: '쉬는 중 · 케어 노트 설정이 "차트 읽기(LIS)만"이라 인투링크를 읽지 않아요' }); return { skip: 'LIS만' }; }
     const st = (await rsGet('rsState')) || {}; st.seen = st.seen || {}; st.cache = st.cache || {};
     const deep = !st.deepAt || Date.now() - st.deepAt > 30 * 60000;
     let d = await rsCollect(deep);
-    if (d && (d.err || []).some(e => /로그인/.test(e)) && await rsRevive()) { d = await rsCollect(deep); await rsLog((d.err || []).some(e => /로그인/.test(e)) ? '🔑 로그인 자동 연장 실패 · 접수실 크롬에서 인투링크에 다시 로그인해 주세요' : '🔑 로그인 자동 연장 성공'); }
+    if (d && (d.err || []).some(e => /로그인/.test(e))) throw new Error('인투링크 로그인이 풀렸어요 · 원장님이 접수실 크롬에서 다시 로그인하면 이어서 읽어요');
     if (!d || !d.items) throw new Error('인투링크 읽기 실패: ' + ((d && d.err || []).join(' / ') || '응답 없음'));
     if ((d.err || []).some(e => /로그인|진료대기 읽기/.test(e))) throw new Error(d.err.join(' / '));
     if (deep) st.deepAt = Date.now();
