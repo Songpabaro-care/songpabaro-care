@@ -5,7 +5,7 @@ async function getDoc(p) {
   const r = await fetch(H + p, { credentials: 'include' });
   const t = await r.text();
   // 읽기만 하므로 onclick 같은 인라인 실행 코드를 미리 지워 둠 (크롬 보안 경고 방지)
-  const safe = t.replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '').replace(/(href|src|action)\s*=\s*(["'])\s*javascript:[^"']*\2/gi, '$1="#"');
+  const safe = t.replace(/\son([a-z]+)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, ' data-sbon-$1=$2').replace(/(href|src|action)\s*=\s*"\s*javascript:([^"]*)"/gi, 'data-sbon-$1="$2" $1="#"').replace(/(href|src|action)\s*=\s*'\s*javascript:([^']*)'/gi, "data-sbon-$1='$2' $1=\"#\"");
   const d = new DOMParser().parseFromString(safe, 'text/html');
   d._len = t.length; d._raw = t; d._login = /인투통합회원|signIn|LOGIN/.test(t) && !/chartSearchTable|waitListTable|mReceiptCompletedTable/.test(t);
   return d;
@@ -27,6 +27,17 @@ function dumpSec(sec) {
   });
   return out;
 }
+// 칸 안에 숨은 동물번호 단서: pet_no= 같은 값, data-* 값, 눌렀을 때 실행 코드(함수 이름 + 숫자들)
+function clues(el) {
+  const h = el.outerHTML;
+  const m = h.match(/(?:pet_?no|psno|pet_?idx|petNo|petIdx|animal_?no)['"]?\s*[:=]\s*['"]?(\d+)/i);
+  const els = [el, ...el.querySelectorAll('*')];
+  for (let a = el.parentElement, k = 0; a && k < 2; a = a.parentElement, k++) els.push(a);
+  const calls = [];
+  els.forEach(e => [...e.attributes].forEach(x => { if (/^data-sbon-/.test(x.name)) { const c = x.value.match(/([A-Za-z_$][\w$.]*)\s*\(([^)]*)\)/); if (c) calls.push({ fn: c[1], nums: (c[2].match(/\d+/g) || []) }); } }));
+  const data = {}; els.forEach(e => [...e.attributes].forEach(x => { if (/^data-(?!sbon)/.test(x.name) && /^\d+$/.test(x.value)) data[x.name] = x.value; }));
+  return { pno: m ? m[1] : (data['data-psno'] || data['data-pet_no'] || data['data-petno'] || ''), calls, data };
+}
 // 입원·호텔 칸(div.wait-inner) 읽기: 글자칸 순서대로
 function readInner(sec, kind) {
   if (!sec) return [];
@@ -40,7 +51,7 @@ function readInner(sec, kind) {
     const sp = t.find(x => /^(Canine|Feline|Exotic|Avian|Rabbit|Other)/i.test(x)) || '';
     let old = false; const dm = dt.match(/^(\d{4})-(\d{2})-(\d{2}).*?\((\d+)\s*일\)/);
     if (dm) { const since = Math.round((new Date(new Date().toDateString()) - new Date(+dm[1], dm[2] - 1, +dm[3])) / 864e5); old = Math.abs(since - +dm[4]) > 1; }
-    return { kind, owner, pet, first, dt, sp, room: t[t.length - 1] || '', texts: t.length, old };
+    return { kind, owner, pet, first, dt, sp, room: t[t.length - 1] || '', texts: t.length, old, cl: clues(it), full: nz(t.join('')) };
   });
 }
 // 이름으로 /plus/main 검색해서 동물번호 찾기
@@ -94,7 +105,7 @@ async function collect() {
   try {
     const w = await getDoc('/plus/waitList');
     if (w._login) res.err.push('인투링크 로그인 필요');
-    res.opd = [...w.querySelectorAll('#waitListTable tr')].filter(r => r.querySelector('td')).map(r => { const c = cells(r); return { owner: c[0], pet: c[1], time: c[2], vet: c[3], room: c[4], all: c.join(' ') + ' ' + [...r.attributes].map(x => x.value).join(' ') }; });
+    res.opd = [...w.querySelectorAll('#waitListTable tr')].filter(r => r.querySelector('td')).map(r => { const c = cells(r); return { owner: c[0], pet: c[1], time: c[2], vet: c[3], room: c[4], all: c.join(' ') + ' ' + [...r.attributes].filter(x => !/^data-sbon/.test(x.name)).map(x => x.value).join(' '), cl: clues(r) }; });
     const ymd = `${now.getFullYear()}-${mm}-${dd}`;
     res.opdOld = res.opd.filter(o => !String(o.time || '').startsWith(ymd)).length;
     res.opd = res.opd.filter(o => String(o.time || '').startsWith(ymd));
