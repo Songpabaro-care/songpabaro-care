@@ -119,7 +119,7 @@ main{padding-top:16px;display:grid;gap:14px}
 .dis .sp{flex:1;min-width:0}
 .fab{position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom,0));z-index:15;height:52px;padding:0 20px;border-radius:99px;background:var(--brand);color:#fff;font-weight:800;box-shadow:0 8px 24px rgba(11,122,117,.4);display:flex;align-items:center;gap:8px}
 .mask{position:fixed;inset:0;background:rgba(8,16,15,.55);z-index:40;display:none;align-items:flex-end;justify-content:center}
-.mask.open{display:flex}
+.mask.open{display:flex}.sheet>.row:first-child{position:sticky;top:-18px;z-index:8;background:var(--card);margin:-18px -18px 0;padding:12px 18px 10px;border-bottom:1px solid var(--line);border-radius:22px 22px 0 0}
 .sheet{background:var(--card);width:100%;max-width:520px;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0));display:grid;gap:12px}
 @media(min-width:600px){.mask{align-items:center}.sheet{border-radius:22px}}
 .sheet h3{font-size:17px;font-weight:800}
@@ -937,6 +937,8 @@ const QTESTS={
  "전해질·혈액가스":[["전해질","Na · K · Cl"],["혈액가스","pH · pCO2 · HCO3 · BE"]],
  "호르몬":[["T4"],["TSH"],["코르티솔"]],
  "특수 검사":[["SDMA"],["proBNP"],["췌장염 키트","cPL · fPL"]],
+ "전염병 키트 🐶":[["파보","CPV Ag"],["코로나","CCV Ag"],["파보·코로나","CPV/CCV 콤보"],["디스템퍼","CDV Ag"],["심장사상충","HW Ag"],["4Dx","HW · 라임 · 에를리키아 · 아나플라즈마"],["지아디아","Giardia Ag"],["인플루엔자","CIV Ag"]],
+ "전염병 키트 🐱":[["FeLV/FIV","FeLV Ag · FIV Ab"],["범백","FPV Ag"],["FCoV","FCoV Ab"],["고양이 심장사상충","FHW Ag"]],
  "기타":[["혈압"],["심전도"],["안압"],["피부·귀 도말"],["FNA 세포검사"]]};
 const QSUB={};Object.values(QTESTS).forEach(a=>a.forEach(([n,d])=>{if(d)QSUB[n]=d}));
 /* 혈청화학: 장기별 낱개 항목 + 묶음 버튼(누르면 해당 항목이 한꺼번에 선택됨) · 후지 NX700 항목 */
@@ -964,7 +966,17 @@ const QOFN=["작게","보통","크게","아주 크게"],QOFZ=[.85,1,1.15,1.3],qO
 const QFSN=["보통","크게","아주 크게","특대","최대"],qFs=()=>{const v=qls("qfs");return v===null?(innerWidth>=1200?1:0):+v||0};
 const qSnd=k=>qls("snd_"+k)==="1",qSndPlay=k=>qSnd(k)&&!(!(Q.view&&!Q.temp)&&Date.now()-QPEER<10000);
 let QAC=null;
+/* 검사 결과 음성 안내: "초코, 검사 결과가 나왔습니다." (띵-동 뒤에, 소리 켠 PC에서만) */
+function qSay(nm){try{if(!window.speechSynthesis||!window.SpeechSynthesisUtterance)return;nm=String(nm||"").trim();if(/^#|테스트|^$/.test(nm))nm="";
+ const u=new SpeechSynthesisUtterance(`${nm?nm+", ":""}검사 결과가 나왔습니다.`);u.lang="ko-KR";u.rate=1;u.volume=1;
+ const v=(speechSynthesis.getVoices()||[]).filter(x=>/^ko/i.test(x.lang));if(v.length)u.voice=v.find(x=>/Heami|SunHi|여성|Female/i.test(x.name))||v[0];
+ clearTimeout(qSay.t);qSay.t=setTimeout(()=>{try{speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}},650)}catch(e){}}
+if(window.speechSynthesis)try{speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices()}catch(e){}
 function qBeep(kind){try{QAC=QAC||new(window.AudioContext||window.webkitAudioContext)();if(QAC.state==="suspended")QAC.resume();
+ /* 검사 결과: "포롱" (낮은 음 → 높은 음으로 빠르게 올라가는 한 번) */
+ if(kind==="res"){const t=QAC.currentTime,cp=QAC.createDynamicsCompressor(),mg=QAC.createGain();mg.gain.value=1.1;cp.connect(mg);mg.connect(QAC.destination);
+  [[1,1],[2,.25]].forEach(([m,g])=>{const o=QAC.createOscillator(),gn=QAC.createGain();o.type="sine";o.frequency.setValueAtTime(660*m,t);o.frequency.linearRampToValueAtTime(1320*m,t+.09);o.connect(gn);gn.connect(cp);
+   gn.gain.setValueAtTime(0,t);gn.gain.linearRampToValueAtTime(.42*g,t+.006);gn.gain.setTargetAtTime(0,t+.006,1/6.5);o.start(t);o.stop(t+.75)});return}
  const A=[[1175,0],[932,.28]],F=[[1568,0],[1319,.24]],seq=kind==="urg"?[...F,...F.map(([f,d])=>[f,d+.75])]:kind==="ord"?F:A;
  const cp=QAC.createDynamicsCompressor();cp.threshold.value=-10;cp.ratio.value=8;const mg=QAC.createGain();mg.gain.value=1.1;cp.connect(mg);mg.connect(QAC.destination);
  const H=[[1,1],[2,.7],[3,.5],[4.2,.3],[5.4,.15]];
@@ -989,8 +1001,8 @@ function qOn(name,path,data,patch){const isO=name==="ord",store=isO?Q.ords:Q.cha
  const pre={};if(isO&&Q.init.ord)Object.entries(Q.ords).forEach(([k,o])=>{if(o)pre[k]={p:Object.fromEntries(Object.entries(qParts(o)).map(([d,x])=>[d,x&&x.s])),r:Object.keys(o.recv||{})}});
  const nk=qApply(store,path||"/",data,patch),first=!Q.init[name];Q.init[name]=true;
  if(isO&&!first)Object.keys(pre).forEach(k=>{const o=Q.ords[k];if(!o)return;const mine=o.uid===AU.uid,sc=Q.view||qScreen(),mon=sc==="chat"||sc==="lab";
-  Object.entries(qParts(o)).forEach(([d,x])=>{if(x&&x.s==="done"&&pre[k].p[d]!=="done"&&!x.auto&&x.by!==qMe()){const ts0=(o.tests||[]).filter(t=>tDept(t)===d).join(", ");sbNote(`${k}_${d}`,`✅ 검사 완료 · ${o.pname||""}${o.chart?" #"+o.chart:""}`,`${QDN[d]} · ${ts0||"기타"}${x.by?" ("+x.by+")":""}`);if(!mine&&qSndPlay("ord"))qBeep("chat")}
-  if(x&&x.s==="done"&&pre[k].p[d]!=="done"&&x.by!==qMe()&&!x.auto&&mine){const ts=(o.tests||[]).filter(t=>tDept(t)===d).join(", ");if(qSndPlay("ord"))qBeep("chat");toast(`✅ ${o.pname||""} · ${QDN[d]} ${x.auto?"결과 도착·자동 완료":"완료"}${ts?" ("+ts.slice(0,30)+")":""}`);qNotify(`✅ ${o.pname||""} ${QDN[d]} 완료`,ts)}})});
+  Object.entries(qParts(o)).forEach(([d,x])=>{if(x&&x.s==="done"&&pre[k].p[d]!=="done"&&!x.auto&&x.by!==qMe()){const ts0=(o.tests||[]).filter(t=>tDept(t)===d).join(", ");sbNote(`${k}_${d}`,`✅ 검사 완료 · ${o.pname||""}${o.chart?" #"+o.chart:""}`,`${QDN[d]} · ${ts0||"기타"}${x.by?" ("+x.by+")":""}`);if(!mine&&qSndPlay("ord")){qBeep("res");qSay(o.pname)}}
+  if(x&&x.s==="done"&&pre[k].p[d]!=="done"&&x.by!==qMe()&&!x.auto&&mine){const ts=(o.tests||[]).filter(t=>tDept(t)===d).join(", ");if(qSndPlay("ord")){qBeep("res");qSay(o.pname)}toast(`✅ ${o.pname||""} · ${QDN[d]} ${x.auto?"결과 도착·자동 완료":"완료"}${ts?" ("+ts.slice(0,30)+")":""}`);qNotify(`✅ ${o.pname||""} ${QDN[d]} 완료`,ts)}})});
   if(!first)nk.forEach(k=>{const m=store[k];if(!m||m.uid===AU.uid)return;
    if(isO){Q.fresh.add(k);const sc=Q.view||qScreen(),dp=sc==="lab"?"lab":sc==="xray"?"img":null,hit=!dp||qParts(m)[dp];
     if(hit&&qSndPlay("ord"))qBeep(m.urgent?"urg":"ord");if(!Q.view)toast(`🧪 ${m.urgent?"긴급 ":""}검사 오더 · ${m.pname||""} · ${(m.tests||[]).join(", ")}`);qNotify(`${m.urgent?"🚨 긴급 ":""}검사 오더 · ${m.pname||""}${m.chart?" #"+m.chart:""}`,(m.tests||[]).join(", "))}
@@ -1037,7 +1049,7 @@ function sbNoteOld(id,title,body){
 function lisOn(){{const ak=ST.lis&&ST.lis.v&&ST.lis.v.acks||{};Object.keys(Q.notes).forEach(t=>{if(ak[t]){const n=Q.notes[t];delete Q.notes[t];if(n&&n.close){n._sys=true;try{n.close()}catch(x){}}}});
  if(Object.keys(ak).length)sbSW().then(r=>r&&r.getNotifications?r.getNotifications():[]).then(ns=>(ns||[]).forEach(n=>{const g=String(n.tag||"");if(g.startsWith("sb")&&ak[g.slice(2)])n.close()})).catch(()=>{})}
  const e=ST.lis&&ST.lis.v&&ST.lis.v.ev;if(Q.lisT===undefined){Q.lisT=e&&e.t||0;return}if(!e||!e.t||e.t<=Q.lisT)return;Q.lisT=e.t;
- if(Date.now()-e.t>120000)return;if(qSndPlay("ord"))qBeep(e.kind==="done"?"chat":"ord");toast(`${e.title} · ${e.body}`.slice(0,90));
+ if(Date.now()-e.t>120000)return;if(qSndPlay("ord")){qBeep(e.kind==="done"?"res":"ord");if(e.kind==="done")qSay((String(e.title||"").match(/·\s*([^#·]+?)\s*(#|$)/)||[])[1])}toast(`${e.title} · ${e.body}`.slice(0,90));
  if(innerWidth>=761&&window.Notification&&Notification.permission==="granted")sbNote(String(e.t),e.title,e.body)}
 document.addEventListener("pointerdown",()=>{if(innerWidth>=761&&window.Notification&&Notification.permission==="default")try{Notification.requestPermission()}catch(e){}},{once:true});
 function qRcv(o){const an=o.an||[],rv=o.recv||{},ks=[...new Set([...an,...Object.keys(rv)])];if(!ks.length)return"";return `<div class="qrcv">${ks.map(a=>`<span class="${rv[a]?"ok":""}">${rv[a]?"📥":"⏳"} ${ANZN[a]||a}${rv[a]?" "+hhmm(rv[a]):""}</span>`).join("")}${o.man&&an.length?`<span class="mn">수기 항목 있음</span>`:""}</div>`}
