@@ -1,4 +1,4 @@
-// 🔄 실제 연동: 2~3분마다 인투링크 진료대기·입원/호텔을 읽어 케어 노트(Firebase)에 반영.
+// 🔄 실제 연동: 3분마다 인투링크 진료대기·입원/호텔을 읽어 케어 노트(Firebase)에 반영.
 // 인투링크에는 아무것도 쓰지 않음(읽기만). 케어 노트에는 동물번호·동물 이름·종·품종 정도만 저장(보호자 이름·전화 저장 안 함).
 const RS = { KEY: 'AIzaSyB7SmDVueDq1ghmIbNTjcHGxMM2vpHSvWw', DB: 'https://songpabaro-default-rtdb.asia-southeast1.firebasedatabase.app', ROOM: 'songpa-baro-care', NAME: '접수실 인투링크 연동', tok: null, exp: 0, busy: false };
 const rsGet = async k => (await chrome.storage.local.get(k))[k];
@@ -135,8 +135,8 @@ async function runSync(why) {
     return { err: e.message };
   } finally { RS.busy = false; }
 }
-// 읽는 간격: 2~3분 사이에서 매번 무작위 (사람이 보는 것처럼 일정하지 않게)
-const rsNextMin = () => 2 + Math.random();
+// 읽는 간격: 고정 3분 (숨기려는 의도 없이 일정하게)
+const rsNextMin = () => 3;
 async function rsArm(first) { const on = await rsGet('rsOn'); await chrome.alarms.clear('sbsync'); if (on) chrome.alarms.create('sbsync', { delayInMinutes: first ? 0.2 : rsNextMin() }); }
 chrome.alarms.onAlarm.addListener(async a => { if (a.name !== 'sbsync') return; try { await runSync('alarm'); } finally { await rsArm(false); } });
 // 서비스 워커가 깨어났는데 예약이 없으면 다시 예약 (크롬 재시작·업데이트 대비)

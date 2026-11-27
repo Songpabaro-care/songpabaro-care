@@ -34,10 +34,10 @@ async function rsRender() {
   let s; try { s = await chrome.runtime.sendMessage({ t: 'rs-status' }); } catch (e) { return; }
   const tm = t => t ? new Date(t).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '';
   const hide = m => $('#real').checked ? m : String(m).replace(/ · ([^#·]+?) #(\d+)/g, (a, n, k) => ' · ' + mask(n) + ' #' + k);
-  $('#rs').innerHTML = `<b style="font-size:15px">🔄 실제 연동 ${s.on ? '<span style="color:#1a7f37">켜짐 (2~3분마다)</span>' : '<span style="color:#888">꺼짐</span>'}</b>
+  $('#rs').innerHTML = `<b style="font-size:15px">🔄 실제 연동 ${s.on ? '<span style="color:#1a7f37">켜짐 (3분마다)</span>' : '<span style="color:#888">꺼짐</span>'}</b>
    <button id="rsT" style="margin-left:8px">${s.on ? '⏹ 끄기' : '▶ 켜기'}</button> ${s.on ? '<button id="rsR">지금 한 번</button>' : ''}
    <div style="margin-top:4px;color:#555">${s.last ? `마지막 ${tm(s.last.t)} · ${E(s.last.msg)}` : '아직 안 돌았어요'}${s.code ? ` · 이 확장의 기기 코드 <b>${E(s.code)}</b>` : ''}</div>
-   <div style="color:#666;font-size:12px;margin-top:2px">켜면 이 PC 크롬이 2~3분마다 인투링크를 읽어 케어 노트에 외래 등록·입원/호텔 구분·보류·접수 취소 정리를 해요. 인투링크에는 아무것도 쓰지 않아요. 처음 켜면 케어 노트 🔐 기기 관리에서 '접수실 인투링크 연동'을 승인해 주세요.</div>
+   <div style="color:#666;font-size:12px;margin-top:2px">켜면 이 PC 크롬이 3분마다 인투링크를 읽어 케어 노트에 외래 등록·입원/호텔 구분·보류·접수 취소 정리를 해요. 인투링크에는 아무것도 쓰지 않아요. 처음 켜면 케어 노트 🔐 기기 관리에서 '접수실 인투링크 연동'을 승인해 주세요.</div>
    ${s.log && s.log.length ? `<details ${s.on ? 'open' : ''} style="margin-top:6px"><summary>최근 기록</summary><pre style="max-height:220px;overflow:auto">${E(s.log.map(l => tm(l.t) + '  ' + hide(l.m)).join('\n'))}</pre></details>` : ''}`;
   $('#rsT').onclick = async () => { await chrome.runtime.sendMessage({ t: 'rs-toggle' }); setTimeout(rsRender, 1500); };
   const r = $('#rsR'); if (r) r.onclick = async () => { r.disabled = true; r.textContent = '도는 중…'; await chrome.runtime.sendMessage({ t: 'rs-run' }); rsRender(); };
