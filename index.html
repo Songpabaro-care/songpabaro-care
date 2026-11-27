@@ -260,7 +260,7 @@ body.scrpin:not(.scron) #scrBack{display:block}
 .qoc.new-in{animation:qpop 1.2s ease}@keyframes qpop{0%{transform:scale(.92);box-shadow:0 0 0 6px rgba(70,85,201,.35)}100%{transform:none}}
 .qoc .top{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--mute)}.qoc .top .sp{flex:1}
 .qoc .pt{font-size:16px;font-weight:800;line-height:1.3}.qoc .pt small{font-weight:600;color:var(--mute);font-size:12px;margin-left:5px}
-.qtests{display:flex;flex-wrap:wrap;gap:4px}.qtests span{background:#eef0fd;color:#4655c9;border-radius:6px;padding:1px 8px;font-weight:700;font-size:13px}
+.qtests{display:flex;flex-wrap:wrap;gap:4px}.qtests span{background:#eef0fd;color:#4655c9;border-radius:6px;padding:1px 8px;font-weight:700;font-size:13px}.qtests span.qadd{background:#e7f6ea;color:#2b7a3d;outline:1.5px dashed #8fcf9c}.qaddb{color:#2b7a3d;font-size:12px}.qsb.qedb{height:24px;padding:0 7px;background:#fff;border:1px solid #d8dbe8;color:#555}
 .qtests.img span{background:#e7f4fb;color:#0c6b94}
 .qoc .memo{font-size:12.5px;background:var(--soft);border-radius:7px;padding:4px 8px}
 .qdp{display:grid;gap:4px;border-top:1px dashed var(--line);padding-top:6px}.qdp .dl{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700}
@@ -950,6 +950,7 @@ PANELS.forEach(([n,a])=>{QSUB[n]=a.join(" · ")+""});
 const URINE={"소변":["요스틱","요비중(USG)","요침사(현미경)","요분석기(기계)","UPC","요배양·감수성"],"분변":["분변 직접도말","분변 부유법","분변 키트"]},UCOL=["방광천자","자연뇨","카테터"];
 PANELS.push(["요검사 종합",["요스틱","요비중(USG)","요분석기(기계)"],"소변"]);QSUB["요검사 종합"]="요스틱 · 요비중(USG) · 요분석기(기계)";
 const CHEMALL=[...Object.values(CHEM).flat(),...Object.values(URINE).flat()];
+function qEditNote(){const o=Q.ords[Q.edit];if(!o)return"";const lk=Object.entries(qParts(o)).filter(([,x])=>x&&x.s!=="new").map(([d])=>QDN[d]);return `<div class="meta" style="margin:-2px 0 8px">대기 중인 파트 항목은 눌러서 넣고 뺄 수 있어요.${lk.length?` <b style="color:#b26a00">${lk.join("·")} 파트는 이미 접수돼 그대로 두고, 그 파트에 새로 고른 항목은 새 오더로 가요.</b>`:""}</div>`}
 function qCompress(sel){const chem=new Set([...sel].filter(x=>CHEMALL.includes(x))),out=[];
  [...PANELS].sort((a,b)=>b[1].length-a[1].length).forEach(([n,a])=>{if(a.length&&a.every(x=>chem.has(x))){out.push(n);a.forEach(x=>chem.delete(x))}});
  return [...out,...CHEMALL.filter(x=>chem.has(x)),...[...sel].filter(x=>!CHEMALL.includes(x))]}
@@ -998,8 +999,13 @@ function qApply(store,path,data,patch){const ks=path.split("/").filter(Boolean);
  else{let o=store[k]=store[k]||{};for(let i=1;i<ks.length-1;i++)o=o[ks[i]]=o[ks[i]]||{};if(data===null)delete o[ks[ks.length-1]];else o[ks[ks.length-1]]=data}
  return isNew?[k]:[]}
 function qOn(name,path,data,patch){const isO=name==="ord",store=isO?Q.ords:Q.chat;
- const pre={};if(isO&&Q.init.ord)Object.entries(Q.ords).forEach(([k,o])=>{if(o)pre[k]={p:Object.fromEntries(Object.entries(qParts(o)).map(([d,x])=>[d,x&&x.s])),r:Object.keys(o.recv||{})}});
+ const pre={};if(isO&&Q.init.ord)Object.entries(Q.ords).forEach(([k,o])=>{if(o)pre[k]={p:Object.fromEntries(Object.entries(qParts(o)).map(([d,x])=>[d,x&&x.s])),r:Object.keys(o.recv||{}),a:o.addN||0,e:o.edN||0,n:o.pname||"",c:o.chart||""}});
  const nk=qApply(store,path||"/",data,patch),first=!Q.init[name];Q.init[name]=true;
+ const gone=isO?Object.keys(pre).filter(k=>!Q.ords[k]).length:0;
+ if(isO&&!first)Object.keys(pre).forEach(k=>{const o=Q.ords[k];
+  if(!o){if(gone<=2&&Object.values(pre[k].p).some(v=>v&&v!=="done")&&!(Q.myDel&&Q.myDel.has(k))){toast(`🗑 검사 오더 취소 · ${pre[k].n}`);qNotify(`🗑 검사 오더 취소 · ${pre[k].n}${pre[k].c?" #"+pre[k].c:""}`,"다른 PC에서 오더를 취소했어요")}return}
+  if((o.edN||0)>pre[k].e&&o.edUid!==AU.uid){Q.fresh.add(k);const ch=[...(o.edAdd||[]).map(t=>"+"+t),...(o.edDel||[]).map(t=>"−"+t)].join(", ");if(qSndPlay("ord"))qBeep("ord");if(!Q.view)toast(`✏️ 검사 오더 수정 · ${o.pname||""} · ${ch}`.slice(0,90));qNotify(`✏️ 검사 오더 수정 · ${o.pname||""}${o.chart?" #"+o.chart:""}`,ch||"메모·긴급 변경")}
+  if((o.addN||0)>pre[k].a&&o.addUid!==AU.uid){Q.fresh.add(k);const ad=(o.added||[]).slice(-12),sc2=Q.view||qScreen(),dp2=sc2==="lab"?"lab":sc2==="xray"?"img":null;if((!dp2||ad.some(t=>tDept(t)===dp2))&&qSndPlay("ord"))qBeep(o.urgent?"urg":"ord");if(!Q.view)toast(`➕ 검사 추가 · ${o.pname||""} · ${ad.join(", ")}`.slice(0,90));qNotify(`➕ 검사 추가 · ${o.pname||""}${o.chart?" #"+o.chart:""}`,ad.join(", "))}});
  if(isO&&!first)Object.keys(pre).forEach(k=>{const o=Q.ords[k];if(!o)return;const mine=o.uid===AU.uid,sc=Q.view||qScreen(),mon=sc==="chat"||sc==="lab";
   Object.entries(qParts(o)).forEach(([d,x])=>{if(x&&x.s==="done"&&pre[k].p[d]!=="done"&&!x.auto&&x.by!==qMe()){const ts0=(o.tests||[]).filter(t=>tDept(t)===d).join(", ");sbNote(`${k}_${d}`,`✅ 검사 완료 · ${o.pname||""}${o.chart?" #"+o.chart:""}`,`${QDN[d]} · ${ts0||"기타"}${x.by?" ("+x.by+")":""}`);if(!mine&&qSndPlay("ord")){qBeep("res");qSay(o.pname)}}
   if(x&&x.s==="done"&&pre[k].p[d]!=="done"&&x.by!==qMe()&&!x.auto&&mine){const ts=(o.tests||[]).filter(t=>tDept(t)===d).join(", ");if(qSndPlay("ord")){qBeep("res");qSay(o.pname)}toast(`✅ ${o.pname||""} · ${QDN[d]} ${x.auto?"결과 도착·자동 완료":"완료"}${ts?" ("+ts.slice(0,30)+")":""}`);qNotify(`✅ ${o.pname||""} ${QDN[d]} 완료`,ts)}})});
@@ -1059,7 +1065,7 @@ document.addEventListener("pointerdown",()=>{if(innerWidth>=761&&window.Notifica
 function qRcv(o){const an=o.an||[],rv=o.recv||{},ks=[...new Set([...an,...Object.keys(rv)])];if(!ks.length)return"";return `<div class="qrcv">${ks.map(a=>`<span class="${rv[a]?"ok":""}">${rv[a]?"📥":"⏳"} ${ANZN[a]||a}${rv[a]?" "+hhmm(rv[a]):""}</span>`).join("")}${o.man&&an.length?`<span class="mn">수기 항목 있음</span>`:""}</div>`}
 function qCard(k,o,dp){const p=qParts(o),dps=dp?[dp]:Object.keys(p).sort(),st=dp?p[dp]:null,ing=dp?st&&st.s==="ing":dps.some(d=>p[d].s==="ing");
  const tg=d=>(o.tests||[]).filter(x=>tDept(x)===d);
- const tch=x=>`<span${QSUB[x]&&PANELS.some(p=>p[0]===x)?` title="${esc(QSUB[x])}"`:""}>${esc(x)}${PANELS.some(p=>p[0]===x)?`<small style="display:block;font-weight:500;font-size:10.5px;opacity:.8">${esc(QSUB[x])}</small>`:""}</span>`;
+ const tch=x=>`<span${QSUB[x]&&PANELS.some(p=>p[0]===x)?` title="${esc(QSUB[x])}"`:""}${(o.added||[]).includes(x)?' class="qadd"':""}>${(o.added||[]).includes(x)?"＋":""}${esc(x)}${PANELS.some(p=>p[0]===x)?`<small style="display:block;font-weight:500;font-size:10.5px;opacity:.8">${esc(QSUB[x])}</small>`:""}</span>`;
  const ctl=(d,x)=>x.s==="new"?`<button class="qsb go" data-act="qst" data-k="${k}" data-d="${d}" data-v="ing">접수</button><button class="qsb ok" data-act="qst" data-k="${k}" data-d="${d}" data-v="done">완료</button>`:x.s==="ing"?`<button class="qsb ok" data-act="qst" data-k="${k}" data-d="${d}" data-v="done">완료</button>`:"";
  const who=x=>x.s==="ing"?`${esc(x.by||"")} 접수 ${hhmm(x.t)}`:x.s==="done"?`✓ ${esc(x.by||"")} ${hhmm(x.t)}`:"";
  const bd=x=>`<span class="qbd ${x.s}">${x.s==="new"?"대기":x.s==="ing"?"진행 중":"완료"}</span>`;
@@ -1067,7 +1073,7 @@ function qCard(k,o,dp){const p=qParts(o),dps=dp?[dp]:Object.keys(p).sort(),st=dp
  if(dp)body=`<div class="qtests${dp==="img"?" img":""}">${tg(dp).map(tch).join("")||"<span>기타</span>"}</div>${dp==="lab"?qRcv(o):""}${o.memo?`<div class="memo">${esc(o.memo)}</div>`:""}${st.s==="ing"?`<div class="top">${who(st)}</div>`:""}<div class="qact">${ctl(dp,st)}</div>`;
  else body=(o.memo?`<div class="memo">${esc(o.memo)}</div>`:"")+dps.map(d=>`<div class="qdp"><div class="dl">${QDN[d]} ${bd(p[d])}<span class="meta" style="font-weight:500">${who(p[d])}</span></div><div class="qtests${d==="img"?" img":""}">${tg(d).map(tch).join("")||"<span>기타</span>"}</div>${d==="lab"?qRcv(o):""}${p[d].s!=="done"?`<div class="qact">${ctl(d,p[d])}</div>`:""}</div>`).join("");
  const el=Math.max(0,Math.floor((Date.now()-(o.t||Date.now()))/60000)),lim=o.urgent?[5,10]:[15,30],lv=el>=lim[1]?2:el>=lim[0]?1:0;
- return `<div class="qoc${o.urgent?" urg":""}${ing?" ing":""}${lv?" late"+lv:""}${Q.fresh.has(k)?" new-in":""}"><div class="top">${o.urgent?'<b style="color:#c93a3a">🚨 긴급</b>':""}${dp?bd(st):""}<span class="sp"></span><b class="qel l${lv}" title="오더 후 경과 시간">${el<1?"방금":el+"분"}</b><span class="qtm">${hhmm(o.t)}<i class="qby" style="font-style:normal"> · ${esc(o.by||"")}</i></span></div>
+ return `<div class="qoc${o.urgent?" urg":""}${ing?" ing":""}${lv?" late"+lv:""}${Q.fresh.has(k)?" new-in":""}"><div class="top">${o.urgent?'<b style="color:#c93a3a">🚨 긴급</b>':""}${dp?bd(st):""}${o.addN?`<b class="qaddb">➕ 추가 ${typeof o.addT==='number'?hhmm(o.addT):''}</b>`:""}${o.edN?`<b class="qaddb" style="color:#8a5a00">✏️ 수정 ${typeof o.edT==='number'?hhmm(o.edT):''}</b>`:""}${Object.values(p).some(x=>x&&x.s==="new")?`<button class="qsb qedb" data-act="qedit" data-k="${k}" title="접수 전 항목 넣고 빼기">✏️</button>`:""}<span class="sp"></span><b class="qel l${lv}" title="오더 후 경과 시간">${el<1?"방금":el+"분"}</b><span class="qtm">${hhmm(o.t)}<i class="qby" style="font-style:normal"> · ${esc(o.by||"")}</i></span></div>
   <div class="pt">${esc(o.pname||"환축 미지정")}${o.chart?`<small>#${esc(o.chart)}</small>`:""}${o.room?`<small class="qrm">${esc(o.room)}</small>`:""}</div>${body}</div>`}
 function qBoard(dp){const act=qMine(dp).sort((a,b)=>(b[1].urgent?1:0)-(a[1].urgent?1:0)||(a[1].t||0)-(b[1].t||0));
  const td=new Date();td.setHours(0,0,0,0);const lastT=o=>Math.max(...Object.values(qParts(o)).map(x=>x.t||0));
@@ -1090,14 +1096,49 @@ function qRender(){if(!Q.view)return;if(Q.drag){Q.pend=true;return}const el=$("#
  if(v==="chat"||v==="mj"){qSplitBind();el.style.gridTemplateRows=innerWidth<=760?"auto auto minmax(0,1fr)":"auto minmax(0,1fr)";const t=$("#qtxt");if(t){t.value=keep;if(foc)t.focus();t.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();qSendChat()}}}const m=$("#qmsgs"),nb=$("#qNew"),cn=Object.keys(Q.chat).length,jump=Date.now()-(Q.jump||0)<6000;if(m){if(stick||jump||!ms){m.scrollTop=m.scrollHeight;Q.nbB=0}else{m.scrollTop=oldTop;if(Q.lastB!=null&&cn>Q.lastB)Q.nbB=(Q.nbB||0)+cn-Q.lastB}Q.lastB=cn;const sh=()=>{nb.hidden=!Q.nbB;nb.textContent=`↓ 새 메시지 ${Q.nbB}개`};sh();nb.onclick=()=>{m.scrollTop=m.scrollHeight;Q.nbB=0;sh()};m.onscroll=()=>{if(m.scrollHeight-m.scrollTop-m.clientHeight<80&&Q.nbB){Q.nbB=0;sh()}}}qls("chatSeen",String(Date.now()));qBadge()}else el.style.gridTemplateRows="auto minmax(0,1fr)"}
 async function qSendChat(){const t=$("#qtxt"),v=(t.value||"").trim();if(!v)return;Q.jump=Date.now();t.value="";try{await qPost(QCH(),{text:v.slice(0,1000)})}catch(e){t.value=v;toast("보내지 못했어요")}}
 /* ---- 오더 보내기 창 ---- */
-function qomOpen(pre){Q.pre=pre||null;Q.sel=new Set();Q.uc="";qomRender();$("#qom").classList.add("open")}
+function qomOpen(pre){Q.edit=null;Q.pre=pre||null;Q.sel=new Set();Q.uc="";qomRender();$("#qom").classList.add("open")}
+/* 접수 전 오더 수정: 대기 파트 항목은 넣고 빼기, 접수·완료된 파트는 그대로 */
+function qEditOpen(k){const o=Q.ords[k];if(!o)return;const p=qParts(o);if(!Object.values(p).some(x=>x&&x.s==="new")){toast("이미 접수된 오더라 수정할 수 없어요");return}
+ Q.edit=k;Q.pre={pid:o.pid||"",name:o.pname||"",room:o.room||"",chart:o.chart||""};Q.sel=new Set();
+ (o.tests||[]).forEach(t=>{if(t==="기타")return;const pn=PANELS.find(x=>x[0]===t);if(pn&&pn[1].length)pn[1].forEach(x=>Q.sel.add(x));else Q.sel.add(t)});
+ let m=o.memo||"";const um=m.match(/^채뇨: ([^·]+?)(\s·\s|$)/);Q.uc=um?um[1].trim():"";if(um)m=m.slice(um[0].length);
+ qomRender();$("#qEtc").value=m;$("#qUrg").checked=!!o.urgent;$("#qom").classList.add("open")}
+/* 오더 한 건을 안전하게 고치기: 읽은 그대로일 때만 저장(ETag), 그사이 누가 접수·결과 수신하면 다시 읽고 다시 계산 */
+async function qOrdTx(k,fn){const u=`${QOR()}/${k}.json`;
+ for(let i=0;i<5;i++){let g;try{g=await fetch(u,{headers:{"X-Firebase-ETag":"true"},cache:"no-store"})}catch(e){g=await fetch(u,{cache:"no-store"})}
+  if(!g.ok)throw new Error("read");const et=g.headers.get("ETag"),x=await g.json(),res=fn(x,i);if(!res||res.put===undefined)return res||{};
+  const h={"Content-Type":"application/json"};if(et)h["if-match"]=et;
+  const w=await fetch(u,{method:"PUT",headers:h,body:JSON.stringify(res.put)});if(w.ok)return res;if(w.status!==412)throw new Error("write")}
+ throw new Error("busy")}
+const qClean=o=>{Object.keys(o).forEach(k=>{if(o[k]===null||o[k]===undefined)delete o[k]});return o};
+const qAnMan=(tests,etc)=>{const lab=tests.filter(t=>tDept(t)==="lab"),an=[...new Set(lab.map(qAnOf).filter(Boolean))];return {an:an.length?an:null,man:an.length&&(lab.some(t=>!qAnOf(t))||(!!etc&&lab.length>0))?true:null}};
+async function qEditSave(){const k=Q.edit;if(!k)return;const tests0=qCompress(Q.sel),etc=($("#qEtc").value||"").trim(),urg=$("#qUrg").checked,uc=Q.uc;let ask=null;
+ try{const res=await qOrdTx(k,x=>{if(!x)return {gone:true};
+   const p=qParts(x),lk=d=>p[d]&&p[d].s!=="new",keep=(x.tests||[]).filter(t=>lk(tDept(t))),late=tests0.filter(t=>lk(tDept(t))&&!keep.includes(t)),mine=tests0.filter(t=>!lk(tDept(t)));
+   let tests=[...keep,...mine];if(!tests.length&&etc)tests=["기타"];
+   if(!tests.length){if(Object.keys(p).some(lk))return {err:"이미 접수된 파트가 있어 오더 전체를 지울 수 없어요"};if(ask===null)ask=confirm(`${x.pname||"이 환축"} 오더의 항목을 모두 뺐어요. 오더를 취소할까요?`);return ask?{put:null,cx:true}:{stop:true}}
+   const parts={};tests.forEach(t=>{const d=tDept(t);parts[d]=p[d]||{s:"new"}});Object.keys(p).forEach(d=>{if(lk(d))parts[d]=p[d]});
+   const memo=((uc?`채뇨: ${uc}`:"")+(uc&&etc?" · ":"")+etc).slice(0,300),was=x.tests||[],add=tests.filter(t=>!was.includes(t)),del=was.filter(t=>!tests.includes(t));
+   const n=qClean({...x,tests,parts,memo:memo||null,urgent:urg,...qAnMan(tests,etc),added:[...new Set([...(x.added||[]).filter(t=>tests.includes(t)),...add])],edN:(x.edN||0)+1,edT:{".sv":"timestamp"},edBy:qMe(),edUid:AU.uid,edAdd:add,edDel:del});
+   if(!n.added.length)delete n.added;if(!add.length)delete n.edAdd;if(!del.length)delete n.edDel;
+   return {put:n,add,del,late,x}});
+  if(res.gone){toast("오더를 찾지 못했어요 (이미 지워졌어요)");$("#qom").classList.remove("open");Q.edit=null;return}
+  if(res.err){toast(res.err);return}if(res.stop)return;
+  if(res.cx){Q.myDel=(Q.myDel||new Set()).add(k);$("#qom").classList.remove("open");Q.edit=null;toast("오더를 취소했어요");return}
+  const {add,del,late,x}=res;
+  if(late.length){const n={pname:x.pname||"",chart:x.chart||"",tests:late,memo:"",urgent:urg,parts:{},room:x.room||"",pid:x.pid||""};late.forEach(t=>{n.parts[tDept(t)]={s:"new"}});Object.assign(n,qClean(qAnMan(late,"")));await qPost(QOR(),n)}
+  $("#qom").classList.remove("open");Q.edit=null;toast(`${x.pname||""} 오더 수정${add.length?" · +"+add.length:""}${del.length?" · −"+del.length:""}${late.length?` · 접수된 파트 항목 ${late.length}개는 새 오더로`:""}`)}catch(e){toast("수정하지 못했어요. 다시 시도해 주세요")}}
+async function qEditCancel(){const k=Q.edit;if(!k)return;const o=Q.ords[k];if(!confirm(`${(o&&o.pname)||"이 환축"} 검사 오더를 취소할까요?`))return;
+ try{const res=await qOrdTx(k,x=>!x?{gone:true}:Object.values(qParts(x)).some(v=>v&&v.s!=="new")?{err:"이미 접수된 파트가 있어 전체 취소는 안 돼요. 항목을 빼서 수정해 주세요"}:{put:null});
+  if(res.err){toast(res.err);return}Q.myDel=(Q.myDel||new Set()).add(k);$("#qom").classList.remove("open");Q.edit=null;toast(res.gone?"이미 지워진 오더예요":"오더를 취소했어요")}catch(e){toast("취소하지 못했어요")}}
 function qomRender(){const pts=[...(S.p.care||[]).map(p=>({p,g:"입원"})),...((S.p.checkup&&S.p.checkup.length?S.p.checkup:S.pcCk)||[]).map(p=>({p,g:"검진"}))],pr=Q.pre;
- $("#qomBody").innerHTML=`${pr?`<div class="tstrip" style="border-style:solid;color:var(--ink)"><b>${esc(pr.name)}</b>${pr.room?" · "+esc(pr.room):""}${pr.chart?" · #"+esc(pr.chart):""}<span>이 환축으로 보냄</span></div>`:`<div class="f"><label>환축</label><select class="in" id="qPt"><option value="">— 케어 노트 환축에서 고르기 (또는 아래 직접 입력) —</option>${pts.map(x=>`<option value="${esc(x.p.id)}">[${x.g}] ${x.p.species==="cat"?"🐱":"🐶"} ${esc(x.p.name)} · ${esc(x.p.room||"")}</option>`).join("")}</select></div>`}
+ $("#qomBody").innerHTML=`${pr?`<div class="tstrip" style="border-style:solid;color:var(--ink)"><b>${esc(pr.name)}</b>${pr.room?" · "+esc(pr.room):""}${pr.chart?" · #"+esc(pr.chart):""}<span>${Q.edit?"오더 수정 중":"이 환축으로 보냄"}</span></div>${Q.edit?qEditNote():""}`:`<div class="f"><label>환축</label><select class="in" id="qPt"><option value="">— 케어 노트 환축에서 고르기 (또는 아래 직접 입력) —</option>${pts.map(x=>`<option value="${esc(x.p.id)}">[${x.g}] ${x.p.species==="cat"?"🐱":"🐶"} ${esc(x.p.name)} · ${esc(x.p.room||"")}</option>`).join("")}</select></div>`}
  <div class="g2"><div class="f"><label>이름</label><input class="in" id="qName" value="${esc(pr?pr.name:"")}" placeholder="환축 이름"></div><div class="f"><label>환축번호 (인투벳)</label><input class="in" id="qNo" value="${esc(pr&&pr.chart||"")}" placeholder="선택 입력"></div></div>
  <div id="qTests">${qTestsHtml()}</div>
  <input class="in" id="qEtc" style="margin-top:8px" placeholder="기타 검사 · 메모 (예: 금식 12시간 확인)">
  <label style="display:flex;align-items:center;gap:8px;font-weight:800;color:#c93a3a;margin-top:8px"><input type="checkbox" id="qUrg"> 🚨 긴급</label>
- <button class="btn" style="width:100%;background:#4655c9" data-act="qosend">검사 오더 보내기</button>`;
+ ${Q.edit?`<div class="row"><button class="btn" style="flex:2;background:#4655c9" data-act="qedsave">✏️ 수정 저장</button><button class="btn" style="flex:1;background:#fff;color:#c93a3a;border:1.5px solid #f0c4c4" data-act="qedcx">🗑 오더 취소</button></div>`:`<button class="btn" style="width:100%;background:#4655c9" data-act="qosend">검사 오더 보내기</button>`}`;
+ const h3=$("#qom h3");if(h3)h3.textContent=Q.edit?"✏️ 검사 오더 수정":"🧪 검사 오더 보내기";
  const sp=$("#qPt");if(sp)sp.onchange=()=>{const x=pts.find(y=>y.p.id===sp.value);if(x){$("#qName").value=x.p.name;Q.preRoom=x.p.room||"";Q.prePid=x.p.id}}}
 function qTestsHtml(){const grp=(g,a)=>`<div class="qgrp">${g}</div><div class="chips">${a.map(([x,dsc])=>`<button type="button" class="chip qtc${Q.sel.has(x)?" qsel":""}" data-act="qtest" data-v="${esc(x)}">${esc(x)}${dsc?`<small>${esc(dsc)}</small>`:""}</button>`).join("")}</div>`;
  const ent=Object.entries(QTESTS),pn=g=>PANELS.filter(p=>p[2]===g).map(([n,a])=>`<button type="button" class="chip qtc qpn${a.every(x=>Q.sel.has(x))?" qsel":""}" data-act="qpanel" data-v="${esc(n)}">${esc(n)}<small>${esc(QSUB[n])}</small></button>`).join("");
@@ -1112,7 +1153,22 @@ async function qoSend(){const name=($("#qName").value||"").trim(),tests=qCompres
  if(!name){toast("환축을 고르거나 이름을 입력해 주세요");return}if(!tests.length&&!etc){toast("검사 항목을 골라 주세요");return}
  const tl=tests.length?tests:["기타"],parts={};tl.forEach(x=>{parts[tDept(x)]={s:"new"}});const labT=tl.filter(x=>tDept(x)==="lab"),anL=[...new Set(labT.map(qAnOf).filter(Boolean))],man=labT.some(x=>!qAnOf(x))||(!!etc&&parts.lab);
  const o={pname:name.slice(0,30),chart:($("#qNo").value||"").trim().slice(0,20),tests:tl,memo:((Q.uc?`채뇨: ${Q.uc}`:"")+(Q.uc&&etc?" · ":"")+etc).slice(0,200),urgent:$("#qUrg").checked,parts,room:(Q.pre&&Q.pre.room)||Q.preRoom||"",pid:(Q.pre&&Q.pre.pid)||Q.prePid||""};if(anL.length){o.an=anL;if(man)o.man=true}
- try{await qPost(QOR(),o);$("#qom").classList.remove("open");Q.preRoom=Q.prePid="";toast(`${name} 검사 오더를 보냈어요`)}catch(e){toast("보내지 못했어요")}}
+ try{const mg=await qMerge(o);if(mg.rest.length){const r={...o,tests:mg.rest,parts:{}};mg.rest.forEach(x=>{r.parts[tDept(x)]={s:"new"}});const rl=mg.rest.filter(x=>tDept(x)==="lab"),ra=[...new Set(rl.map(qAnOf).filter(Boolean))];delete r.an;delete r.man;if(ra.length){r.an=ra;if(rl.some(x=>!qAnOf(x))||(!!etc&&r.parts.lab))r.man=true}if(mg.n||mg.dup)r.memo="";await qPost(QOR(),r)}
+  $("#qom").classList.remove("open");Q.preRoom=Q.prePid="";toast(mg.dup&&!mg.rest.length?`${name} · 이미 접수 전 오더에 있는 항목이에요`:mg.n?(mg.rest.length?`${name} · 접수 전 오더에 ${mg.n}개 추가, 나머지는 새 오더로 보냈어요`:`${name} · 접수 전 오더에 ${mg.n}개 추가했어요`):`${name} 검사 오더를 보냈어요`)}catch(e){toast("보내지 못했어요")}}
+/* 같은 환축의 접수 전(대기) 오더가 있으면 거기에 항목을 합침. 이미 접수·완료된 파트 항목은 새 오더로 */
+async function qMerge(o){const same=x=>x&&qActive(x)&&(o.pid&&x.pid?x.pid===o.pid:o.chart&&x.chart?String(x.chart).replace(/\D/g,"")===String(o.chart).replace(/\D/g,""):(!o.pid&&!o.chart&&!x.pid&&!x.chart&&x.pname===o.pname));
+ const c=Object.entries(Q.ords).filter(([,x])=>same(x)).sort((a,b)=>(b[1].t||0)-(a[1].t||0));
+ for(const [k] of c){const res=await qOrdTx(k,x=>{if(!same(x))return {skip:true};
+   const p=qParts(x),allNew=Object.values(p).every(v=>v&&v.s==="new"),ok=t=>{const d=tDept(t);return p[d]?p[d].s==="new":allNew};
+   const add=o.tests.filter(t=>ok(t)&&!(x.tests||[]).includes(t)),dup=o.tests.filter(t=>ok(t)&&(x.tests||[]).includes(t)),rest=o.tests.filter(t=>!ok(t));
+   if(!add.length&&!dup.length)return {skip:true};
+   const memo=[x.memo,o.memo].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).join(" · ").slice(0,300);
+   if(!add.length)return o.memo&&!(x.memo||"").includes(o.memo)?{put:{...x,memo},n:0,dup:dup.length,rest}:{n:0,dup:dup.length,rest};
+   const tests=[...(x.tests||[]),...add],parts={...p};add.forEach(t=>{const d=tDept(t);if(!parts[d])parts[d]={s:"new"}});
+   const n=qClean({...x,tests,parts,memo:memo||null,urgent:!!(x.urgent||o.urgent),...qAnMan(tests,memo),added:[...(x.added||[]),...add],addN:(x.addN||0)+1,addT:{".sv":"timestamp"},addBy:qMe(),addUid:AU.uid,room:x.room||o.room||null,pid:x.pid||o.pid||null,chart:x.chart||o.chart||null});
+   return {put:n,n:add.length,rest}});
+  if(res.skip)continue;return {n:res.n||0,dup:res.dup||0,rest:res.rest}}
+ return {n:0,rest:o.tests}}
 /* ---- 떠 있는 채팅창: 끌어서 옮기고, 📌로 다른 프로그램 위에 항상 띄우기 (크롬·엣지) ---- */
 const FC={pip:null};
 const fcPref=()=>{const v=qls("fchat");return v===null?innerWidth>=761:v==="1"};
@@ -1880,7 +1936,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
  qord:()=>{const p=id&&find(S.room,id);qomOpen(p?{pid:p.id,name:p.name,room:p.room||"",chart:p.chartNo||""}:null)},qomclose:()=>$("#qom").classList.remove("open"),
  qtest:()=>{Q.sel.has(d.v)?Q.sel.delete(d.v):Q.sel.add(d.v);const t=$("#qTests");if(t)t.innerHTML=qTestsHtml()},
  quc:()=>{Q.uc=Q.uc===d.v?"":d.v;const t=$("#qTests");if(t)t.innerHTML=qTestsHtml()},
- qpanel:()=>{const a=(PANELS.find(x=>x[0]===d.v)||[,[]])[1],all=a.every(x=>Q.sel.has(x));a.forEach(x=>all?Q.sel.delete(x):Q.sel.add(x));const t=$("#qTests");if(t)t.innerHTML=qTestsHtml()},qosend:qoSend,qsend:qSendChat,
+ qpanel:()=>{const a=(PANELS.find(x=>x[0]===d.v)||[,[]])[1],all=a.every(x=>Q.sel.has(x));a.forEach(x=>all?Q.sel.delete(x):Q.sel.add(x));const t=$("#qTests");if(t)t.innerHTML=qTestsHtml()},qosend:qoSend,qedit:()=>qEditOpen(d.k),qedsave:qEditSave,qedcx:qEditCancel,qsend:qSendChat,
  qtab:()=>{Q.tab=d.v;qRender()},ordf:()=>{S.ordF=d.k;render()},
  qst:async()=>{try{const r=await fetch(`${QOR()}/${d.k}/parts/${d.d}.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({s:d.v,by:qMe(),t:Date.now()})});if(!r.ok)throw 0}catch(e){toast("바꾸지 못했어요")}},
  qundo:async()=>{const o=Q.ords[d.k];if(!o)return;const dps=d.d?[d.d]:Object.keys(qParts(o));for(const x of dps)await fetch(`${QOR()}/${d.k}/parts/${x}.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({s:"new"})}).catch(()=>{})},tkopen:()=>tkOpen(id),anopen:()=>anOpen(id),tkclose:()=>$("#tk").classList.remove("open"),alclose:()=>$("#al").classList.remove("open"),
