@@ -167,6 +167,10 @@ body.pcmode .wrap{max-width:var(--pcw);margin:0}
 body.pcmode .fab{right:auto;left:calc(var(--pcw) - 160px)}
 body.pcmode .mask{right:auto;width:var(--pcw)}
 body.pcmode #toast{left:calc(var(--pcw) + (100vw - var(--pcw)) / 2)}
+#pcsplit{display:none;position:fixed;top:0;bottom:0;left:calc(var(--pcw,560px) - 5px);width:10px;z-index:32;cursor:col-resize;touch-action:none}#pcsplit::after{content:"";position:absolute;top:50%;left:3px;width:4px;height:46px;margin-top:-23px;border-radius:3px;background:#c8ccd8}#pcsplit:hover::after,#pcsplit.on::after{background:var(--brand)}body.pcmode #pcsplit{display:block}body.pcdrag{user-select:none;cursor:col-resize}
+body.pcmode #list.tiles{grid-template-columns:repeat(var(--tc,2),minmax(0,1fr));gap:7px;align-items:start}body.pcmode .tile{padding:8px 9px;gap:4px;border-radius:13px}body.pcmode .tile .av{width:32px;height:32px;font-size:17px}body.pcmode .tile .tn{font-size:15px}
+.tile.sp-dog{border-left:4px solid #5b8def}.tile.sp-cat{border-left:4px solid #f08a3c;background:linear-gradient(90deg,#fff6ee,var(--card) 55%)}.tile.sp-dog .av{background:#e6efff}.tile.sp-cat .av{background:#ffe9d6}
+.tile .tt .tn{flex:1 1 auto;min-width:3.6em}.tile .tx{flex:0 1 auto;max-width:44%;display:grid;font-size:10.5px;line-height:1.2;color:var(--mute);text-align:right;min-width:0}.tile .tx span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #pcb{position:fixed;top:0;bottom:0;right:0;left:var(--pcw,560px);z-index:30;background:var(--bg);border-left:2px solid var(--line);box-shadow:-6px 0 18px rgba(0,0,0,.05);display:none;grid-template-columns:minmax(230px,260px) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
 #pcb .feedC{display:none}
 
@@ -884,12 +888,24 @@ function catSet(id,c){const m=$("#catm");if(m)m.remove();const p=(S.p.care||[]).
 function tile(p){const cr=S.room==="care",lg=(p.logs||[])[0],
  bd=(cr||isCareP(p.id))?`<button type="button" class="badge catb ${cat(p)==="호텔"?"h":cat(p)==="외래"?"o":""}" data-act="catpick" data-id="${p.id}" title="외래·입원·호텔 바꾸기">${cat(p)}${cat(p)==="외래"?"":dayN(p)} ▾</button>`:"",
  l2=cr?(p.dx?esc(p.dx):"병명 미입력"):esc(p.breed||"")+(p.owner?" · "+esc(p.owner):"");
- return `<div class="tile" role="button" tabindex="0" data-act="sel" data-id="${p.id}"><div class="tt"><div class="av">${p.species==="cat"?"🐱":"🐶"}</div><div class="tn">${esc(p.name)}${p.mjNo?`<span class="mjno${p.mjAt?"":" wait"}">#${esc(p.mjNo)}</span>`:""}</div></div><div class="meta">${bd}<span class="badge n">${esc(pno(p))}</span></div><div class="meta td">${l2}</div>${cr?alertRow(p):""}${cr&&tasksOf(p).length?(lateN(p)?`<div class="meta tlate">⏰ 처치 ${lateN(p)}건 지남</div>`:`<div class="meta">⏰ 다음 처치 ${hhmm(tasksOf(p)[0].due)}</div>`):""}${cr&&lg?`<div class="meta">🕒 ${logDate(lg)&&logDate(lg)!==todayStr()?esc(fmtD(logDate(lg)).slice(0,5))+" ":""}${esc(lg.time)} 마지막 기록</div>`:""}${cr&&(p.logs||[]).length?`<button type="button" class="btn-xs" style="justify-self:start" data-act="copycare" data-m="new" data-id="${p.id}">📋 새 기록 복사</button>`:""}</div>`}
+ const tx=[p.breed?esc(String(p.breed).replace(/\s*\(.*?\)\s*/g," ").trim()||p.breed):"",p.sex?sexKo(p.sex):"",p.bw?esc(p.bw)+"kg":""].filter(Boolean);
+ return `<div class="tile sp-${p.species==="cat"?"cat":"dog"}" role="button" tabindex="0" data-act="sel" data-id="${p.id}"><div class="tt"><div class="av">${p.species==="cat"?"🐱":"🐶"}</div><div class="tn">${esc(p.name)}${p.mjNo?`<span class="mjno${p.mjAt?"":" wait"}">#${esc(p.mjNo)}</span>`:""}</div>${tx.length?`<div class="tx">${tx.map(x=>`<span>${x}</span>`).join("")}</div>`:""}</div><div class="meta">${bd}<span class="badge n">${esc(pno(p))}</span></div><div class="meta td">${l2}</div>${cr?alertRow(p):""}${cr&&tasksOf(p).length?(lateN(p)?`<div class="meta tlate">⏰ 처치 ${lateN(p)}건 지남</div>`:`<div class="meta">⏰ 다음 처치 ${hhmm(tasksOf(p)[0].due)}</div>`):""}${cr&&lg?`<div class="meta">🕒 ${logDate(lg)&&logDate(lg)!==todayStr()?esc(fmtD(logDate(lg)).slice(0,5))+" ":""}${esc(lg.time)} 마지막 기록</div>`:""}${cr&&(p.logs||[]).length?`<button type="button" class="btn-xs" style="justify-self:start" data-act="copycare" data-m="new" data-id="${p.id}">📋 새 기록 복사</button>`:""}</div>`}
 /* ---- PC 차트 보드: 넓은 화면에서 환축을 고르고 인투벳에 붙여넣을 글을 바로 복사 ---- */
 S.pc=false;S.pcSel=null;S.pcCk=[];let PCT;
 const pcNew=p=>careRows(p,"new").length;
 async function pcLoadCk(){try{const st=ST[PATHS.checkup];if(st&&st.got){S.pcCk=toList(st.v);if(S.pc)pcRender();return}const r=await fetch(url(PATHS.checkup));if(r.ok){S.pcCk=toList(await r.json());if(S.pc)pcRender()}}catch(e){}}
 function pcItems(){const c=(S.p.care||[]).map(p=>({p,r:"care"})),k=(S.room==="checkup"&&S.live&&S.live.checkup?(S.p.checkup||[]):S.pcCk).map(p=>({p,r:"checkup"}));return[...c,...k]}
+/* 진료실 화면: 가운데 칸막이를 끌어 왼쪽 케어 노트 폭 조절 (폭에 따라 카드 2~4칸) */
+function pcW(){const v=+(qls("pcw")||0);return v?Math.max(380,Math.min(v,innerWidth-520)):0}
+function pcTc(){const L=$("#list");if(!L)return;const w=(pcW()||Math.max(500,Math.min(620,innerWidth*.32)))/(innerWidth>=1600?1.12:1)-28;L.style.setProperty("--tc",Math.max(2,Math.min(4,Math.floor(w/170))))}
+function pcWApply(){const v=pcW();if(v)document.body.style.setProperty("--pcw",v+"px");else document.body.style.removeProperty("--pcw");pcTc()}
+setTimeout(function(){const h=document.createElement("div");h.id="pcsplit";h.title="끌어서 폭 조절 · 두 번 누르면 원래대로";document.body.appendChild(h);
+ h.addEventListener("pointerdown",e=>{e.preventDefault();h.setPointerCapture(e.pointerId);h.classList.add("on");document.body.classList.add("pcdrag");
+  const mv=ev=>{const v=Math.max(380,Math.min(ev.clientX,innerWidth-520));document.body.style.setProperty("--pcw",v+"px");qls("pcw",String(Math.round(v)));pcTc()};
+  const up=()=>{h.classList.remove("on");document.body.classList.remove("pcdrag");h.removeEventListener("pointermove",mv);h.removeEventListener("pointerup",up);h.removeEventListener("pointercancel",up)};
+  h.addEventListener("pointermove",mv);h.addEventListener("pointerup",up);h.addEventListener("pointercancel",up)});
+ h.addEventListener("dblclick",()=>{qls("pcw",null);pcWApply()});
+ pcWApply();addEventListener("resize",pcWApply)},0);
 function pcOpen(){if(innerWidth<1000){toast("넓은 화면(PC)에서 쓸 수 있어요");return}S.pc=true;document.body.classList.add("pcmode");$("#pcb").classList.add("open");try{localStorage.setItem("pcboard","1")}catch(e){}pcLoadCk();clearInterval(PCT);PCT=setInterval(()=>{if(!document.hidden)pcLoadCk()},30000);pcRender()}
 function pcClose(){S.pc=false;document.body.classList.remove("pcmode");$("#pcb").classList.remove("open");clearInterval(PCT);if(!S.pcAuto)try{localStorage.setItem("pcboard","0")}catch(e){}S.pcAuto=false}
 S.pcExp={};
@@ -1188,6 +1204,7 @@ function fcRender(){const m=$("#fcM",FC.pip),root=FC.pip?FC.pip.document:documen
  const mid=qMid(),arr=Object.entries(Q.chat).filter(([,c])=>c&&(c.t||0)>=mid).sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0).map(([,c])=>c).slice(-40),stick=box.scrollHeight-box.scrollTop-box.clientHeight<60;
  box.innerHTML=arr.map(c=>`<div class="ln${c.uid===AU.uid?" me":""}"><span class="lw">${esc(c.uid===AU.uid?"나":c.by||"직원")} ${hhmm(c.t)}</span> ${esc(c.text)}</div>`).join("")||'<div class="w">아직 메시지가 없어요</div>';{const nb=root.getElementById("fcNew"),cn=Object.keys(Q.chat).length,jump=Date.now()-(FC.jump||0)<6000;if(stick||jump){box.scrollTop=box.scrollHeight;FC.nb=0}else if(FC.lastN!=null&&cn>FC.lastN)FC.nb=(FC.nb||0)+cn-FC.lastN;FC.lastN=cn;if(nb){const sh=()=>{nb.hidden=!FC.nb;nb.textContent=`↓ 새 메시지 ${FC.nb}`};sh();nb.onclick=e=>{e.stopPropagation();box.scrollTop=box.scrollHeight;FC.nb=0;sh()};box.onscroll=()=>{if(box.scrollHeight-box.scrollTop-box.clientHeight<60&&FC.nb){FC.nb=0;sh()}}}}
  const seen=+(qls("chatSeen")||0),un=Object.values(Q.chat).filter(c=>c&&c.uid!==AU.uid&&(c.t||0)>Math.max(seen,qMid())).length,u=root.getElementById("fcU");if(u)u.textContent=(qls("fcmin")==="1"||FC.pip)&&un?un:""}
+setInterval(()=>{FC.jump=Date.now();try{fcRender()}catch(e){}},15*60000);   /* 15분마다 떠 있는 채팅창을 최신 메시지로 */
 async function fcSend(){const root=FC.pip?FC.pip.document:document,t=root.getElementById("fcT"),v=(t.value||"").trim();if(!v)return;FC.jump=Date.now();t.value="";try{await qPost(QCH(),{text:v.slice(0,1000)})}catch(e){t.value=v;toast("보내지 못했어요")}}
 function fcInit(){const el=$("#fchat"),h=$("#fcH");
  $("#fcS").onclick=fcSend;$("#fcT").onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();fcSend()}};
@@ -1254,6 +1271,7 @@ function render(){{const tk=$("#tk");if(tk&&tk.classList.contains("open"))setTim
  sb.style.display="";L.className="tiles";renderDash();
  let list=all;
  if(S.room==="care"&&S.filter!=="ALL")list=list.filter(p=>{const c=cat(p),sp=p.species==="cat"?"cat":"dog";return S.filter===c||S.filter===sp});
+ if(S.room==="care"){const rk={"외래":0,"입원":1,"호텔":2},rt=p=>+((String(p.id).match(/(\d{13})/)||[])[1]||0)||Date.parse(p.adm||"")||0;list=[...list].sort((a,b)=>(rk[cat(a)]??1)-(rk[cat(b)]??1)||rt(b)-rt(a))}
  L.innerHTML=list.length?list.map(tile).join(""):`<div class="card empty" style="padding:36px 16px;grid-column:1/-1"><div style="font-size:30px">🐾</div><b>해당하는 환축이 없습니다</b><div class="meta">오른쪽 아래 '환축 등록'으로 추가하세요.</div></div>`;
  renderDis();applyQ();
 }
