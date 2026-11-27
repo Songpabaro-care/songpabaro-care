@@ -2,7 +2,7 @@
 # 하는 일: IntoVET_LIS 창 아래 상태줄의 "자료 수신 Unit[..] ID[동물번호]" 글자만 읽어서
 #          케어 노트 검사 오더에 "결과 도착"을 표시하고, 필요한 기계 결과가 다 오면 검사실 완료로 바꿉니다.
 # 인투벳·LIS 프로그램과 그 DB에는 아무것도 쓰지 않습니다. (화면 글자 읽기만)
-param([switch]$Diag, [switch]$JDiag, [switch]$Reception, [switch]$DbDiag)
+param([switch]$Diag, [switch]$JDiag, [switch]$Reception, [switch]$DbDiag, [switch]$Bg)
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -150,11 +150,19 @@ public static class SbAcc2 {
 
 # ---------- 자동 업데이트: 저장소에 새 버전이 올라오면 스스로 바꾸고 다시 시작 ----------
 $SELF = $PSCommandPath
+# 창 없이 뒤에서 실행: 보통 실행(진단 아님)이면 숨김 모드로 다시 띄우고 이 창은 닫음 → 파워쉘 창이 화면·작업표시줄에 안 보임
+function Start-Bg {
+  $vb = Join-Path $DIR 'bg.vbs'
+  $a = '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""' + $SELF + '"" -Bg' + $(if ($Reception) { ' -Reception' } else { '' })
+  Set-Content -Path $vb -Value ('CreateObject("WScript.Shell").Run "powershell.exe ' + $a + '", 0, False') -Encoding Unicode
+  Start-Process wscript.exe -ArgumentList ('"' + $vb + '"')
+}
+if (-not $Diag -and -not $Bg) { try { Start-Bg; exit } catch {} }
 $script:MTX = New-Object System.Threading.Mutex($false, ('Global\SongpaBaroLIS' + $(if ($Reception) { 'R' } else { '' })))
 $got = $false
 try { $got = $script:MTX.WaitOne(0) } catch [System.Threading.AbandonedMutexException] { $got = $true }
 if (-not $got) {
-  Write-Host '이미 실행 중이에요. 작업표시줄의 SongpaBaro LIS 창을 닫고 다시 실행해 주세요.'
+  Write-Host '이미 실행 중이에요 (창 없이 뒤에서 도는 중일 수 있어요). 진단하려면 작업 관리자에서 Windows PowerShell을 끝낸 뒤 다시 실행해 주세요.'
   Start-Sleep -Seconds 8; exit
 }
 $UPURL = 'https://songpabaro-care.github.io/songpabaro-care/lis/sb-lis.ps1'
@@ -174,8 +182,11 @@ function Try-Update {
 }
 function Restart-Self {
   try { $script:MTX.ReleaseMutex() } catch {}
-  $args2 = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ('"' + $SELF + '"')); if ($Reception) { $args2 += '-Reception' }; if ($Diag) { $args2 += '-Diag' } else { $args2 = @('-WindowStyle', 'Minimized') + $args2 }
-  Start-Process powershell -ArgumentList $args2
+  # 업데이트·자동 회복 때는 진단 창이었더라도 창 없는 보통 실행으로 다시 시작 (메모장·파워쉘 창이 다시 뜨지 않게)
+  try { Start-Bg } catch {
+    $args2 = @('-WindowStyle', 'Minimized', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ('"' + $SELF + '"')); if ($Reception) { $args2 += '-Reception' }
+    Start-Process powershell -ArgumentList $args2
+  }
   exit
 }
 # 같은 오류가 계속되면 스스로 회복: 3번째 실패 → 로그인 새로 받기, 약 2분 계속 → 프로그램 다시 시작 (10분에 한 번까지)
@@ -255,7 +266,9 @@ function Try-Backup {
 Get-Tok | Out-Null
 $uid = $script:A.uid
 $code = $uid.Substring([Math]::Max(0, $uid.Length - 6)).ToUpper()
-Fb 'Put' "devices/$uid/name" (JsonStr $NAME) | Out-Null
+# 이미 이름이 있으면(전에 승인됐거나 🔐에서 원장님이 바꾼 이름) 덮어쓰지 않음
+$curNm = $null; try { $curNm = Fb 'Get' "devices/$uid/name" $null } catch {}
+if ($curNm) { $NAME = "$curNm" } else { Fb 'Put' "devices/$uid/name" (JsonStr $NAME) | Out-Null }
 Fb 'Put' "devices/$uid/t" (NowMs) | Out-Null
 while ($true) {
   $ok = $false
@@ -265,6 +278,24 @@ while ($true) {
   Start-Sleep -Seconds 10
 }
 Log "승인됨 · $(if ($Reception) { '인투벳 접수 감시' } else { 'LIS 감시' })를 시작합니다 (코드 $code)"
+# 바탕화면 'LIS 보기' 아이콘 (한 번만 만듦 · 지우면 다시 안 만듦): 뒤에서 도는 LIS의 기록을 실시간으로 보는 창. 닫아도 LIS는 계속 돔
+function Open-View {
+  $cmd = "[Console]::OutputEncoding=[Text.Encoding]::UTF8; `$Host.UI.RawUI.WindowTitle='송파바로 LIS 보기 (닫아도 LIS는 계속 돌아요)'; Get-Content -Path '$LOGF' -Tail 40 -Wait -Encoding UTF8"
+  Start-Process powershell -ArgumentList ('-NoProfile -ExecutionPolicy Bypass -Command "' + $cmd + '"')
+}
+try {
+  $vf = Join-Path $DIR 'view-lnk.txt'
+  if (-not (Test-Path $vf)) {
+    $cmd = "[Console]::OutputEncoding=[Text.Encoding]::UTF8; `$Host.UI.RawUI.WindowTitle='송파바로 LIS 보기 (닫아도 LIS는 계속 돌아요)'; Get-Content -Path '$LOGF' -Tail 40 -Wait -Encoding UTF8"
+    $sh = (New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path ([Environment]::GetFolderPath('Desktop')) '송파바로 LIS 보기.lnk'))
+    $sh.TargetPath = (Get-Command powershell.exe).Source
+    $sh.Arguments = '-NoProfile -ExecutionPolicy Bypass -Command "' + $cmd + '"'
+    $sh.Description = '송파바로 LIS가 지금 하는 일을 보여 줘요'
+    $sh.Save()
+    Set-Content -Path $vf -Value (Get-Date -Format 'o')
+    Log "바탕화면에 '송파바로 LIS 보기' 아이콘을 만들었어요"
+  }
+} catch { Log "바탕화면 아이콘 만들기 실패: $($_.Exception.Message)" }
 $script:startToast = $true
 
 # ---------- LIS 화면 글자 읽기 (윈도우 UI Automation) ----------
@@ -647,7 +678,7 @@ if ($Reception) {
     return $g
   }
   $last = ''
-  $script:rHb = [datetime]::MinValue; $script:readMs = $null; $script:geSeen = $null
+  $script:rHb = [datetime]::MinValue; $script:readMs = $null; $script:geSeen = $null; $script:nmAt = [datetime]::MinValue; $script:DNM = $NAME
   while ($true) {
     try {
       # 키보드·마우스를 쓰는 중이면(1초 안) 이번 차례는 쉬고 다음에 읽음 → 입력할 때 버벅임 없음
@@ -676,7 +707,16 @@ if ($Reception) {
         $script:rHb = Get-Date
         $hb = [ordered]@{ hb = @{ '.sv' = 'timestamp' }; pc = "$env:COMPUTERNAME"; ge = $(if ($script:geSeen -and ((Get-Date) - $script:geSeen).TotalMinutes -lt 5) { 'ok' } else { 'noge' }) }
         if ($script:readMs) { $hb.read = $script:readMs }
+        if (((Get-Date) - $script:nmAt).TotalMinutes -ge 10) { $script:nmAt = Get-Date; try { $n2 = Fb 'Get' "devices/$uid/name" $null; if ($n2) { $script:DNM = "$n2" } } catch {} }
+        if ($script:DNM) { $hb.nm = $script:DNM }
         Fb 'Patch' "rooms/$ROOM/rcp/$code" $hb | Out-Null
+        # 케어 노트 ⚙ 설정에서 보낸 요청: 창 띄우기 / 다시 시작
+        $cm = $null; try { $cm = Fb 'Get' "rooms/$ROOM/rcp/$code/cmd" $null } catch {}
+        if ($cm -and $cm.c) {
+          Fb 'Delete' "rooms/$ROOM/rcp/$code/cmd" $null | Out-Null
+          if ($cm.c -eq 'show') { Log "🪟 케어 노트에서 창 띄우기 요청 ($($cm.by))"; Open-View }
+          elseif ($cm.c -eq 'restart') { Log "↻ 케어 노트에서 다시 시작 요청 ($($cm.by))"; Restart-Self }
+        }
       }
     } catch { Log "오류: $(ErrTxt $_)"; $script:GEC = $null; Start-Sleep -Seconds 7 }
     if ($script:GEC) { Start-Sleep -Milliseconds 1500 } else { Start-Sleep -Seconds 4 }

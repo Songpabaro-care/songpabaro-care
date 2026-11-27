@@ -11,9 +11,11 @@ echo.
 echo  Done. A check window is open.
 echo  1) Approve "IntoVet chart reader" device in Care Note (lock icon) if asked.
 echo  2) Open any chart in IntoVet and see that it is read.
-echo  3) Close the check window and restart this PC. It will run quietly from then on.
+echo  3) Close the check window, then press any key here.
+echo     It keeps running quietly in the background (no window) and starts with Windows.
 echo.
 pause
+start "" "C:\songpabaro-lis\jrun.bat"
 goto end
 :fail
 echo.
