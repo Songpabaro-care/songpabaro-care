@@ -3,6 +3,7 @@ const $ = s => document.querySelector(s);
 const nz = s => String(s || '').replace(/\s+/g, '').trim();
 const mask = s => String(s || '').replace(/[가-힣]/g, '가').replace(/[A-Za-z]/g, 'a');
 let DATA = null;
+const E = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 // 외래로 등록하지 않고 퇴원 처리하는 접수 항목 (진료실·담당의·접수 내용 어디에 있어도)
 const SKIP = /약\s*처방|전화\s*문의|수납\s*대기|면회/;
 const skipOf = o => { const m = [o.room, o.vet, o.time, o.all].join(' ').match(SKIP); return m ? m[0].replace(/\s+/g, '') : ''; };
@@ -43,11 +44,11 @@ function render() {
   <table><tr><th>고객명</th><th>동물명</th><th>접수일시</th><th>진료실</th><th>동물번호</th><th>케어 노트에서</th><th>상태 표시</th></tr>${rows}</table>
   <h3>입원·호텔 ${(d.inp || []).length}마리 · 동물번호 찾음 <span id="inF"></span> · 퇴원 안 눌린 옛 기록 ${(d.inpOld || []).length}개 (제외)</h3>
   <table><tr><th>구분</th><th>고객명</th><th>동물명</th><th>입원 일시</th><th>종</th><th>입원실</th><th>동물번호</th><th>케어 노트에서</th></tr>${(d.inp || []).map(o => { const p = inpNo(o); if (p) inFound++; return `<tr><td>${o.kind}</td><td>${show(o.owner)}</td><td>${show(o.pet)}</td><td>${o.dt || ''}</td><td>${o.sp || ''}</td><td>${show(o.room)}</td><td>${p ? '#' + p.psno + ` <small>(${p.how})</small>` : '<b style="color:#c33">못 찾음</b>'}</td><td>${o.kind} 카드로 등록·구분 맞춤</td></tr>`; }).join('')}</table>
-  <details open><summary>🔎 이름 검색 진단 (동물번호 못 찾는 이유)</summary><pre>${(d.slog || []).map((x, i) => `검색 ${i + 1}: 결과 ${x.rows}줄 · 검색어 들어간 줄 ${x.hit}`).join('\n') || '검색 안 함'}\n\n${(d.form || []).join('\n')}</pre></details>
-  <details open><summary>🧭 인투링크 데이터 주소 찾기 (환자 정보 없음 · 주소 글자만)</summary><pre>${Object.entries(d.api || {}).map(([p, v]) => `[${p}]${v.err ? ' 실패: ' + v.err : ''}\n스크립트: ${(v.js || []).join(', ') || '-'}\n${(v.urls || []).map(u => ' ' + u).join('\n')}`).join('\n\n')}</pre></details>
-  <details open><summary>🧩 차트 번호 단서 (숫자는 0으로 가림)</summary><pre>배운 규칙: ${Object.entries(learn).map(([f, i]) => `${f} → ${i + 1}번째 숫자`).join(', ') || '없음'}\n[외래] ${d.opd.slice(0, 3).map(o => clueTxt(o.cl)).join('  /  ')}\n${(d.inp || []).map(o => `[${o.kind}] ${clueTxt(o.cl)}`).join('\n')}</pre></details>
+  <details open><summary>🔎 이름 검색 진단 (동물번호 못 찾는 이유)</summary><pre>${E(`${(d.slog || []).map((x, i) => `검색 ${i + 1}: 결과 ${x.rows}줄 · 검색어 들어간 줄 ${x.hit}`).join('\n') || '검색 안 함'}\n\n${(d.form || []).join('\n')}`)}</pre></details>
+  <details open><summary>🧭 인투링크 데이터 주소 찾기 (환자 정보 없음 · 주소 글자만)</summary><pre>${E(`${Object.entries(d.api || {}).map(([p, v]) => `[${p}]${v.err ? ' 실패: ' + v.err : ''}\n스크립트: ${(v.js || []).join(', ') || '-'}\n${(v.urls || []).map(u => ' ' + u).join('\n')}`).join('\n\n')}`)}</pre></details>
+  <details open><summary>🧩 차트 번호 단서 (숫자는 0으로 가림)</summary><pre>${E(`배운 규칙: ${Object.entries(learn).map(([f, i]) => `${f} → ${i + 1}번째 숫자`).join(', ') || '없음'}\n[외래] ${d.opd.slice(0, 3).map(o => clueTxt(o.cl)).join('  /  ')}\n${(d.inp || []).map(o => `[${o.kind}] ${clueTxt(o.cl)}`).join('\n')}`)}</pre></details>
   <details><summary>입원·호텔 부분 모양 (가림)</summary><h3>입원·호텔 부분 모양 (가림)</h3>
-  <pre>[전체]\n${(d.dumps.all || []).join('\n')}\n[입원]\n${(d.dumps.inp || []).join('\n')}\n[호텔]\n${(d.dumps.hot || []).join('\n')}</pre></details>`;
+  <pre>${E(`[전체]\n${(d.dumps.all || []).join('\n')}\n[입원]\n${(d.dumps.inp || []).join('\n')}\n[호텔]\n${(d.dumps.hot || []).join('\n')}`)}</pre></details>`;
   $('#inF').textContent = inFound;
 }
 async function load() {
