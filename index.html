@@ -1096,7 +1096,7 @@ async function fcPipOpen(){const el=$("#fchat");if(FC.pip||!window.documentPictu
  try{const w=await documentPictureInPicture.requestWindow({width:+(qls("fpw")||340),height:+(qls("fph")||440)});FC.pip=w;qls("fcpip","1");
   document.querySelectorAll("style").forEach(st=>w.document.head.appendChild(st.cloneNode(true)));w.document.documentElement.dataset.theme=document.documentElement.dataset.theme||"";w.document.title="송파바로 채팅";
   w.document.body.style.cssText="margin:0;padding:0;overflow:hidden;height:100vh";w.document.documentElement.style.overflow="hidden";el.classList.add("pip");el.classList.remove("min");el.style.display="flex";w.document.body.appendChild(el);fcRender();
-  let rt;w.addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{qls("fpw",String(w.innerWidth));qls("fph",String(w.innerHeight))},400)});
+  FC.pmin=false;let rt;w.addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{if(FC.pmin)return;qls("fpw",String(w.innerWidth));qls("fph",String(w.innerHeight))},400)});
   w.addEventListener("pagehide",()=>{if(!FC.unloading)qls("fcpip","0");el.classList.remove("pip");document.body.appendChild(el);FC.pip=null;fcShow()})}catch(x){toast("띄우지 못했어요")}}
 function fcRender(){const m=$("#fcM",FC.pip),root=FC.pip?FC.pip.document:document,box=root.getElementById("fcM");if(!box)return;
  const arr=Object.entries(Q.chat).filter(([,c])=>c).sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0).map(([,c])=>c).slice(-40),stick=box.scrollHeight-box.scrollTop-box.clientHeight<60;
@@ -1106,7 +1106,10 @@ async function fcSend(){const root=FC.pip?FC.pip.document:document,t=root.getEle
 function fcInit(){const el=$("#fchat"),h=$("#fcH");
  $("#fcS").onclick=fcSend;$("#fcT").onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();fcSend()}};
  $("#fcT").onfocus=()=>{qls("chatSeen",String(Date.now()));qBadge();fcRender()};
- $("#fcMin").onclick=e=>{e.stopPropagation();qls("fcmin",qls("fcmin")==="1"?"0":"1");fcShow()};
+ $("#fcMin").onclick=e=>{e.stopPropagation();
+  if(FC.pip){const w=FC.pip;FC.pmin=!FC.pmin;el.classList.toggle("min",FC.pmin);el.querySelector("#fcMin").textContent=FC.pmin?"+":"–";
+   try{if(FC.pmin){FC.ph=w.outerHeight;w.resizeTo(w.outerWidth,Math.max(60,w.outerHeight-w.innerHeight+44))}else w.resizeTo(w.outerWidth,FC.ph||+(qls("fph")||440))}catch(x){}fcRender();return}
+  qls("fcmin",qls("fcmin")==="1"?"0":"1");fcShow()};
  $("#fcHome").onclick=e=>{e.stopPropagation();try{window.focus()}catch(x){}if(Q.view&&Q.temp)scrClose();
   setTimeout(()=>{if(document.hasFocus()||!FC.pip)return;const d=FC.pip.document,hn=d.createElement("div");hn.className="fhint";hn.textContent="창이 안 올라오면 이 작은 창 맨 위의 '탭으로 돌아가기' 아이콘을 누르거나, 작업표시줄에서 케어 노트를 눌러 주세요";el.appendChild(hn);setTimeout(()=>hn.remove(),5000)},600)};
  $("#fcIv").onclick=e=>{e.stopPropagation();const d=FC.pip?FC.pip.document:document,w=FC.pip||window,fr=d.createElement("iframe");fr.style.display="none";
@@ -1136,8 +1139,8 @@ function qsRender(){const cur=qls("screen")||"auto",dk=document.documentElement.
  <div class="otitle">알림음 <span class="meta" style="font-weight:500">· 이 기기에서만 · 기본은 꺼짐</span></div>
  <div class="row" style="flex-wrap:wrap;gap:6px"><button class="qtg${qSnd("chat")?" on":""}" data-act="qsnd" data-k="chat">🔔 채팅 소리 ${qSnd("chat")?"켬":"끔"}</button><button class="qtg${qSnd("ord")?" on":""}" data-act="qsnd" data-k="ord">🧪 오더 소리 ${qSnd("ord")?"켬":"끔"}</button><button class="qtg${qls("noti")==="1"?" on":""}" data-act="qnoti">🖥 화면 알림 ${qls("noti")==="1"?"켬":"끔"}</button></div>
  <div class="otitle">떠 있는 채팅창 <span class="meta" style="font-weight:500">· 이 기기에서만</span></div>
- <div class="row" style="flex-wrap:wrap;gap:6px"><button class="qtg${fcPref()?" on":""}" data-act="qfchat">💬 떠 있는 채팅창 ${fcPref()?"켬":"끔"}</button><button class="qtg" data-act="listest">🔔 결과 알림 테스트 (모든 PC)</button><a class="qtg" href="intovet/songpabaro-intovet-install.bat" download style="text-decoration:none">🏥 인투벳 버튼·자리 비키기 설치 파일</a><button class="qtg" data-act="dockdiag">🩺 자리 비키기 진단</button></div>
- <div class="meta">화면 위에 작은 채팅창이 떠요. 위쪽 띠를 끌어서 옮기고, 📌를 누르면 인투벳 같은 다른 프로그램 위에도 항상 떠 있어요 (PC 크롬·엣지).</div>  <div class="meta">🏥를 누르면 인투벳 창이 앞으로 와요. PC마다 설치 파일을 한 번 받아서 더블클릭해 주세요. 같은 파일로 📌 채팅창이 인투벳 전화 수신 창과 겹치면 그 위로 비켜 가는 기능도 함께 깔려요.</div>
+ <div class="row" style="flex-wrap:wrap;gap:6px"><button class="qtg${fcPref()?" on":""}" data-act="qfchat">💬 떠 있는 채팅창 ${fcPref()?"켬":"끔"}</button><button class="qtg" data-act="listest">🔔 결과 알림 테스트 (모든 PC)</button><a class="qtg" href="intovet/songpabaro-intovet-install.bat" download style="text-decoration:none">🏥 인투벳 버튼·자리 비키기 설치 파일</a><button class="qtg${qls("dockfix")==="0"?"":" on"}" data-act="dockfix">📍 우측 하단 고정 ${qls("dockfix")==="0"?"끔":"켬"}</button><button class="qtg" data-act="dockdiag">🩺 자리 비키기 진단</button></div>
+ <div class="meta">화면 위에 작은 채팅창이 떠요. 위쪽 띠를 끌어서 옮기고, 📌를 누르면 인투벳 같은 다른 프로그램 위에도 항상 떠 있어요 (PC 크롬·엣지).</div>  <div class="meta">🏥를 누르면 인투벳 창이 앞으로 와요. PC마다 설치 파일을 한 번 받아서 더블클릭해 주세요. 같은 파일로 자리 기능도 깔려요: 📌 채팅창이 순정 채팅처럼 오른쪽 아래에 붙어 있다가, 전화 수신 창이 뜨면 그 위로 올라가고 닫히면 내려와요 (📍로 끄면 겹칠 때만 비켜 가요).</div>  <div class="otitle">인투링크 연동 <span class="meta" style="font-weight:500">· 접수실 PC 크롬</span></div>  <div class="row" style="flex-wrap:wrap;gap:6px"><a class="qtg" href="intolink/songpabaro-intolink.zip" download style="text-decoration:none">🔗 인투링크 연동 확장 받기</a></div>  <div class="meta">압축을 풀고 크롬 chrome://extensions → 개발자 모드 켜기 → "압축해제된 확장 프로그램 로드" → 풀린 폴더 안 ext 폴더 선택. 지금은 구조 진단만 하고 아무것도 보내지 않아요.</div>
  <div class="meta">검사실·영상실 화면에서는 그 부서 오더에만 소리가 나요. 소리는 페이지를 연 뒤 화면을 한 번 눌러야 나기 시작해요.</div>
  <div class="otitle">기타</div><div class="row" style="flex-wrap:wrap;gap:6px"><button class="qtg" data-act="tropen">🗑 최근 지운 항목</button><button class="qtg" id="themeBtn" data-act="theme">${dk?"☀️ 밝은 화면":"🌙 어두운 화면"}</button><button class="qtg" data-act="shareweb">🔗 링크 공유</button></div>`}
 S.ordF="all";
@@ -1832,6 +1835,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
  qsnd:()=>{const on=!qSnd(d.k);qls("snd_"+d.k,on?"1":"0");if(on)qBeep(d.k==="ord"?"ord":"chat");qsRender();qRender();toast(`${d.k==="chat"?"채팅":"오더"} 알림음 ${on?"켬":"끔"} (이 기기만)`)},
  qwin:()=>{const w=window.open(`${location.pathname}?w=${d.v}`,"sb_"+d.v,"popup,width=1280,height=820");if(!w)toast("팝업이 막혔어요. 주소창 오른쪽에서 팝업 허용을 눌러 주세요");$("#qs").classList.remove("open")},
  listest:async()=>{try{await fetch(`${base()}/rooms/${encodeURIComponent(S.code)}/lis/ev.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({t:{".sv":"timestamp"},kind:"done",title:"🔔 알림 테스트",body:`${qMe()}에서 보낸 시험 알림 · 이 PC에 보이면 정상이에요`})});toast("모든 PC에 시험 알림을 보냈어요")}catch(e){toast("보내지 못했어요")}},
+ dockfix:()=>{const on=qls("dockfix")==="0";qls("dockfix",on?"1":"0");const fr=document.createElement("iframe");fr.style.display="none";fr.src="sbintovet://"+(on?"dockon":"dockoff");document.body.appendChild(fr);setTimeout(()=>fr.remove(),4000);qsRender();toast(on?"📌 채팅창이 오른쪽 아래에 붙어 있어요 (전화 오면 위로)":"고정을 껐어요 · 겹칠 때만 비켜 가요")},
  dockdiag:()=>{const fr=document.createElement("iframe");fr.style.display="none";fr.src="sbintovet://diag";document.body.appendChild(fr);setTimeout(()=>fr.remove(),4000);toast("진단 결과가 메모장으로 열려요 (설치한 PC에서만)")},
  mjscr:()=>mjLoad(),
  qfchat:()=>{qls("fchat",fcPref()?"0":"1");qsRender();fcShow()},

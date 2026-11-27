@@ -15,6 +15,11 @@ public static class SbDock {
   [DllImport("user32.dll")] static extern int GetWindowLong(IntPtr h, int i);
   [DllImport("user32.dll")] static extern bool SetWindowPos(IntPtr h, IntPtr a, int x, int y, int cx, int cy, uint f);
   [DllImport("user32.dll")] static extern bool SetProcessDPIAware();
+  [DllImport("user32.dll")] static extern short GetAsyncKeyState(int k);
+  [DllImport("user32.dll")] static extern IntPtr MonitorFromWindow(IntPtr h, uint f);
+  [StructLayout(LayoutKind.Sequential)] struct MINFO { public int cb; public RECT rcMon; public RECT rcWork; public uint flags; }
+  [DllImport("user32.dll")] static extern bool GetMonitorInfo(IntPtr m, ref MINFO i);
+  static RECT Work(IntPtr h) { MINFO i = new MINFO(); i.cb = Marshal.SizeOf(typeof(MINFO)); GetMonitorInfo(MonitorFromWindow(h, 2), ref i); return i.rcWork; }
 
   static string Title(IntPtr h) { StringBuilder sb = new StringBuilder(512); GetWindowText(h, sb, 512); return sb.ToString(); }
   static string Cls(IntPtr h) { StringBuilder sb = new StringBuilder(256); GetClassName(h, sb, 256); return sb.ToString(); }
@@ -122,6 +127,18 @@ public static class SbDock {
         if (pop != IntPtr.Zero && (!IsWindow(pop) || !IsWindowVisible(pop))) pop = IntPtr.Zero;
         if (pop == IntPtr.Zero && (DateTime.Now - lastScan).TotalMilliseconds >= 1000) { lastScan = DateTime.Now; pop = FindPopup(main); }
         IntPtr chat = FindChat();
+        // 우측 하단 고정 (기본): 순정 채팅처럼 오른쪽 아래, 전화 수신 창이 떠 있으면 그 위에 붙기
+        if (!File.Exists(Path.Combine(dir, "dock-off.flag"))) {
+          if (chat != IntPtr.Zero && (GetAsyncKeyState(0x01) & 0x8000) == 0) {
+            RECT c = Rect(chat); int w = c.R - c.L, hh = c.B - c.T, tx, ty;
+            if (pop != IntPtr.Zero) { RECT p = Rect(pop); tx = p.R - w; ty = p.T - hh - 2; }
+            else { RECT wa = Work(main); tx = wa.R - w; ty = wa.B - hh; }
+            if (ty < 0) ty = 0;
+            if (c.L != tx || c.T != ty) Move(chat, tx, ty);
+          }
+          docked = false; userMoved = false;
+          Thread.Sleep(400); continue;
+        }
         if (pop != IntPtr.Zero && chat != IntPtr.Zero) {
           RECT p = Rect(pop), c = Rect(chat);
           if (!docked && !userMoved && Overlap(p, c)) {

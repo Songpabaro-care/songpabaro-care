@@ -9,6 +9,11 @@ public static class SbIntoVet {
   [DllImport("user32.dll")] static extern bool SetForegroundWindow(IntPtr h);
   [DllImport("user32.dll")] static extern void keybd_event(byte v, byte s, uint f, UIntPtr e);
   [STAThread] public static void Main(string[] a) {
+    if (a.Length > 0 && (a[0].IndexOf("dockoff", StringComparison.OrdinalIgnoreCase) >= 0 || a[0].IndexOf("dockon", StringComparison.OrdinalIgnoreCase) >= 0)) {
+      string f = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "dock-off.flag");
+      try { if (a[0].IndexOf("dockoff", StringComparison.OrdinalIgnoreCase) >= 0) System.IO.File.WriteAllText(f, "off"); else System.IO.File.Delete(f); } catch {}
+      return;
+    }
     if (a.Length > 0 && a[0].IndexOf("diag", StringComparison.OrdinalIgnoreCase) >= 0) {
       string dir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
       try { System.Diagnostics.Process.Start(System.IO.Path.Combine(dir, "sbdock.exe"), "diag"); } catch {}
