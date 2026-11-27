@@ -7,7 +7,7 @@ async function getDoc(p) {
   // 읽기만 하므로 onclick 같은 인라인 실행 코드를 미리 지워 둠 (크롬 보안 경고 방지)
   const safe = t.replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '').replace(/(href|src|action)\s*=\s*(["'])\s*javascript:[^"']*\2/gi, '$1="#"');
   const d = new DOMParser().parseFromString(safe, 'text/html');
-  d._len = t.length; d._login = /인투통합회원|signIn|LOGIN/.test(t) && !/chartSearchTable|waitListTable|mReceiptCompletedTable/.test(t);
+  d._len = t.length; d._raw = safe; d._login = /인투통합회원|signIn|LOGIN/.test(t) && !/chartSearchTable|waitListTable|mReceiptCompletedTable/.test(t);
   return d;
 }
 function cells(tr) { return [...tr.children].map(td => td.textContent.replace(/\s+/g, ' ').trim()); }
@@ -38,15 +38,36 @@ function readInner(sec, kind) {
     if (m) { owner = m[1]; pet = m[2]; } else if ((m = first.match(/^(.+?)\((.+?)\)\s*\d*$/))) { pet = m[1]; owner = m[2]; } else pet = first;
     const dt = t.find(x => /^\d{4}-\d{2}-\d{2}/.test(x)) || '';
     const sp = t.find(x => /^(Canine|Feline|Exotic|Avian|Rabbit|Other)/i.test(x)) || '';
-    return { kind, owner, pet, first, dt, sp, room: t[t.length - 1] || '', texts: t.length };
+    let old = false; const dm = dt.match(/^(\d{4})-(\d{2})-(\d{2}).*?\((\d+)\s*일\)/);
+    if (dm) { const since = Math.round((new Date(new Date().toDateString()) - new Date(+dm[1], dm[2] - 1, +dm[3])) / 864e5); old = Math.abs(since - +dm[4]) > 1; }
+    return { kind, owner, pet, first, dt, sp, room: t[t.length - 1] || '', texts: t.length, old };
   });
 }
 // 이름으로 /plus/main 검색해서 동물번호 찾기
+const SLOG = [];
 async function searchPet(q) {
   try {
     const d = await getDoc('/plus/main?searchText=' + encodeURIComponent(q));
+    const rs = [...d.querySelectorAll('tr.status_data_row')];
+    SLOG.push({ rows: rs.length, hit: rs.filter(r => (r.textContent || '').replace(/\s+/g, '').includes(nz(q))).length });
     return [...d.querySelectorAll('tr.status_data_row')].map(r => { const c = cells(r); return { owner: c[0], phone: c[1], pet: c[2], visit: c[3], psno: r.getAttribute('data-psno'), csno: r.getAttribute('data-csno'), st: (r.children[2] || {}).className || '', via: 'search' }; });
   } catch (e) { return []; }
+}
+// 검색창 모양 (이름·값은 안 읽음: 칸 이름과 선택지 글자만)
+function formDiag(d) {
+  const out = [];
+  try {
+    const inp = d.querySelector('[name="searchText"]') || d.querySelector('input[type="search"], input[placeholder*="검색"]');
+    const f = inp && inp.closest('form');
+    out.push('검색칸: ' + (inp ? `${inp.tagName} name=${inp.name || '-'} id=${inp.id || '-'}` : '없음'));
+    if (f) {
+      out.push(`form action=${f.getAttribute('action') || '-'} method=${f.getAttribute('method') || 'get'} id=${f.id || '-'}`);
+      f.querySelectorAll('input,select,textarea').forEach(e => out.push(` - ${e.tagName.toLowerCase()} ${e.type || ''} name=${e.name || '-'}` + (e.tagName === 'SELECT' ? ' [' + [...e.options].map(o => o.value + ':' + o.text.trim()).join(', ') + ']' : '')));
+    } else if (inp) out.push('form 없음 (스크립트로 검색)');
+    const raw = d._raw || '', re = /searchText|chartSearch|searchKeyword|search_text/g; let m, k = 0;
+    while ((m = re.exec(raw)) && k++ < 6) out.push('… ' + raw.slice(Math.max(0, m.index - 90), m.index + 110).replace(/\s+/g, ' ').replace(/[가-힣]+/g, '가'));
+  } catch (e) { out.push('진단 실패: ' + e.message); }
+  return out;
 }
 async function collect() {
   const res = { at: Date.now(), err: [], opd: [], pets: [], paid: [], dumps: {} };
@@ -59,7 +80,8 @@ async function collect() {
     const ymd = `${now.getFullYear()}-${mm}-${dd}`;
     res.opdOld = res.opd.filter(o => !String(o.time || '').startsWith(ymd)).length;
     res.opd = res.opd.filter(o => String(o.time || '').startsWith(ymd));
-    res.inp = [...readInner(w.getElementById('fixedWaitTab2Tab2'), '입원'), ...readInner(w.getElementById('fixedWaitTab2Tab3'), '호텔')];
+    const inAll = [...readInner(w.getElementById('fixedWaitTab2Tab2'), '입원'), ...readInner(w.getElementById('fixedWaitTab2Tab3'), '호텔')];
+    res.inpOld = inAll.filter(o => o.old); res.inp = inAll.filter(o => !o.old);
     res.dumps.all = dumpSec(w.getElementById('fixedWaitTab2Tab1'));
     res.dumps.inp = dumpSec(w.getElementById('fixedWaitTab2Tab2'));
     res.dumps.hot = dumpSec(w.getElementById('fixedWaitTab2Tab3'));
@@ -67,6 +89,7 @@ async function collect() {
   try {
     for (let pg = 1; pg <= 8; pg++) {
       const d = await getDoc('/plus/main?page=' + pg);
+      if (pg === 1) res.form = formDiag(d);
       const rows = [...d.querySelectorAll('tr.status_data_row')];
       if (!rows.length) break;
       let older = false;
@@ -78,7 +101,7 @@ async function collect() {
   try {
     const have = new Set(res.pets.map(p => nz(p.owner) + '|' + nz(p.pet)));
     const need = [...res.opd, ...(res.inp || [])].filter(o => o.pet && !have.has(nz(o.owner) + '|' + nz(o.pet)));
-    let n = 0; res.searched = 0;
+    let n = 0; res.searched = 0; SLOG.length = 0; res.slog = SLOG;
     for (const o of need) {
       if (n++ >= 12) break;
       const hits = await searchPet(o.owner || o.pet);
@@ -88,7 +111,10 @@ async function collect() {
   } catch (e) { res.err.push('이름 검색 실패: ' + e.message); }
   try {
     const rc = await getDoc('/plus/receiptCompleted');
-    res.paid = [...rc.querySelectorAll('#mReceiptCompletedTable tbody tr')].map(cells).filter(c => c.length >= 3 && /^\d{1,2}:\d{2}$/.test(c[0])).map(c => ({ time: c[0], owner: c[1], pet: c[2] }));
+    const ymd2 = `${now.getFullYear()}-${mm}-${dd}`;
+    const prow = [...rc.querySelectorAll('#mReceiptCompletedTable tbody tr')].map(cells).filter(c => c.length >= 3);
+    res.paidRaw = prow.length; res.paidHead = prow.slice(0, 3).map(c => c[0].replace(/[가-힣]/g, '가'));
+    res.paid = prow.filter(c => /\d{1,2}:\d{2}/.test(c[0]) && (!/\d{4}-\d{2}-\d{2}/.test(c[0]) || c[0].includes(ymd2))).map(c => ({ time: c[0], owner: c[1], pet: c[2] }));
   } catch (e) { res.err.push('수납완료 읽기 실패: ' + e.message); }
   res.today = today;
   return res;
