@@ -158,6 +158,14 @@ public static class SbDock {
     System.Diagnostics.Process.Start("notepad.exe", "\"" + f + "\"");
   }
 
+  // 화면 맨 아래에서 띄우는 높이 (인투벳 맨 아래 상태줄 아이콘이 보이게). dock-gap.txt에 숫자를 넣으면 바꿀 수 있음
+  static int gapV = 32; static DateTime gapT = DateTime.MinValue;
+  static int Gap(string dir) {
+    if ((DateTime.Now - gapT).TotalSeconds < 5) return gapV;
+    gapT = DateTime.Now; int g;
+    try { string f = Path.Combine(dir, "dock-gap.txt"); gapV = File.Exists(f) && int.TryParse(File.ReadAllText(f).Trim(), out g) && g >= 0 && g < 400 ? g : 32; } catch { gapV = 32; }
+    return gapV;
+  }
   static Mutex MX;
   static string lastMark = "";
   [STAThread] public static void Main(string[] a) {
@@ -188,7 +196,7 @@ public static class SbDock {
               if (wh.Length == 2 && int.TryParse(wh[0], out nw) && int.TryParse(wh[1].Split(']')[0], out nh) && nw > 100 && nh > 60) { w = nw; hh = nh; c.L = -99999; }
             } else if (mi < 0) lastMark = "";
             if (pop != IntPtr.Zero) { RECT p = Rect(pop); tx = p.R - w; ty = p.T - hh - 2; }
-            else { RECT wa = Work(main); tx = wa.R - w; ty = wa.B - hh; }
+            else { RECT wa = Work(main); tx = wa.R - w; ty = wa.B - hh - Gap(dir); }
             if (ty < 0) ty = 0;
             if (c.L == -99999) SetWindowPos(chat, IntPtr.Zero, tx, ty, w, hh, 0x0004 | 0x0010);
             else if (c.L != tx || c.T != ty) Move(chat, tx, ty);
