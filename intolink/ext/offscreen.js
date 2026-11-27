@@ -4,7 +4,9 @@ const nz = s => String(s || '').replace(/\s+/g, '').trim();
 async function getDoc(p) {
   const r = await fetch(H + p, { credentials: 'include' });
   const t = await r.text();
-  const d = new DOMParser().parseFromString(t, 'text/html');
+  // 읽기만 하므로 onclick 같은 인라인 실행 코드를 미리 지워 둠 (크롬 보안 경고 방지)
+  const safe = t.replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '').replace(/(href|src|action)\s*=\s*(["'])\s*javascript:[^"']*\2/gi, '$1="#"');
+  const d = new DOMParser().parseFromString(safe, 'text/html');
   d._len = t.length; d._login = /인투통합회원|signIn|LOGIN/.test(t) && !/chartSearchTable|waitListTable|mReceiptCompletedTable/.test(t);
   return d;
 }
