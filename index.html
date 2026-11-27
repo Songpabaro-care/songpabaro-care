@@ -1109,8 +1109,8 @@ function fcInit(){const el=$("#fchat"),h=$("#fcH");
  $("#fcMin").onclick=e=>{e.stopPropagation();qls("fcmin",qls("fcmin")==="1"?"0":"1");fcShow()};
  $("#fcHome").onclick=e=>{e.stopPropagation();try{window.focus()}catch(x){}if(Q.view&&Q.temp)scrClose();
   setTimeout(()=>{if(document.hasFocus()||!FC.pip)return;const d=FC.pip.document,hn=d.createElement("div");hn.className="fhint";hn.textContent="창이 안 올라오면 이 작은 창 맨 위의 '탭으로 돌아가기' 아이콘을 누르거나, 작업표시줄에서 케어 노트를 눌러 주세요";el.appendChild(hn);setTimeout(()=>hn.remove(),5000)},600)};
- $("#fcIv").onclick=e=>{e.stopPropagation();const d=FC.pip?FC.pip.document:document,w=FC.pip||window,a=d.createElement("a");a.href="sbintovet://go";a.style.display="none";d.body.appendChild(a);
-  let gone=false;const f=()=>{gone=true};w.addEventListener("blur",f,{once:true});try{a.click()}catch(x){}a.remove();
+ $("#fcIv").onclick=e=>{e.stopPropagation();const d=FC.pip?FC.pip.document:document,w=FC.pip||window,fr=d.createElement("iframe");fr.style.display="none";
+  let gone=false;const f=()=>{gone=true};w.addEventListener("blur",f,{once:true});fr.src="sbintovet://go";d.body.appendChild(fr);setTimeout(()=>fr.remove(),4000);
   setTimeout(()=>{w.removeEventListener("blur",f);if(gone)return;const m="인투벳이 안 올라오면 이 PC에 '🏥 인투벳 버튼'을 설치해 주세요 (⚙ → 떠 있는 채팅창). 급할 땐 Alt+Tab";if(FC.pip){const hn=d.createElement("div");hn.className="fhint";hn.textContent=m;el.appendChild(hn);setTimeout(()=>hn.remove(),6000)}else toast(m)},2500)};
  $("#fcPip").onclick=async e=>{e.stopPropagation();if(FC.pip){FC.pip.close();return}
   if(!window.documentPictureInPicture){toast("이 브라우저는 '항상 위에 띄우기'를 지원하지 않아요 (PC 크롬·엣지에서 가능)");return}
