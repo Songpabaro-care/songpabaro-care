@@ -1019,9 +1019,14 @@ function qAnOf(t){const chem=new Set(Object.values(CHEM).flat());if(chem.has(t)|
 function lisBadge(){const l=ST.lis&&ST.lis.v;if(!l||!l.hb)return"";const age=Date.now()-l.hb,ok=age<180000&&l.st==="ok";return ` · <b style="color:${ok?"#0f8a7e":"#c93a3a"}">LIS 연동 ${ok?"● 정상":age<180000?"● LIS 창 없음":"● 꺼짐"}</b>`}
 Q.notes={};
 function lisAck(t){if(!t)return;fetch(`${base()}/rooms/${encodeURIComponent(S.code)}/lis/acks/${t}.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:"true"}).catch(()=>{})}
-function sbNote(id,title,body){if(!(innerWidth>=761&&window.Notification&&Notification.permission==="granted"))return;if(Q.notes[id])return;
- try{const n=new Notification(title,{body,icon:"icon-192.png",silent:true,tag:"sb"+id,requireInteraction:true});Q.notes[id]=n;n.onclick=()=>{try{window.focus()}catch(x){}n._sys=true;n.close();delete Q.notes[id];lisAck(id)};n.onclose=()=>{if(n._sys)return;delete Q.notes[id];lisAck(id)}}catch(x){}}
-function lisOn(){{const ak=ST.lis&&ST.lis.v&&ST.lis.v.acks||{};Object.keys(Q.notes).forEach(t=>{if(ak[t]){const n=Q.notes[t];delete Q.notes[t];n._sys=true;try{n.close()}catch(x){}}})}
+function sbSW(){return navigator.serviceWorker&&navigator.serviceWorker.getRegistration?navigator.serviceWorker.getRegistration().catch(()=>null):Promise.resolve(null)}
+if(navigator.serviceWorker)navigator.serviceWorker.addEventListener("message",ev=>{const d=ev.data;if(d&&d.t==="sbAck"&&d.tag&&String(d.tag).startsWith("sb")){const id=String(d.tag).slice(2);delete Q.notes[id];lisAck(id)}});
+function sbNote(id,title,body){if(!(innerWidth>=761&&window.Notification&&Notification.permission==="granted"))return;if(Q.notes[id])return;Q.notes[id]=true;
+ sbSW().then(r=>{if(r&&r.showNotification)return r.showNotification(title,{body,icon:"icon-192.png",silent:true,tag:"sb"+id,requireInteraction:true});throw 0}).catch(()=>sbNoteOld(id,title,body))}
+function sbNoteOld(id,title,body){
+ try{const n=new Notification(title,{body,icon:"icon-192.png",silent:true,tag:"sb"+id,requireInteraction:true});Q.notes[id]=n;n.onclick=()=>{n._sys=true;n.close();delete Q.notes[id];lisAck(id)};n.onclose=()=>{if(n._sys)return;delete Q.notes[id];lisAck(id)}}catch(x){}}
+function lisOn(){{const ak=ST.lis&&ST.lis.v&&ST.lis.v.acks||{};Object.keys(Q.notes).forEach(t=>{if(ak[t]){const n=Q.notes[t];delete Q.notes[t];if(n&&n.close){n._sys=true;try{n.close()}catch(x){}}}});
+ if(Object.keys(ak).length)sbSW().then(r=>r&&r.getNotifications?r.getNotifications():[]).then(ns=>(ns||[]).forEach(n=>{const g=String(n.tag||"");if(g.startsWith("sb")&&ak[g.slice(2)])n.close()})).catch(()=>{})}
  const e=ST.lis&&ST.lis.v&&ST.lis.v.ev;if(Q.lisT===undefined){Q.lisT=e&&e.t||0;return}if(!e||!e.t||e.t<=Q.lisT)return;Q.lisT=e.t;
  if(Date.now()-e.t>120000)return;if(qSndPlay("ord"))qBeep(e.kind==="done"?"chat":"ord");toast(`${e.title} · ${e.body}`.slice(0,90));
  if(innerWidth>=761&&window.Notification&&Notification.permission==="granted")sbNote(String(e.t),e.title,e.body)}

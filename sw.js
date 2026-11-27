@@ -7,3 +7,7 @@ self.addEventListener("fetch",e=>{const r=e.request,u=new URL(r.url);
  if(r.method!=="GET"||u.origin!==location.origin)return;
  e.respondWith((async()=>{try{const res=await fetch(r,{cache:"no-store"});if(res.ok&&r.mode==="navigate"){const c=await caches.open(C);c.put(u.pathname,res.clone())}return res}
   catch(x){const hit=await caches.match(u.pathname)||await caches.match(r);if(hit)return hit;throw x}})())});
+/* 검사 완료 알림: 본문을 누르면 알림만 바로 닫힘 (케어 노트 창은 그대로). 닫은 사실은 열린 케어 노트에 알려서 모든 PC에서 함께 닫힘 */
+async function sbTell(tag){const cs=await self.clients.matchAll({type:"window",includeUncontrolled:true});for(const c of cs)c.postMessage({t:"sbAck",tag});return cs}
+self.addEventListener("notificationclick",e=>{e.notification.close();e.waitUntil(sbTell(e.notification.tag))});
+self.addEventListener("notificationclose",e=>{e.waitUntil(sbTell(e.notification.tag))});
