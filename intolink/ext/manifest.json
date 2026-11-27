@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "송파바로 인투링크 연동",
-  "version": "1.1",
-  "description": "인투링크 진료대기·입원/호텔 목록을 케어 노트와 연동 (1.1: 연동 미리보기, 케어 노트로는 아직 보내지 않음)",
+  "version": "1.2",
+  "description": "인투링크 진료대기·입원/호텔 목록을 케어 노트와 연동 (1.2: 연동 미리보기, 케어 노트로는 아직 보내지 않음)",
   "permissions": [
     "declarativeNetRequest",
     "webRequest",

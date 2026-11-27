@@ -32,7 +32,7 @@ async function collect() {
   try {
     const w = await getDoc('/plus/waitList');
     if (w._login) res.err.push('인투링크 로그인 필요');
-    res.opd = [...w.querySelectorAll('#waitListTable tr')].filter(r => r.querySelector('td')).map(r => { const c = cells(r); return { owner: c[0], pet: c[1], time: c[2], vet: c[3], room: c[4] }; });
+    res.opd = [...w.querySelectorAll('#waitListTable tr')].filter(r => r.querySelector('td')).map(r => { const c = cells(r); return { owner: c[0], pet: c[1], time: c[2], vet: c[3], room: c[4], all: c.join(' ') + ' ' + [...r.attributes].map(x => x.value).join(' ') }; });
     res.dumps.all = dumpSec(w.getElementById('fixedWaitTab2Tab1'));
     res.dumps.inp = dumpSec(w.getElementById('fixedWaitTab2Tab2'));
     res.dumps.hot = dumpSec(w.getElementById('fixedWaitTab2Tab3'));
