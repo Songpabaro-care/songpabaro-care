@@ -315,7 +315,7 @@ body.scrpin:not(.scron) #scrBack{display:block}
 #fchat .fi button{border:0;border-radius:9px;background:var(--brand);color:#fff;font-weight:800;padding:0 12px;cursor:pointer}
 #fchat:not(.pip){opacity:.6;transition:opacity .15s}#fchat:not(.pip):hover,#fchat:not(.pip):focus-within{opacity:1}html:has(body.scron),body.scron{overflow:hidden}.qchat{position:relative}.qsplit{display:none}@media(min-width:761px){.qsplit{display:block;cursor:col-resize;background:var(--line);position:relative;touch-action:none}.qsplit:hover,.qsplit:active{background:var(--brand)}.qsplit::after{content:"⋮";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;font-weight:900;font-size:14px}.qbody.two .qchat{border-right:0}}#fchat .fb{position:relative}.qnew{position:absolute;left:50%;transform:translateX(-50%);bottom:70px;z-index:3;border:0;border-radius:99px;background:#4655c9;color:#fff;font-weight:800;padding:7px 14px;box-shadow:0 6px 16px rgba(70,85,201,.35);cursor:pointer;font-size:13px}#fchat .qnew{bottom:56px;padding:4px 11px;font-size:12px}.qnew[hidden]{display:none}
 #fchat .fm{gap:1px;padding:6px 9px;background:var(--card)}#fchat .fm .ln{font-size:12px;line-height:1.45;white-space:pre-wrap;word-break:break-all;padding:1px 0}#fchat .fm .ln .lw{color:var(--mute);font-weight:700;font-size:11px}#fchat .fm .ln.me{color:var(--brand)}#fchat .fm .ln.me .lw{color:var(--brand)}#fchat:not(.pip) #fcHome{display:none}#fchat .fhint{position:absolute;left:8px;right:8px;top:42px;background:#1f2933;color:#fff;border-radius:9px;padding:7px 10px;font-size:12px;z-index:2}
-#fchat.min .fb{display:none}#fchat.min{width:auto!important;height:auto!important;min-height:0;resize:none}
+#fchat.min .fb{display:none}#fchat.pip.min .fh{height:100vh;box-sizing:border-box;justify-content:center;gap:8px;cursor:pointer;padding:0 8px}#fchat.pip.min .fh b{font-size:17px}#fchat.pip.min #fcIv,#fchat.pip.min #fcHome,#fchat.pip.min #fcPip,#fchat.pip.min .sp{display:none}#fchat.min{width:auto!important;height:auto!important;min-height:0;resize:none}
 #fchat:not(.min):not(.pip)::after{content:"";position:absolute;right:3px;bottom:3px;width:10px;height:10px;border-right:2px solid var(--mute);border-bottom:2px solid var(--mute);opacity:.5;pointer-events:none;border-radius:0 0 3px 0}
 #fchat.pip{position:static;width:auto!important;height:100vh!important;box-sizing:border-box;resize:none;max-width:none;max-height:none;border:0;border-radius:0;box-shadow:none;display:flex!important;flex-direction:column}#fchat.pip .fh{cursor:default}#fchat.pip .fb{flex:1;display:flex;flex-direction:column;min-height:0}#fchat.pip .fm{flex:1;height:auto}
 .tabn{font-style:normal;background:#4655c9;color:#fff;border-radius:99px;font-size:10px;font-weight:800;padding:0 5px;margin-left:3px;vertical-align:1px}.tabn:empty{display:none}.qwrap .qboard{padding:0;overflow:visible}
@@ -1106,12 +1106,15 @@ async function fcSend(){const root=FC.pip?FC.pip.document:document,t=root.getEle
 function fcInit(){const el=$("#fchat"),h=$("#fcH");
  $("#fcS").onclick=fcSend;$("#fcT").onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();fcSend()}};
  $("#fcT").onfocus=()=>{qls("chatSeen",String(Date.now()));qBadge();fcRender()};
- $("#fcMin").onclick=e=>{e.stopPropagation();
+ const fcMinTog=e=>{if(e)e.stopPropagation();
   if(FC.pip){const w=FC.pip;FC.pmin=!FC.pmin;el.classList.toggle("min",FC.pmin);el.querySelector("#fcMin").textContent=FC.pmin?"+":"–";
-   try{if(FC.pmin){FC.ph=w.outerHeight;w.resizeTo(w.outerWidth,Math.max(60,w.outerHeight-w.innerHeight+44))}else{const H=FC.ph||+(qls("fph")||440),r=w.devicePixelRatio||1;w.resizeTo(w.outerWidth,H);
+   /* 접으면 💬 작은 상자로 오른쪽 아래에, 누르면 다시 펴기 */
+   try{if(FC.pmin){FC.ph=w.outerHeight;FC.pw=w.outerWidth;w.resizeTo(150,Math.max(60,w.outerHeight-w.innerHeight+48))}else{const H=FC.ph||+(qls("fph")||440),W=FC.pw||+(qls("fpw")||340),r=w.devicePixelRatio||1;w.resizeTo(W,H);
     /* 화면 아래에 붙어 있으면 크롬이 못 키움 → 자리 비키기 프로그램에 제목으로 크기 요청 */
-    const base=document.title.replace(/ \[sb:[^\]]*\]$/,"");document.title=base+` [sb:${Math.round(w.outerWidth*r)}x${Math.round(H*r)}]`;clearTimeout(FC.tt);FC.tt=setTimeout(()=>{document.title=base},2500)}}catch(x){}fcRender();return}
+    const base=document.title.replace(/ \[sb:[^\]]*\]$/,"");document.title=base+` [sb:${Math.round(W*r)}x${Math.round(H*r)}]`;clearTimeout(FC.tt);FC.tt=setTimeout(()=>{document.title=base},2500)}}catch(x){}fcRender();return}
   qls("fcmin",qls("fcmin")==="1"?"0":"1");fcShow()};
+ $("#fcMin").onclick=fcMinTog;
+ h.addEventListener("click",e=>{if(FC.pip&&FC.pmin)fcMinTog(e)});
  $("#fcHome").onclick=e=>{e.stopPropagation();try{window.focus()}catch(x){}if(Q.view&&Q.temp)scrClose();
   setTimeout(()=>{if(document.hasFocus()||!FC.pip)return;const d=FC.pip.document,hn=d.createElement("div");hn.className="fhint";hn.textContent="창이 안 올라오면 이 작은 창 맨 위의 '탭으로 돌아가기' 아이콘을 누르거나, 작업표시줄에서 케어 노트를 눌러 주세요";el.appendChild(hn);setTimeout(()=>hn.remove(),5000)},600)};
  $("#fcIv").onclick=e=>{e.stopPropagation();const d=FC.pip?FC.pip.document:document,w=FC.pip||window,fr=d.createElement("iframe");fr.style.display="none";
