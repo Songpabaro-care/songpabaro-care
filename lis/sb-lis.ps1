@@ -415,7 +415,7 @@ function Dump-Lis($w, $names) {
       } catch { $out.Add("읽기 실패: $($_.Exception.Message)") }
     }
     $out | Set-Content -Path $f -Encoding UTF8
-    Start-Process notepad.exe $f
+    Start-Process notepad.exe $f -WindowStyle Minimized
     Log "[진단] 화면 글자 목록을 저장했어요: $f"
   } catch { Log "진단 저장 실패: $($_.Exception.Message)" }
 }
