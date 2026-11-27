@@ -163,3 +163,6 @@ async function diag() {
   await chrome.tabs.create({ url: chrome.runtime.getURL('result.html') });
   try { await chrome.tabs.remove(tab.id); } catch (e) {}
 }
+
+importScripts('find.js');
+importScripts('probe.js');
