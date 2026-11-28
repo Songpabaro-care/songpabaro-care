@@ -329,6 +329,19 @@ table.grid th.gn em{display:block;font-style:normal;color:#0f766e;font-weight:90
 #qBtn .bdg,#scrBack i{background:#e5484d;color:#fff;border-radius:99px;font-size:10.5px;font-weight:800;padding:0 5px;margin-left:2px;font-style:normal}
 #scr{position:fixed;inset:0;z-index:35;background:var(--bg);display:none;grid-template-rows:auto minmax(0,1fr)}
 #scr.open{display:grid}
+.qbody.tabl{display:block;overflow:auto;padding:8px}
+body.tkdock .qbody.tabl{width:300px}
+.tabls{display:grid;gap:6px}.tabi{display:flex;align-items:center;gap:8px;width:100%;min-height:58px;padding:8px 10px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);font:inherit;color:inherit;cursor:pointer}
+.tabi .av{font-size:22px}.tabi b{display:block;font-size:15.5px}.tabi small{display:block;font-size:12px;color:#667085}.tabi.on{border-color:#0f8a7e;box-shadow:inset 0 0 0 2px #0f8a7e;background:#f3fbf9}
+.tabi.late{border-color:#f04438}.tabct{display:grid;gap:2px;justify-items:end}.tabct i{font-style:normal;font-size:12.5px;font-weight:800;color:#475467}.tabct i.l{color:#fff;background:#f04438;border-radius:99px;padding:1px 8px}.tabct i.s{color:#b54708}.tabct i.e{color:#98a2b3;font-weight:600}
+body.tkdock #tk{z-index:37;left:310px;right:0!important;width:auto!important;top:var(--tabTop,56px);background:none;align-items:stretch;justify-content:stretch}
+body.tkdock #tk:not(.open){display:flex;pointer-events:none}body.tkdock #tk:not(.open) .sheet{opacity:0}
+body.tkdock #tk .sheet{max-width:none;max-height:none;height:100%;border-radius:14px 0 0 0;box-shadow:-4px 0 18px rgba(0,0,0,.08);padding:14px 18px}
+body.tkdock #tk [data-act=tkclose]{display:none}body.tkdock #fchat{display:none!important}
+body.tkdock table.grid th,body.tkdock table.grid td{min-width:64px;height:50px}body.tkdock .gc{width:52px;height:42px;font-size:18px}
+body.tkdock .gwrap{max-height:calc(100vh - var(--tabTop,56px) - 260px)}body.tkdock table.grid thead th.gh{min-width:96px;max-width:140px;font-size:13px}
+body.tkdock .tsr{min-height:58px}body.tkdock .tset{grid-template-columns:repeat(auto-fill,minmax(260px,1fr));align-items:start}body.tkdock .tset>.row,body.tkdock .tset>.btn,body.tkdock .tset>.meta{grid-column:1/-1}
+body.tkdock .rxg{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
 #scrBack{display:none;position:fixed;right:16px;top:12px;z-index:36;height:36px;border-radius:99px;border:0;background:#4655c9;color:#fff;font-weight:800;padding:0 14px;box-shadow:0 6px 18px rgba(70,85,201,.35)}
 body.scrpin:not(.scron) #scrBack{display:block}
 .qh{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap}
@@ -987,7 +1000,7 @@ function txBoard(){const td0=new Date();td0.setHours(0,0,0,0);
  ${L.length?`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;align-items:start;align-content:start">${L.map(x=>{const p=x.p,c=x.late.length?"#f04438":x.soon.length?"#e8a33d":"#0f8a7e";
   return `<div class="card" style="padding:9px 10px;display:grid;gap:5px;align-content:start;border:1.5px solid ${c}"><div class="row" style="align-items:center;gap:6px"><b style="font-size:15px">${p.species==="cat"?"🐱":"🐶"} ${esc(p.name)}</b><span class="meta">${cat(p)}${p.room?" · "+esc(p.room):""}</span><button class="btn-xs" style="margin-left:auto;height:26px" data-act="tkopen" data-id="${p.id}">열기</button></div>
    ${x.ts.map(t=>row(p,t)).join("")}</div>`}).join("")}</div>`:`<div class="meta">걸려 있는 처치가 없어요.</div>`}</div>`}
-setInterval(()=>{if(Q.view==="tx"&&!document.hidden)qRender()},60000);
+setInterval(()=>{if((Q.view==="tx"||Q.view==="tab")&&!document.hidden)qRender()},60000);
 /* ---- 💧 수액 처방: 수액 종류·백 용량·속도 + 백에 섞는 약(비타민 B·C, 타우린, KCl) + 시린지 CRI(푸로세마이드·도부타민·도파민·니트로프루시드·도부+니트로 합제)
    기본값은 병원 전체 '설정'(관리자)에서 바꿈 · 원장님 확인 전에는 걸 때 계산식을 한 번 더 보여 주고 물어봄 ---- */
 const FX_DEF={types:["하트만(LRS)","0.9% 생리식염수","5% 포도당","0.45% NS+2.5% 포도당","플라스마솔루션"],bags:[100,250,500,1000],rate:2.5,
@@ -1507,9 +1520,16 @@ async function qPrune(){const lim=Date.now()-7*864e5,mid=qMid(),del={};Object.en
  Object.entries(Q.ords).forEach(([k,o])=>{if(o&&!qActive(o)){const lt=Math.max(...Object.values(qParts(o)).map(x=>x.t||0),o.t||0);if(lt<lim)fetch(`${QOR()}/${k}.json`,{method:"DELETE"}).catch(()=>{})}})}
 async function qPost(url,m){m.t={".sv":"timestamp"};m.by=qMe();m.uid=AU.uid;const r=await fetch(`${url}.json`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(m)});if(!r.ok)throw 0}
 /* ---- 화면 ---- */
-const QTITLE={tx:"⏰ 처치 현황판",mj:"📋 문진 접수 · 채팅",chat:"💬 채팅 · 검사 오더",lab:"🧪 검사실 오더 (혈액·요·분변·기타)",xray:"🩻 영상실 오더 (X-ray·초음파)"};
-function scrOpen(mode,temp){setTimeout(fcShow,0);Q.view=mode;Q.temp=!!temp;$("#scr").classList.add("open");document.body.classList.add("scron");if(mode==="chat")qls("chatSeen",String(Date.now()));qBadge();qRender()}
-function scrClose(){setTimeout(fcShow,0);Q.view=null;$("#scr").classList.remove("open");document.body.classList.remove("scron");qBadge()}
+const QTITLE={tab:"📋 처치 태블릿",tx:"⏰ 처치 현황판",mj:"📋 문진 접수 · 채팅",chat:"💬 채팅 · 검사 오더",lab:"🧪 검사실 오더 (혈액·요·분변·기타)",xray:"🩻 영상실 오더 (X-ray·초음파)"};
+/* ---- ⑧ 처치 태블릿: 왼쪽 입원·호텔 목록, 오른쪽에 처치 창을 붙여서 크게 ---- */
+function tabPts(){return (S.p.care||[]).filter(p=>cat(p)!=="외래"||tasksOf(p).length).map(p=>{const ts=tasksOf(p);return {p,ts,late:ts.filter(t=>tStat(t).c==="late").length,soon:ts.filter(t=>tStat(t).c==="soon").length}}).sort((a,b)=>b.late-a.late||b.soon-a.soon||(cat(a.p)==="입원"?0:1)-(cat(b.p)==="입원"?0:1)||String(a.p.name).localeCompare(String(b.p.name)))}
+function tabList(){const L=tabPts(),cur=$("#tk").classList.contains("open")?S.tkId:null;
+ return `<div class="tabls">${L.map(x=>{const p=x.p;return `<button class="tabi${cur===p.id?" on":""}${x.late?" late":x.soon?" soon":""}" data-act="tabsel" data-id="${p.id}"><span class="av">${p.species==="cat"?"🐱":"🐶"}</span><span style="flex:1;min-width:0;text-align:left"><b>${esc(p.name)}</b><small>${esc(cat(p))}${p.room?" · "+esc(p.room):""}${p.bw?" · "+esc(p.bw)+"kg":""}</small></span><span class="tabct">${x.late?`<i class="l">⚠${x.late}</i>`:""}${x.soon?`<i class="s">곧 ${x.soon}</i>`:""}${!x.late&&!x.soon?(x.ts.length?`<i>${hhmm(x.ts[0].due)}</i>`:`<i class="e">처치표 없음</i>`):""}</span></button>`}).join("")||'<div class="meta" style="padding:12px">입원·호텔 환축이 없어요</div>'}</div>`}
+function tabDock(on){document.body.classList.toggle("tkdock",!!on);if(on){setTimeout(()=>{const h=$("#scr .qh");document.documentElement.style.setProperty("--tabTop",(h?h.offsetHeight:56)+"px");if(!$("#tk").classList.contains("open")){const f=tabPts()[0];if(f){tkOpen(f.p.id);qRender()}}},50);tabWake(true)}else{tabWake(false)}}
+async function tabWake(on){try{if(on){if(navigator.wakeLock&&!S.wl)S.wl=await navigator.wakeLock.request("screen")}else if(S.wl){await S.wl.release();S.wl=null}}catch(e){}}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&document.body.classList.contains("tkdock")){S.wl=null;tabWake(true)}});
+function scrOpen(mode,temp){setTimeout(fcShow,0);Q.view=mode;tabDock(mode==="tab");Q.temp=!!temp;$("#scr").classList.add("open");document.body.classList.add("scron");if(mode==="chat")qls("chatSeen",String(Date.now()));qBadge();qRender()}
+function scrClose(){setTimeout(fcShow,0);if(Q.view==="tab")tabDock(false);Q.view=null;$("#scr").classList.remove("open");document.body.classList.remove("scron");qBadge()}
 const ANZN={NX700:"NX700",BC2800:"BC-2800",AU10V:"AU10V",ISMART:"i-Smart",ANIKO:"AniKo"};
 function qAnOf(t){const chem=new Set(Object.values(CHEM).flat());if(chem.has(t)||t==="혈청화학"||(PANELS.some(p=>p[0]===t)&&!/요검사/.test(t)))return"NX700";if(t==="CBC")return"BC2800";if(["T4","TSH","코르티솔","SDMA","CRP","ACTH 자극검사","LDDST"].includes(t))return"AU10V";if(["전해질","혈액가스"].includes(t))return"ISMART";if(t==="췌장염 키트")return"ANIKO";return null}
 function lisBadge(){const l=ST.lis&&ST.lis.v;if(!l||!l.hb)return"";const age=Date.now()-l.hb,ok=age<180000&&l.st==="ok";return ` · <b style="color:${ok?"#0f8a7e":"#c93a3a"}">LIS 연동 ${ok?"● 정상":age<180000?"● LIS 창 없음":"● 꺼짐"}</b>`}
@@ -1600,6 +1620,7 @@ function qRender(){if(!Q.view)return;if(Q.drag){Q.pend=true;return}const el=$("#
   ${v==="chat"?`<button class="qtg" data-act="qfs">가 채팅 글씨 ${QFSN[qFs()]}</button>`:""}<button class="qtg" data-act="qofs">가 오더 글씨 ${QOFN[qOfs()]}</button>${v==="xray"?`<button class="qtg${XS&&XS.w?" on":""}" data-act="xstrip" title="BLADE 같은 다른 프로그램 위에 항상 떠 있는 작은 알림 띠">📌 BLADE 위 알림 띠 ${XS&&XS.w?"켜짐":"띄우기"}</button>`:""}<button class="qtg pri" data-act="qord">＋ 검사 오더</button><button class="qtg" data-act="${Q.temp?"scrclose":"scrhide"}">${Q.temp?"닫기":"케어 노트 보기"}</button><button class="qtg" data-act="qset">⚙</button></div>`;
  let body;if(v==="mj")body=`<div class="qbody two"${innerWidth>760?` style="grid-template-columns:minmax(260px,${qSplit()}%) 9px minmax(0,1fr)"`:""}>${qChatHtml()}<div class="qsplit" title="끌어서 폭 조절"></div><div class="qboard"><div class="qbh"><h2>📋 사전 문진</h2><span class="sp" style="flex:1"></span><button class="qtg" data-act="mjscr">새로고침</button><button class="qtg" data-act="mjlink">문진 링크 복사</button></div><div id="mjScrSlot"></div></div></div>`;else if(v==="chat")body=`<div class="qbody two ${Q.tab==="ord"?"tab-ord":""}"${innerWidth>760?` style="grid-template-columns:minmax(260px,${qSplit()}%) 9px minmax(0,1fr)"`:""}>${qChatHtml()}<div class="qsplit" title="끌어서 채팅·오더 폭 조절 (두 번 누르면 기본값)"></div>${qBoard(null)}</div>${innerWidth<=760?`<div style="position:fixed;left:0;right:0;bottom:0"></div>`:""}`;
  else if(v==="tx")body=`<div class="qbody">${txBoard()}</div>`;
+ else if(v==="tab")body=`<div class="qbody tabl">${tabList()}</div>`;
  else body=`<div class="qbody">${qBoard(v==="lab"?"lab":"img")}</div>`;
  const mjKeep=v==="mj"?$("#mjScr"):null;el.innerHTML=head+(v==="chat"&&innerWidth<=760?`<div class="qh" style="padding:6px 10px"><button class="qtg${Q.tab!=="ord"?" on":""}" style="flex:1" data-act="qtab" data-v="chat">💬 채팅</button><button class="qtg${Q.tab==="ord"?" on":""}" style="flex:1" data-act="qtab" data-v="ord">🧪 오더 (${on})</button></div>`:"")+body;
  {const bd=$("#scr .qboard");if(bd)bd.style.zoom=QOFZ[qOfs()]}if(v==="mj"){const sl=$("#mjScrSlot");if(sl){if(mjKeep)sl.replaceWith(mjKeep);else{const d=document.createElement("div");d.id="mjScr";d.innerHTML='<div class="meta">불러오는 중...</div>';sl.replaceWith(d);setTimeout(mjLoad,0)}}}
@@ -1731,12 +1752,12 @@ function fcInit(){const el=$("#fchat"),h=$("#fcH");
  addEventListener("resize",()=>{if(!FC.pip&&el.style.display!=="none")fcPlace(parseFloat(el.style.left)||0,parseFloat(el.style.top)||0)})}
 fcInit();
 /* ---- 이 기기 설정 ---- */
-const QSCR=[["auto","자동","넓은 화면이면 진료실, 폰이면 일반"],["clinic","① 진료실","왼쪽 케어 노트 + 오른쪽 차트 복사 보드 · 환축 화면에서 바로 오더"],["chat","② 채팅·오더 모니터","왼쪽 채팅 + 오른쪽 전체 오더 보드"],["lab","③ 검사실","혈액·요·분변·기타 오더만 · 서버 PC 옆에 띄우기"],["xray","④ 영상실","X-ray·초음파 오더만"],["mj","⑥ 문진 접수","왼쪽 채팅 + 오른쪽 사전 문진 목록 · 새 문진 오면 알림"],["tx","⑦ 처치 현황판","입원·호텔 처치표가 다 됐는지 한눈에 · 처치실·간호 스테이션 모니터용"],["basic","⑤ 일반","케어 노트만"]];
+const QSCR=[["auto","자동","넓은 화면이면 진료실, 폰이면 일반"],["clinic","① 진료실","왼쪽 케어 노트 + 오른쪽 차트 복사 보드 · 환축 화면에서 바로 오더"],["chat","② 채팅·오더 모니터","왼쪽 채팅 + 오른쪽 전체 오더 보드"],["lab","③ 검사실","혈액·요·분변·기타 오더만 · 서버 PC 옆에 띄우기"],["xray","④ 영상실","X-ray·초음파 오더만"],["mj","⑥ 문진 접수","왼쪽 채팅 + 오른쪽 사전 문진 목록 · 새 문진 오면 알림"],["tx","⑦ 처치 현황판","입원·호텔 처치표가 다 됐는지 한눈에 · 처치실·간호 스테이션 모니터용"],["tab","⑧ 처치 태블릿","가로 태블릿 · 왼쪽 입원·호텔 목록, 오른쪽 처치표 크게 · 처치대·입원실용"],["basic","⑤ 일반","케어 노트만"]];
 function qsRender(){const cur=qls("screen")||"auto",dk=document.documentElement.dataset.theme==="dark";
  $("#qsBody").innerHTML=`<div class="otitle" style="margin:0">이 기기의 기본 화면</div><div class="qopt">${QSCR.map(([v,t,d])=>`<button class="${cur===v?"sel":""}" data-act="qscr" data-v="${v}"><b>${t}</b><span>${d}</span></button>`).join("")}</div>
  ${qWin()?`<div class="meta" style="margin-top:6px">이 창은 따로 띄운 창이라 <b>${(QSCR.find(x=>x[0]===qWin())||[])[1]||""}</b> 화면으로 고정돼 있어요.</div>`:""}
  <div class="otitle">이 PC에서 창 하나 더 띄우기 <span class="meta" style="font-weight:500">· 모니터 두 대에 따로 놓기</span></div>
- <div class="row" style="flex-wrap:wrap;gap:6px">${[["chat","② 채팅·오더"],["lab","③ 검사실"],["xray","④ 영상실"],["tx","⑦ 처치 현황판"],["mj","⑥ 문진 접수"],["clinic","① 케어 노트"]].map(([v,t])=>`<button class="qtg" data-act="qwin" data-v="${v}">↗ ${t} 창</button>`).join("")}</div>
+ <div class="row" style="flex-wrap:wrap;gap:6px">${[["chat","② 채팅·오더"],["lab","③ 검사실"],["xray","④ 영상실"],["tx","⑦ 처치 현황판"],["tab","⑧ 처치 태블릿"],["mj","⑥ 문진 접수"],["clinic","① 케어 노트"]].map(([v,t])=>`<button class="qtg" data-act="qwin" data-v="${v}">↗ ${t} 창</button>`).join("")}</div>
  <div class="meta">새 창을 다른 모니터로 끌어다 놓으면 돼요. 두 창이 같이 열려 있으면 알림음은 오더 화면 창에서만 나요.</div>
  <div class="otitle">알림음 <span class="meta" style="font-weight:500">· 이 기기에서만 · 기본은 꺼짐</span></div>
  <div class="row" style="flex-wrap:wrap;gap:6px"><button class="qtg${qSnd("chat")?" on":""}" data-act="qsnd" data-k="chat">🔔 채팅 소리 ${qSnd("chat")?"켬":"끔"}</button><button class="qtg${qSnd("ord")?" on":""}" data-act="qsnd" data-k="ord">🧪 오더 소리 ${qSnd("ord")?"켬":"끔"}</button><button class="qtg${qls("noti")==="1"?" on":""}" data-act="qnoti">🖥 화면 알림 ${qls("noti")==="1"?"켬":"끔"}</button></div>
@@ -1875,10 +1896,10 @@ S.ordF="all";
 function ordView(){const f=S.ordF,dp=f==="all"?null:f,cnt=d=>qMine(d).length;
  return `<div class="card" style="display:grid;gap:10px"><div class="row" style="align-items:center;gap:6px;flex-wrap:wrap">${[["all","전체",cnt(null)],["lab","검사실",cnt("lab")],["img","영상",cnt("img")]].map(([k,t,n])=>`<button type="button" class="chip ${f===k?"sel":""}" data-act="ordf" data-k="${k}">${t} ${n}</button>`).join("")}<span style="flex:1"></span><button class="btn" style="background:#4655c9" data-act="qord">＋ 검사 오더</button></div>
  <div class="qwrap">${qBoard(dp)}</div></div>`}
-function qScreenApply(){const sc=qScreen();document.body.classList.toggle("scrpin",["chat","lab","xray","mj","tx"].includes(sc));
- if(["chat","lab","xray","mj","tx"].includes(sc)){if(S.pc){S.pcAuto=true;pcClose()}scrOpen(sc,false)}
+function qScreenApply(){const sc=qScreen();document.body.classList.toggle("scrpin",["chat","lab","xray","mj","tx","tab"].includes(sc));
+ if(["chat","lab","xray","mj","tx","tab"].includes(sc)){if(S.pc){S.pcAuto=true;pcClose()}scrOpen(sc,false)}
  else{if(Q.view&&!Q.temp)scrClose();if(sc==="clinic"&&innerWidth>=1000){if(!S.pc&&(qls("screen")==="clinic"||pcPref()!=="0"))pcOpen()}else if(sc==="basic"&&S.pc){S.pcAuto=true;pcClose()}}}
-function render(){if(Q.view==="tx")setTimeout(qRender,0);setTimeout(fxWarnTick,0);{const tk=$("#tk");if(tk&&tk.classList.contains("open")){if(tkTyping())S.tkDirty=true;else setTimeout(tkRender,0)}}{const an=$("#an");if(an&&an.classList.contains("open")&&!anTyping())setTimeout(anRender,0)}if(S.pendSel&&S.pendSel.r===S.room&&rowsOf(S.room).some(p=>p.id===S.pendSel.id)){S.sel[S.room]=S.pendSel.id;S.pendSel=null}
+function render(){if(Q.view==="tx"||Q.view==="tab")setTimeout(qRender,0);setTimeout(fxWarnTick,0);{const tk=$("#tk");if(tk&&tk.classList.contains("open")){if(tkTyping())S.tkDirty=true;else setTimeout(tkRender,0)}}{const an=$("#an");if(an&&an.classList.contains("open")&&!anTyping())setTimeout(anRender,0)}if(S.pendSel&&S.pendSel.r===S.room&&rowsOf(S.room).some(p=>p.id===S.pendSel.id)){S.sel[S.room]=S.pendSel.id;S.pendSel=null}
  if(S.pc){const cs=S.sel[S.room];if(cs&&(S.room==="care"||S.room==="checkup"))S.pcSel=cs;setTimeout(pcRender,0)}
  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.r===S.room));
  const all=rowsOf(S.room),id=S.sel[S.room],cur=id&&all.find(p=>p.id===id);if(id&&!cur)S.sel[S.room]=null;
@@ -2635,7 +2656,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
  callack:async()=>{const k=d.k;try{const r=await fetch(`${base()}/rooms/${encodeURIComponent(S.code)}/calls/${encodeURIComponent(k)}/ack.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({by:S.devName||qMe(),t:Date.now()})});if(!r.ok)throw 0;callClose(k);qPost(QCH(),{text:`✋ ${S.devName||qMe()}에서 진료 볼게요`}).catch(()=>{});toast("접수실에 알렸어요")}catch(e){toast("보내지 못했어요")}},
  callcancel:async()=>{try{await fetch(`${base()}/rooms/${encodeURIComponent(S.code)}/calls/${encodeURIComponent(d.k)}.json`,{method:"DELETE"})}catch(e){}const b=$("#callB");if(b)b.remove();toast("호출을 취소했어요")},
  stimclose:()=>{const m=$("#stimM");if(m)m.classList.remove("open")},
- qundo:async()=>{const o=Q.ords[d.k];if(!o)return;const dps=d.d?[d.d]:Object.keys(qParts(o));for(const x of dps)await fetch(`${QOR()}/${d.k}/parts/${x}.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({s:"new"})}).catch(()=>{})},tkopen:()=>tkOpen(id,d.v),anopen:()=>anOpen(id),tkclose:()=>$("#tk").classList.remove("open"),alclose:()=>$("#al").classList.remove("open"),
+ qundo:async()=>{const o=Q.ords[d.k];if(!o)return;const dps=d.d?[d.d]:Object.keys(qParts(o));for(const x of dps)await fetch(`${QOR()}/${d.k}/parts/${x}.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({s:"new"})}).catch(()=>{})},tkopen:()=>tkOpen(id,d.v),tabsel:()=>{tkOpen(id,S.tkSub);qRender()},anopen:()=>anOpen(id),tkclose:()=>$("#tk").classList.remove("open"),alclose:()=>$("#al").classList.remove("open"),
  altog:()=>{const p=find("care",S.alId);if(!p)return;const a=p.alerts=p.alerts||[],i=a.indexOf(d.v);if(i>=0)a.splice(i,1);else a.push(d.v);alSave(p)},
  aladd:()=>{const p=find("care",S.alId),v=($("#alIn").value||"").trim();if(!p||!v)return;p.alerts=p.alerts||[];if(!p.alerts.includes(v))p.alerts.push(v.slice(0,30));alSave(p)},
  alcpr:()=>{const p=find("care",S.alId);if(!p)return;if(d.v==="미정")delete p.cpr;else p.cpr=d.v;alSave(p)},
@@ -2757,7 +2778,7 @@ async function startGate(){
  $("#gateBody").innerHTML=gateView(st);$("#gate").classList.add("open");
  if(st.dev&&st.dev.name)GPOLL=setInterval(()=>{if(!document.hidden)startGate()},5000)}
 function openApp(online){$("#gate").classList.remove("open");$("#dvBtn").style.display=S.adm?"":"none";if(OKD)return;OKD=true;
- render();load("care");loadDis();startPoll();mjPoll();{const w=(location.search.match(/[?&]w=(\w+)/)||[])[1];if(w&&["clinic","chat","lab","xray","mj","tx","basic"].includes(w)){try{sessionStorage.setItem("sbw",w)}catch(e){}history.replaceState(null,"",location.pathname)}}
+ render();load("care");loadDis();startPoll();mjPoll();{const w=(location.search.match(/[?&]w=(\w+)/)||[])[1];if(w&&["clinic","chat","lab","xray","mj","tx","tab","basic"].includes(w)){try{sessionStorage.setItem("sbw",w)}catch(e){}history.replaceState(null,"",location.pathname)}}
  {const m=(location.search.match(/[?&]screen=(\w+)/)||[])[1];if(m&&["auto","clinic","chat","lab","xray","basic"].includes(m)){if(m==="auto")qls("screen",null);else qls("screen",m);history.replaceState(null,"",location.pathname)}}qStart();qScreenApply();clearInterval(MJI);MJI=setInterval(mjPoll,90000);setInterval(()=>{if((Q.view||qScreen())==="mj")mjPoll()},15000)}
 let RCK=0;async function recheck(){if(Date.now()-RCK<15000)return;RCK=Date.now();try{const st=await devState();if(!st.ok){OKD=false;startGate()}}catch(e){}}
 async function devLoad(){const box=$("#dvList");box.innerHTML='<div class="meta">불러오는 중...</div>';
