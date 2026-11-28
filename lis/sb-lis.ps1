@@ -278,7 +278,8 @@ $uid = $script:A.uid
 $code = $uid.Substring([Math]::Max(0, $uid.Length - 6)).ToUpper()
 # 이미 이름이 있으면(전에 승인됐거나 🔐에서 원장님이 바꾼 이름) 덮어쓰지 않음
 $curNm = $null; try { $curNm = "$(Fb 'Get' "devices/$uid/name" $null)".Trim() } catch {}
-if ($curNm -and $curNm -ne 'null') { $NAME = $curNm } else { Fb 'Put' "devices/$uid/name" (JsonStr $NAME) | Out-Null }
+if ($NAME.Length -gt 30) { $NAME = $NAME.Substring(0, 30) }   # Firebase 규칙: 기기 이름 30자까지
+if ($curNm -and $curNm -ne 'null') { $NAME = $curNm } else { try { Fb 'Put' "devices/$uid/name" (JsonStr $NAME) | Out-Null } catch { Log "기기 이름 저장 실패: $(ErrTxt $_)" } }
 Fb 'Put' "devices/$uid/t" (NowMs) | Out-Null
 while ($true) {
   $ok = $false

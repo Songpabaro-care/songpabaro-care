@@ -2048,7 +2048,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
  rcpcmd:async()=>{if(!S.adm){toast("관리자 기기에서만 할 수 있어요");return}const c=d.v==="restart"?"restart":"show";
   if(c==="restart"&&!confirm("그 PC의 차트 읽기(LIS)를 다시 시작할까요?"))return;
   try{const r=await fetch(`${base()}/rooms/${encodeURIComponent(S.code)}/rcp/${encodeURIComponent(d.k)}/cmd.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({c,by:qMe(),t:{".sv":"timestamp"}})});if(!r.ok)throw 0;toast(c==="show"?"1분 안에 그 PC 화면에 LIS 기록 창이 떠요":"1분 안에 그 PC의 LIS가 다시 시작돼요")}catch(x){toast("보내지 못했어요. 다시 눌러 주세요")}},
- devren:async()=>{const n=prompt("이 기기의 새 이름 (예: 1진료실 LIS)",d.n||"");if(n===null)return;const v=n.trim().slice(0,40);if(!v){toast("이름을 입력해 주세요");return}
+ devren:async()=>{const n=prompt("이 기기의 새 이름 (30자까지 · 예: 1진료실 LIS)",d.n||"");if(n===null)return;const v=n.trim().slice(0,30);if(!v){toast("이름을 입력해 주세요");return}
   try{const r=await fetch(`${DBH}/devices/${d.u}/name.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(v)});if(!r.ok)throw 0;toast("이름을 바꿨어요")}catch(x){toast("저장하지 못했어요")}devLoad()},
  syncmode:async()=>{if(!S.adm){toast("관리자 기기에서만 바꿀 수 있어요");return}const v=d.v==="lis"?"lis":"both";if(v===syncMode())return;
   if(!confirm(v==="lis"?"인투링크 읽기를 멈추고 차트 읽기(LIS)만 쓸까요?\n접수실 확장은 다음 차례(3분 안)부터 인투링크를 읽지 않아요.":"인투링크 읽기를 다시 켤까요?\n접수실 크롬 확장이 켜져 있어야 실제로 읽어요."))return;
