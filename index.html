@@ -1337,6 +1337,23 @@ async function xsOpen(){if(XS.w)return;if(!window.documentPictureInPicture){toas
 setInterval(()=>{if(XS.w)xsRender()},20000);
 setTimeout(()=>{if(qls("xstrip")!=="1"||!window.documentPictureInPicture)return;const re=ev=>{if(XS.w||qls("xstrip")!=="1"){document.removeEventListener("pointerdown",re,true);return}if(!OKD)return;document.removeEventListener("pointerdown",re,true);xsOpen()};document.addEventListener("pointerdown",re,true);
  let tn=0;const hint=()=>{if(XS.w||qls("xstrip")!=="1")return;if(OKD){toast("📌 화면을 한 번 클릭하면 영상 알림 띠가 다시 BLADE 위에 떠요");return}if(++tn<20)setTimeout(hint,1500)};setTimeout(hint,1500)},0);
+/* ---- 🧹 외래 자동 정리: 차트 읽기(LIS)·인투링크로 자동 등록된 외래 카드 중 기록·오더·문진이 하나도 없고
+   등록 후 4시간이 지났거나 어제 이전에 등록된 것 → 접수 취소·지난 접수로 보고 정리 (⚙ 최근 지운 항목에서 되돌리기 가능) ---- */
+const ocHas=c=>{const n=v=>Array.isArray(v)?v.length:v&&typeof v==="object"?Object.keys(v).length:0;return !!(n(c.logs)||c.dx||c.memo||c.mjNo||n(c.tasks)||n(c.alerts)||c.anes||n(c.anesthesia))};
+const ocTs=c=>{const m=String(c.id||"").match(/^p-care-(\d{12,})/);return m?+m[1]:0};
+const ocDay=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
+function ocStale(c){if(!c||!(c.auto==="intovet"||c.auto==="intolink"))return false;if((c.category||"외래")!=="외래")return false;
+ const ts=ocTs(c),t0=new Date();t0.setHours(0,0,0,0);const old=(c.adm&&c.adm<ocDay())||(ts&&(ts<t0.getTime()||Date.now()-ts>4*3600000));if(!old||ocHas(c))return false;
+ const dr=S.drafts&&S.drafts[c.id];if(dr&&((dr.items&&dr.items.length)||(dr.memo&&String(dr.memo).trim())||(dr.f&&Object.values(dr.f).some(v=>v!==""&&v!=null))))return false;
+ const ch=String(c.chartNo||"").replace(/\D/g,"");if(Object.values(Q.ords).some(o=>o&&(o.pid===c.id||(ch&&String(o.chart||"").replace(/\D/g,"")===ch))))return false;return true}
+async function ocLock(){const u=`${base()}/rooms/${encodeURIComponent(S.code)}/config/clean.json`;
+ try{const r=await fetch(u,{headers:{"X-Firebase-ETag":"true"},cache:"no-store"});if(!r.ok)return false;const et=r.headers.get("ETag"),tx=await r.text();let v=null;try{v=tx?JSON.parse(tx):null}catch(x){}if(v&&v.t&&Date.now()-v.t<9*60000&&v.u!==AU.uid)return false;
+  const h={"Content-Type":"application/json"};if(et)h["if-match"]=et;const w=await fetch(u,{method:"PUT",headers:h,body:JSON.stringify({t:Date.now(),u:AU.uid,by:qMe()})});return w.ok}catch(e){return false}}
+async function ocRun(){if(!OKD||!S.p||!Array.isArray(S.p.care)||!Q.init.ord)return;const L=getL("care").filter(ocStale).slice(0,30);if(!L.length)return;if(!await ocLock())return;
+ const ids=new Set(L.map(c=>c.id));S.p.care=getL("care").filter(p=>!ids.has(p.id));L.forEach(c=>{if(S.drafts)delete S.drafts[c.id]});render();save("care");
+ for(const c of L){try{await trashPut("patient",`${c.name||"#"+(c.chartNo||"")} (외래 자동 정리)`,{room:"care",p:c})}catch(e){}}
+ toast(`🧹 기록 없는 외래 카드 ${L.length}개 정리 (접수 취소·지난 접수) · ⚙ → 최근 지운 항목에서 되돌릴 수 있어요`)}
+setTimeout(()=>{ocRun();setInterval(ocRun,10*60000)},90000);
 S.ordF="all";
 function ordView(){const f=S.ordF,dp=f==="all"?null:f,cnt=d=>qMine(d).length;
  return `<div class="card" style="display:grid;gap:10px"><div class="row" style="align-items:center;gap:6px;flex-wrap:wrap">${[["all","전체",cnt(null)],["lab","검사실",cnt("lab")],["img","영상",cnt("img")]].map(([k,t,n])=>`<button type="button" class="chip ${f===k?"sel":""}" data-act="ordf" data-k="${k}">${t} ${n}</button>`).join("")}<span style="flex:1"></span><button class="btn" style="background:#4655c9" data-act="qord">＋ 검사 오더</button></div>
