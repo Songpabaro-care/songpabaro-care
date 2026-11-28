@@ -3,7 +3,7 @@ title SongpaBaro chart reader (LIS) setup
 echo.
 echo  SongpaBaro - IntoVet chart reader (LIS) setup
 echo  Downloading the latest version...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop';[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12;$t=Join-Path $env:TEMP 'sb-lis-setup';if(Test-Path $t){Remove-Item $t -Recurse -Force};New-Item -ItemType Directory -Path $t | Out-Null;$u='https://songpabaro-care.github.io/songpabaro-care/lis/songpabaro-lis.zip?v='+[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();Invoke-WebRequest -UseBasicParsing -Uri $u -OutFile (Join-Path $t 'lis.zip');Expand-Archive -Path (Join-Path $t 'lis.zip') -DestinationPath $t -Force"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop';[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12;$t=Join-Path $env:TEMP 'sb-lis-setup\songpabaro-lis';if(Test-Path $t){Remove-Item $t -Recurse -Force};New-Item -ItemType Directory -Path $t -Force | Out-Null;$v=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();foreach($f in 'sb-lis.ps1','jinstall.bat','jrun.bat','jcheck.bat','jdiag.bat'){Invoke-WebRequest -UseBasicParsing -Uri ('https://songpabaro-care.github.io/songpabaro-care/lis/'+$f+'?v='+$v) -OutFile (Join-Path $t $f)};if((Get-Item (Join-Path $t 'sb-lis.ps1')).Length -lt 3000){throw 'bad download'}"
 if errorlevel 1 goto fail
 if not exist "%TEMP%\sb-lis-setup\songpabaro-lis\jinstall.bat" goto fail
 call "%TEMP%\sb-lis-setup\songpabaro-lis\jinstall.bat"
