@@ -977,8 +977,8 @@ function fxHtml(p){const x=fxCalc(p),f=S.fx,cf=x.cf;if(!S.fxOpen)return `<button
  <div class="rs">→ ${x.mlh||"?"} mL/h · 하루 ${x.day||"?"} mL · 이 백 약 ${x.hours||"?"}시간</div>
  <div class="ln"><i>백에 섞기</i><div class="sg">${x.add.map(a=>`<button type="button" class="ad${a.on?" on":""}" data-act="fxadd" data-k="${a.k}">${esc(a.n)}</button>`).join("")}</div></div>
  ${x.add.filter(a=>a.on).map(a=>`<div class="ln"><b style="min-width:62px">${esc(a.n)}</b><input class="nm fxa" data-k="${a.k}" inputmode="decimal" value="${a.per}"><i>${esc(a.u)}</i><span class="rs" style="font-size:12.5px">= ${a.amt}${a.u.split("/")[0]}${a.ml!=null&&a.u!=="mL/L"?` · ${a.ml} mL`:""}${a.ml==null?' <span class="wn">원액 농도 설정 필요</span>':""}</span></div>`).join("")}
- ${x.kr?`<div class="${x.kr>.5?"wn":"rs"}" style="font-size:12px">K 주입 속도 ${x.kr} mEq/kg/h${x.kr>.5?" ⚠ 0.5 초과 · 속도나 KCl을 줄이세요":" (0.5 이하)"}</div>`:""}
- <details${Object.values(f.cri).some(Boolean)||f.mix?" open":""}><summary>🧪 시린지 CRI (따로 연결)</summary><div style="display:grid;gap:5px;margin-top:6px">
+ ${x.kr?`<div class="${x.kr>.5?"wn":"rs"}" style="font-size:12px">K 주입 속도 ${x.kr} mEq/kg/h${x.kr>.5?" ⚠ 0.5 초과 · 속도나 KCl을 줄이세요":" (0.5 이하)"}</div>`:"<div hidden></div>"}
+ <details${Object.values(f.cri).some(Boolean)||f.mix||S.fxCrOpen?" open":""} ontoggle="S.fxCrOpen=this.open"><summary>🧪 시린지 CRI (따로 연결)</summary><div style="display:grid;gap:5px;margin-top:6px">
  ${x.cri.map(c=>`<div class="cr${c.on?" on":""}"><div class="ln"><button type="button" class="btn-xs" data-act="fxcri" data-k="${c.k}">${c.on?"✓ ":""}${esc(c.n)}</button><input class="nm fxc" data-k="${c.k}" data-f="r" inputmode="decimal" value="${c.r}"><i>${esc(c.u)}</i><i>희석</i><input class="nm fxc" data-k="${c.k}" data-f="dil" inputmode="decimal" value="${c.dil}"><i>mg/mL</i></div>
   <div class="rs" style="font-size:12.5px">→ ${c.mlh!=null?c.mlh+" mL/h":"?"}${c.stock!=null?` <span style="font-weight:600;color:var(--ink)">· 50mL 만들기: 원액 ${c.stock}mL + 희석액 ${c.dl}mL</span>`:""}${c.note?` · ${esc(c.note)}`:""}</div></div>`).join("")}
  ${x.mix?`<div class="cr${f.mix?" on":""}"><div class="ln"><button type="button" class="btn-xs" data-act="fxmix">${f.mix?"✓ ":""}도부+니트로 합제</button><i>도부</i><input class="nm fxm" data-f="ra" inputmode="decimal" value="${x.mix.ra}"><i>mcg/kg/min</i><i>니트로</i><input class="nm fxm" data-f="rb" inputmode="decimal" value="${x.mix.rb}"><i>mcg/kg/min</i></div>
@@ -988,7 +988,7 @@ function fxHtml(p){const x=fxCalc(p),f=S.fx,cf=x.cf;if(!S.fxOpen)return `<button
  <button type="button" class="go" data-act="fxgo">＋ 이대로 처치 계획에 걸기</button></div>`}
 function morph(a,b){if(a.nodeType!==b.nodeType||a.nodeName!==b.nodeName){a.replaceWith(b);return}
  if(a.nodeType===3){if(a.nodeValue!==b.nodeValue)a.nodeValue=b.nodeValue;return}if(a.nodeType!==1)return;
- [...a.attributes].forEach(x=>{if(!b.hasAttribute(x.name))a.removeAttribute(x.name)});[...b.attributes].forEach(x=>{if(a.getAttribute(x.name)!==x.value)a.setAttribute(x.name,x.value)});
+ [...a.attributes].forEach(x=>{if(!b.hasAttribute(x.name)&&!(a.tagName==="DETAILS"&&x.name==="open"))a.removeAttribute(x.name)});[...b.attributes].forEach(x=>{if(a.getAttribute(x.name)!==x.value)a.setAttribute(x.name,x.value)});
  if(a.tagName==="INPUT"||a.tagName==="TEXTAREA"){if(a!==document.activeElement&&a.value!==b.value)a.value=b.value;return}
  if(a.tagName==="SELECT"){if(a.innerHTML!==b.innerHTML)a.innerHTML=b.innerHTML;a.value=b.value;return}
  const ac=[...a.childNodes],bc=[...b.childNodes];bc.forEach((n,i)=>{if(ac[i])morph(ac[i],n);else a.appendChild(n)});for(let i=bc.length;i<ac.length;i++)ac[i].remove()}
@@ -1111,6 +1111,9 @@ function tkPlanHtml(p){const ts=tasksOf(p);
  ${ts.length?ts.map(t=>`<div class="card" style="padding:8px 10px;display:grid;gap:6px" data-tke="${t.id}"><input class="in" data-k="n" style="height:34px;font-size:13px" value="${esc(t.name)}">
   <div class="row" style="gap:6px;align-items:center;flex-wrap:wrap"><select class="in" data-k="e" style="width:110px;height:34px;font-size:13px">${[["0","1회만"],["1","1시간마다"],["2","2시간마다"],["4","4시간마다"],["6","6시간마다"],["8","8시간마다 (TID)"],["12","12시간마다 (BID)"],["24","하루 1번"]].map(([v,l])=>`<option value="${v}" ${String(t.every||0)===v?"selected":""}>${l}</option>`).join("")}</select><span class="meta">다음</span><input class="in" data-k="d" type="time" style="width:110px;height:34px;font-size:13px" value="${hhmm(t.due)}"><span style="flex:1"></span><button class="btn-xs" data-act="tksave" data-id="${p.id}" data-t="${t.id}">저장</button><button class="btn-xs" data-act="tdel" data-id="${p.id}" data-t="${t.id}">✕</button></div></div>`).join(""):`<div class="meta">아직 없어요. 위에서 주사·수액을 고르거나 아래에서 직접 추가하세요.</div>`}
  ${taskBox(p).replace(/^[\s\S]*?(<div class="tadd">[\s\S]*)<\/div>$/,"$1")}`}
+/* 처치 창에서 숫자 입력 중이면 다른 기기 변경으로 화면을 다시 그리지 않음 (키보드 튕김 방지) → 입력칸을 벗어나면 그때 반영 */
+function tkTyping(){const a=document.activeElement;return !!(a&&a.closest&&a.closest("#tk")&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))}
+document.addEventListener("focusout",e=>{if(!S.tkDirty||!e.target.closest||!e.target.closest("#tk"))return;setTimeout(()=>{if(!tkTyping()&&S.tkDirty){S.tkDirty=false;tkRender()}},250)});
 function tkRender(){const p=find("care",S.tkId);if(!p){$("#tk").classList.remove("open");return}$("#tkTitle").textContent=`⏰ ${p.name} 처치`;
  if(!S.tkTab)S.tkTab=tasksOf(p).length?"do":"plan";const tab=S.tkTab;const ow=$("#tkBody .gwrap"),okey=S.gKey,osc=ow?[ow.scrollTop,ow.scrollLeft]:null;
  $("#tkBody").innerHTML=`<div class="row" style="gap:6px;position:sticky;top:0;z-index:5;background:var(--card);padding:2px 0 6px"><button class="qtg${tab==="do"?" on":""}" style="flex:1;height:38px;font-size:13.5px" data-act="tktab" data-v="do">✅ 처치하기 ${tasksOf(p).length?`(${tasksOf(p).length})`:""}</button><button class="qtg${tab==="plan"?" on":""}" style="flex:1;height:38px;font-size:13.5px" data-act="tktab" data-v="plan">📋 처치표 만들기·고치기</button></div>
@@ -1714,7 +1717,7 @@ function ordView(){const f=S.ordF,dp=f==="all"?null:f,cnt=d=>qMine(d).length;
 function qScreenApply(){const sc=qScreen();document.body.classList.toggle("scrpin",["chat","lab","xray","mj","tx"].includes(sc));
  if(["chat","lab","xray","mj","tx"].includes(sc)){if(S.pc){S.pcAuto=true;pcClose()}scrOpen(sc,false)}
  else{if(Q.view&&!Q.temp)scrClose();if(sc==="clinic"&&innerWidth>=1000){if(!S.pc&&(qls("screen")==="clinic"||pcPref()!=="0"))pcOpen()}else if(sc==="basic"&&S.pc){S.pcAuto=true;pcClose()}}}
-function render(){if(Q.view==="tx")setTimeout(qRender,0);setTimeout(fxWarnTick,0);{const tk=$("#tk");if(tk&&tk.classList.contains("open"))setTimeout(tkRender,0)}{const an=$("#an");if(an&&an.classList.contains("open")&&!anTyping())setTimeout(anRender,0)}if(S.pendSel&&S.pendSel.r===S.room&&rowsOf(S.room).some(p=>p.id===S.pendSel.id)){S.sel[S.room]=S.pendSel.id;S.pendSel=null}
+function render(){if(Q.view==="tx")setTimeout(qRender,0);setTimeout(fxWarnTick,0);{const tk=$("#tk");if(tk&&tk.classList.contains("open")){if(tkTyping())S.tkDirty=true;else setTimeout(tkRender,0)}}{const an=$("#an");if(an&&an.classList.contains("open")&&!anTyping())setTimeout(anRender,0)}if(S.pendSel&&S.pendSel.r===S.room&&rowsOf(S.room).some(p=>p.id===S.pendSel.id)){S.sel[S.room]=S.pendSel.id;S.pendSel=null}
  if(S.pc){const cs=S.sel[S.room];if(cs&&(S.room==="care"||S.room==="checkup"))S.pcSel=cs;setTimeout(pcRender,0)}
  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.r===S.room));
  const all=rowsOf(S.room),id=S.sel[S.room],cur=id&&all.find(p=>p.id===id);if(id&&!cur)S.sel[S.room]=null;
