@@ -1251,6 +1251,20 @@ function tkPlanHtml(p){const ts=tasksOf(p),E=S.tkEd;
  ${ts.length?ts.map(row).join(""):`<div class="meta">아직 없어요. 위에서 고르고 담은 뒤 확정하세요.</div>`}
  ${cartHtml(p)}`}
 /* 처치 창에서 숫자 입력 중이면 다른 기기 변경으로 화면을 다시 그리지 않음 (키보드 튕김 방지) → 입력칸을 벗어나면 그때 반영 */
+/* ---- 차트 복사: 같은 시각 줄끼리 묶어서 보기 좋게 ---- */
+function tkChartTxt(p,L){const H={};(p.tasks||[]).forEach(t=>(t.h||[]).forEach(h=>{if(h.lid)H[h.lid]={t,h}}));
+ const slots=[...new Set(L.map(l=>l.time))].sort();const skips=(p.logs||[]).filter(l=>l&&l.d===todayStr()&&/^✕ /.test(l.text||"")&&slots.includes(l.time));
+ const out=[`[처치] ${todayStr()} ${p.name}${p.bw?` (${p.bw}kg)`:""}`];
+ slots.forEach(tm=>{const ls=L.filter(l=>l.time===tm),items=ls.map(l=>({l,...(H[l.id]||{})})),bys=[...new Set(items.map(x=>x.h?x.h.by:(String(x.l.text).match(/처치:\s*(.+)$/)||[])[1]).filter(Boolean))],one=bys.length<=1;
+  const who=x=>one?"":` (${x.h?x.h.by:""})`;const vit={},lines=[],ord=x=>!x.t?9:isDrug(x.t)?0:x.h&&x.h.v?1:x.h&&x.h.c?2:3,ti=x=>x.t?(p.tasks||[]).indexOf(x.t):999;items.sort((a,b)=>ord(a)-ord(b)||ti(a)-ti(b));
+  items.forEach(x=>{if(x.h&&x.h.v){Object.assign(vit,x.h.v);return}
+   if(x.h&&x.h.c){lines.push(`- ${txShort(x.t.name)}: ${chTxt(x.h.c)}${who(x)}`);return}
+   if(x.t){lines.push(`- ${x.t.name}${who(x)}`);return}
+   lines.push(`- ${String(x.l.text).replace(/^✓\s*/,"").replace(/\s*·\s*처치:.*$/,"")}`)});
+  if(Object.keys(vit).length)lines.splice(items.filter(x=>x.t&&isDrug(x.t)).length,0,`- 바이탈: ${["hr","rr","t"].filter(k=>vit[k]!=null).map(k=>`${VK[k].s} ${k==="t"?(+vit[k]).toFixed(1):vit[k]}`).join(" · ")}${one?"":` (${[...new Set(items.filter(x=>x.h&&x.h.v).map(x=>x.h.by))].join(", ")})`}`);
+  const sk=skips.filter(l=>l.time===tm).map(l=>String(l.text).replace(/^✕\s*/,"").replace(/\s*생략.*$/,"")).map(n=>txShort(n));if(sk.length)lines.push(`- 안 함: ${sk.join(", ")}`);
+  out.push("",`${tm}${one&&bys[0]?` · ${bys[0]}`:""}`,...lines)});
+ return out.join("\n")}
 function tkTyping(){const a=document.activeElement;return !!(a&&a.closest&&a.closest("#tk")&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))}
 document.addEventListener("focusout",e=>{if(!S.tkDirty||!e.target.closest||!e.target.closest("#tk"))return;setTimeout(()=>{if(!tkTyping()&&S.tkDirty){S.tkDirty=false;tkRender()}},250)});
 /* 팝업(시트)이 열려 있으면 뒤 화면이 같이 스크롤되지 않게 몸통 고정 (아이폰 포함) */
@@ -2598,7 +2612,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
   const n=(r.querySelector("[data-k=n]").value||"").trim(),ev=+r.querySelector("[data-k=e]").value,tm=r.querySelector("[data-k=d]").value;if(!n){toast("처치 이름을 넣어 주세요");return}
   delete S.tkEd[t.id];t.name=n.slice(0,120);t.every=ev;if(tm){const [h,m]=tm.split(":").map(Number),dd=new Date();dd.setHours(h,m,0,0);if(dd.getTime()<Date.now()-12*3600000)dd.setDate(dd.getDate()+1);t.due=dd.getTime()}if(ev===12)t.due=bidSnap(t.due);t.off=false;save("care");render();tkRender();toast(`${n} 고쳤어요 · 다음 ${hhmm(t.due)}`)},
  tkcopy:()=>{const p=find("care",id);if(!p)return;const dn=tkToday(p),cp=p.tkCopied===todayStr()?p.tkCopiedN||0:0,L=d.v==="all"?dn:dn.slice(cp);if(!L.length){toast("새로 한 처치가 없어요");return}
-  copy(`[처치] ${todayStr()} ${p.name}\n`+L.map(l=>`${l.time} ${l.text.replace(/^✓ /,"")}`).join("\n"),`오늘 처치 ${L.length}건을 복사했어요 · 인투벳에 붙여 넣으세요`);p.tkCopied=todayStr();p.tkCopiedN=dn.length;save("care");tkRender()},
+  copy(tkChartTxt(p,L),`오늘 처치 ${L.length}건을 복사했어요 · 인투벳에 붙여 넣으세요`);p.tkCopied=todayStr();p.tkCopiedN=dn.length;save("care");tkRender()},
  fxopen:()=>{S.fxOpen=true;if(!S.fx.tSet){const T=fxCfg().types,i=T.findIndex(x=>/생리식염수/.test(x));S.fx.t=i<0?0:i}fxRefresh()},fxclose:()=>{S.fxOpen=false;fxRefresh()},fxt:()=>{S.fx.t=+d.v;S.fx.tSet=true;fxRefresh()},fxb:()=>{S.fx.b=+d.v;fxRefresh()},fxr:()=>{S.fx.rate=d.v;S.fx.mlh="";fxRefresh()},
  fxadd:()=>{S.fx.add[d.k]=!S.fx.add[d.k];fxRefresh()},fxcri:()=>{S.fx.cri[d.k]=!S.fx.cri[d.k];fxRefresh()},fxmix:()=>{S.fx.mix=!S.fx.mix;fxRefresh()},
  fxgo:()=>{const p=find("care",S.tkId);if(p)fxGo(p)},fxcfg:fxCfgOpen,fxcfgclose:()=>{const m=$("#fxM");if(m)m.classList.remove("open")},
