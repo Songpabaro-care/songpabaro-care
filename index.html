@@ -240,6 +240,26 @@ button.gc{cursor:pointer}.gc small{font-size:9.5px;font-weight:700;margin-top:1p
 .gc.ok{background:#e6f6f3;color:#0f766e}.gc.late{background:#f04438;color:#fff;animation:gpulse 1.4s infinite}.gc.soon{background:#fff1dc;color:#b54708;box-shadow:inset 0 0 0 1.5px #e8a33d}
 .gc.vit{width:auto;min-width:44px;height:auto;padding:3px 4px;gap:0}.gc.vit small{font-size:10px;margin:0;white-space:nowrap}.gc.vit i{font-style:normal;color:#98a2b3;margin-right:2px}
 .tinf{display:block;font-style:normal;font-size:11.5px;font-weight:900;color:#b54708;text-align:right;white-space:nowrap}th.gh .tinf{text-align:center;font-size:10.5px}
+.qcall{display:flex;gap:6px;padding:6px 6px 4px}.qcb{flex:1;height:42px;border-radius:10px;border:0;font:inherit;font-weight:900;font-size:14px;cursor:pointer;color:#fff}.qcb.cl{background:#1f6fb2}.qcb.wt{background:#b54708}
+#callS{position:fixed;left:8px;right:8px;top:calc(8px + env(safe-area-inset-top,0px));z-index:9400;max-width:620px;margin:0 auto;background:#1f6fb2;color:#fff;border-radius:12px;padding:8px 10px 8px 14px;font-size:15px;display:flex;gap:6px;align-items:center;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.callm{position:fixed;inset:0;z-index:9500;display:flex;align-items:center;justify-content:center;padding:20px;animation:callIn .2s}.callm.cl{background:rgba(31,111,178,.94)}.callm.wt{background:rgba(181,71,8,.94)}
+.callb{display:grid;gap:12px;text-align:center;color:#fff;max-width:420px;width:100%}.callt{font-size:40px;font-weight:900;line-height:1.15}.callf{font-size:17px;opacity:.9}
+.callm .btn{background:#fff;color:#111}.callm .btn.gh{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.7)}
+@keyframes callIn{from{opacity:0;transform:scale(1.03)}}
+.stim{display:grid;gap:4px;margin:6px 0;padding:7px 9px;border-radius:9px;background:#fff4ed;border:1.5px solid #f79009;font-size:13px}.stim.wait{background:#fffaf2;border-style:dashed;color:#8a5200}
+.stim .soon{color:#b42318;font-weight:800}.stim .late{color:#b42318;font-weight:900}.stim .ok{color:#0f766e;opacity:.8}
+.stimbig{font-size:18px;padding:10px 12px;border-radius:10px;background:#fff4ed;border:1.5px solid #f79009}.stimbig b{font-size:24px;color:#b42318}
+.tpk{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.tpk .sg{display:flex;gap:4px;flex:1 1 220px}.tpk .sg button{flex:1;white-space:nowrap;min-width:52px;height:34px;padding:0 8px;border-radius:9px;border:1px solid #d0d5dd;background:#fff;font:inherit;font-weight:700;font-size:13px;cursor:pointer}.tpk .sg button.on{background:#0f8a7e;color:#fff;border-color:#0f8a7e}
+.lnk{border:0;background:none;color:#1f6fb2;font:inherit;font-size:12.5px;text-decoration:underline;cursor:pointer;padding:0}
+.tkbs{display:flex;gap:5px;flex-wrap:wrap}
+.tkb{height:32px;padding:0 9px;max-width:100%;overflow:hidden;text-overflow:ellipsis;border-radius:9px;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;white-space:nowrap}
+.tkb.has{background:#0f8a7e;color:#fff;border:0}.tkb.has b{font-weight:700;opacity:.9;margin-left:2px}.tkb.has.late{background:#f04438}
+.tkb.none{background:transparent;color:#667085;border:1.5px dashed #c0c6cf;font-weight:700}
+.backfab{position:fixed;left:12px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:40;height:44px;padding:0 16px;border-radius:99px;border:0;background:#1d2939;color:#fff;font:inherit;font-weight:800;font-size:14px;box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer}
+.cart{position:sticky;bottom:0;z-index:6;display:grid;gap:8px;padding:10px 12px;border-radius:14px 14px 0 0;background:#fff;border:2px solid #0f8a7e;box-shadow:0 -6px 20px rgba(0,0,0,.12);margin:4px -4px 0}
+.cartl{display:grid;gap:4px;max-height:34vh;overflow:auto}.cartr{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:8px;background:#f3fbf9}
+.cartr b{font-size:13.5px}.cartr small{display:block;font-size:11.5px;color:#475467;font-weight:700}
+.rxc.inc{border-color:#e8a33d;background:#fffaf2}.chip.on{background:#0f8a7e;color:#fff;border-color:#0f8a7e}
 .rxh{font-size:12px;font-weight:800;color:#475467;margin:2px 0 -2px}
 .rxg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .rxc{display:grid;grid-template-columns:1fr auto;gap:1px 6px;align-items:baseline;text-align:left;padding:8px 10px;border-radius:10px;border:1px solid #d6e9e4;background:#fff;cursor:pointer;font:inherit;color:inherit;min-height:56px}
@@ -776,7 +796,7 @@ let EGEN=0,RSG=0,RS=null,RSgot=false;const SUB={},RSW=[];
 /* 방 전체를 실시간 연결 1개로 받고, 하위 경로별로 나눠 전달 */
 function rsRoute(seg,path,data,patch){
  if(seg==="chat"||seg==="orders"){qOn(seg==="orders"?"ord":"chat",path,data,patch);return}
- const st=ST[seg]||(ST[seg]={v:null});applyEv(st,{path,data},patch);st.got=true;if(SUB[seg])flush(seg,SUB[seg]);if(seg==="lis")lisOn();if(seg==="rcp"||seg==="config")rcpUpd();if(seg==="ilres")ilOn()}
+ const st=ST[seg]||(ST[seg]={v:null});applyEv(st,{path,data},patch);st.got=true;if(SUB[seg])flush(seg,SUB[seg]);if(seg==="lis")lisOn();if(seg==="rcp"||seg==="config")rcpUpd();if(seg==="ilres")ilOn();if(seg==="calls")setTimeout(callsOn,0)}
 function rsEv(d,patch){Q.lastEv=Date.now();Q.down=0;const ps=String(d.path||"/").split("/").filter(Boolean),data=d.data;
  if(!ps.length){
   if(patch)Object.entries(data||{}).forEach(([k,v])=>{const ks=k.split("/").filter(Boolean),seg=ks.shift();if(!seg)return;if(!ks.length)rsRoute(seg,"/",v,false);else rsRoute(seg,"/",{[ks.join("/")]:v},true)});
@@ -1051,28 +1071,81 @@ function rxChip(x,k,bw){const r=rxCalc(x,bw);return `<button type="button" class
 const RX_GRP=[["항생제",/세파졸린|아목시|세포탁심|메트로니다|암피|엔로|세프트|마르보|클린다|독시|겐타/],["진통·소염",/트라마돌|멜록시|부토르|부프레|로베나|카프로|펜타닐|케토프/],["위장·구토",/파모티|메토클로|세레니아|마로피|온단|판토|오메프|에소메|수크랄/],["스테로이드",/덱사|PDS|프레드|메틸프레드/]];
 const rxGrp=x=>x.g||(RX_GRP.find(([g,re])=>re.test(x.n))||["기타"])[0];
 function rxFreq(){const C={};const L=rxCfg().list;(S.p.care||[]).forEach(p=>(p.tasks||[]).forEach(t=>{const x=L.find(x=>String(t.name||"").startsWith(x.n+" "));if(x)C[x.n]=(C[x.n]||0)+1+(t.n||0)}));return C}
-function rxCard(x,k,bw,g,p){const r=rxCalc(x,bw),on=S.rx.k===k&&S.rx.g===g,got=p&&tasksOf(p).some(t=>String(t.name||"").startsWith(x.n+" "));
- return `<button type="button" class="rxc${on?" on":""}${got?" got":""}${r?"":" na"}" data-act="rxsel" data-k="${k}" data-g="${esc(g)}"><span class="rxn">${esc(x.n)}${x.r==="SC"||x.r==="IM"||x.r==="PO"?" "+rtBadge(" "+x.r+" "):""}</span><span class="rxm">${r?(x.f==="CRI"?`${r.mlh}<small>mL/h</small>`:`${r.ml}<small>mL</small>`):num(x.c)?"<small>체중 필요</small>":"<small>농도 넣기</small>"}</span><span class="rxd">${x.d}mg/kg${x.f==="CRI"?"/일":""} · ${x.f}${num(x.i)?` · ${x.i}분`:""}${got?` · <b>✓ 걸림</b>`:""}</span></button>`}
-function rxPanel(p,bw){const L=rxCfg().list,s=S.rx,cur={...L[s.k],d:s.d,c:s.c,f:s.f,i:s.i},cr=rxCalc(cur,bw),rate=cr&&num(s.i)&&s.f!=="CRI"?Math.round(cr.ml/(num(s.i)/60)*10)/10:null;
+function rxCard(x,k,bw,g,p){const r=rxCalc(x,bw),on=S.rx.k===k&&S.rx.g===g,got=p&&tasksOf(p).some(t=>String(t.name||"").startsWith(x.n+" ")),inc=p&&cartOf(p).some(c=>c.key==="rx:"+x.n);
+ return `<button type="button" class="rxc${on?" on":""}${inc?" inc":""}${got?" got":""}${r?"":" na"}" data-act="rxsel" data-k="${k}" data-g="${esc(g)}"><span class="rxn">${esc(x.n)}${x.r==="SC"||x.r==="IM"||x.r==="PO"?" "+rtBadge(" "+x.r+" "):""}</span><span class="rxm">${r?(x.f==="CRI"?`${r.mlh}<small>mL/h</small>`:`${r.ml}<small>mL</small>`):num(x.c)?"<small>체중 필요</small>":"<small>농도 넣기</small>"}</span><span class="rxd">${x.d}mg/kg${x.f==="CRI"?"/일":""} · ${x.f}${num(x.i)?` · ${x.i}분`:""}${inc?` · <b style="color:#b54708">🧺 담음</b>`:got?` · <b>✓ 걸림</b>`:""}</span></button>`}
+function rxPanel(p,bw){const L=rxCfg().list,s=S.rx,cur={...(s.k!=null?L[s.k]:s.ex),d:s.d,c:s.c,f:s.f,i:s.i},cr=rxCalc(cur,bw),rate=cr&&num(s.i)&&s.f!=="CRI"?Math.round(cr.ml/(num(s.i)/60)*10)/10:null;
  return `<div class="rxp"><div class="row" style="align-items:center;gap:6px"><b style="flex:1;font-size:15px">${esc(cur.n)} ${cur.r==="SC"||cur.r==="IM"||cur.r==="PO"?rtBadge(" "+cur.r+" "):`<span class="meta">${esc(cur.r||"IV")}</span>`}</b><button type="button" class="btn-xs" data-act="rxcancel">닫기</button></div>
   <div class="rxbig" id="rxRes">${cr?(s.f==="CRI"?`${cr.mlh} <small>mL/h · 하루 ${cr.ml}mL</small>`:`${cr.ml} <small>mL</small>${rate?`<i class="tinf" style="text-align:left">⏱ ${rate}mL/h로 ${s.i}분</i>`:""}`):`<small>${bw?"농도를 넣어 주세요":"체중을 넣어 주세요"}</small>`}</div>
   <div class="row" style="gap:6px;flex-wrap:wrap;align-items:center"><span class="meta">용량</span><input class="in rxi" id="rxD" inputmode="decimal" style="width:64px;height:34px" value="${esc(s.d)}"><span class="meta">mg/kg${s.f==="CRI"?"/일":""}</span><span class="meta" style="margin-left:6px">농도</span><input class="in rxi" id="rxC" inputmode="decimal" style="width:64px;height:34px" value="${esc(s.c)}"><span class="meta">mg/mL</span></div>
   <div class="sg">${Object.keys(RX_FQ).map(f=>`<button type="button" class="${s.f===f?"on":""}" data-act="rxfq" data-v="${f}">${f}</button>`).join("")}</div>
   ${s.f==="CRI"?"":`<div class="sg">${[0,30,60].map(m=>`<button type="button" class="${num(s.i)===m?"on":""}" data-act="rxinf" data-v="${m}">${m?m+"분 주입":"바로 주사"}</button>`).join("")}</div>`}
-  <div class="row" style="gap:6px;align-items:center"><span class="meta">첫 시각</span><input class="in" id="rxAt" type="time" style="width:110px;height:34px" value="${esc(s.at||hhmm(Date.now()))}"><span class="meta">${s.f==="BID"?"BID는 09:30·20:30에 맞춰요":""}</span></div>
-  <button type="button" class="btn" style="height:46px" data-act="rxaddc">＋ 처치표에 걸기</button></div>`}
+  ${s.g==="edit"?"":`${tPick("rx",s.atMs)}${s.f==="BID"?`<div class="meta">BID는 09:30·20:30 칸에 맞춰져요</div>`:""}`}
+  ${s.g==="edit"?`<div class="row" style="gap:6px"><button type="button" class="btn gh" style="flex:1" data-act="rxcancel">취소</button><button type="button" class="btn" style="flex:2;height:46px" data-act="rxeditsave">✓ 이 처치 수정 저장</button></div>`:`<button type="button" class="btn" style="height:46px" data-act="rxaddc">${cartOf(p).some(x=>x.key==="rx:"+cur.n)?"✓ 담은 내용 바꾸기":"＋ 담기"}</button>`}</div>`}
 function rxHtml(p){const cf=rxCfg(),L=cf.list,bw=rxBwOf(p),s=S.rx,F=rxFreq();
  const fav=L.map((x,k)=>({x,k})).filter(o=>F[o.x.n]).sort((a,b)=>F[b.x.n]-F[a.x.n]).slice(0,6);
  const groups=[...(fav.length?[["자주 쓴 약",fav]]:[]),...[...RX_GRP.map(g=>g[0]),"기타"].map(g=>[g,L.map((x,k)=>({x,k})).filter(o=>rxGrp(o.x)===g)]).filter(g=>g[1].length)];
  const grid=(g,items)=>{let h="";items.forEach(o=>{h+=rxCard(o.x,o.k,bw,g,p);if(s.k===o.k&&s.g===g)h+=rxPanel(p,bw)});return h};
- return `<div class="tadd" style="border-color:#c7e5df;background:#f3fbf9;gap:8px"><div class="row" style="align-items:center;gap:6px"><div class="otitle" style="margin:0;flex:1">💉 주사 처방</div><span class="meta">체중</span><input class="in" id="rxBw" inputmode="decimal" style="width:64px;height:34px" value="${bw||""}" placeholder="kg"><span class="meta">kg</span><button type="button" class="btn-xs" data-act="rxcfg">⚙</button></div>
+ return `<div class="tadd" style="border-color:#c7e5df;background:#f3fbf9;gap:8px"><div class="row" style="align-items:center;gap:6px"><div class="otitle" style="margin:0;flex:1">💉 주사 처방 <span class="meta" style="font-weight:500">· 약 누르고 담기</span></div><span class="meta">체중</span><input class="in" id="rxBw" inputmode="decimal" style="width:64px;height:34px" value="${bw||""}" placeholder="kg"><span class="meta">kg</span><button type="button" class="btn-xs" data-act="rxcfg">⚙</button></div>
  ${cf.ok?"":`<div class="meta" style="color:#8a5200">⚠ 기본 용량·농도 확인 전이에요 (⚙에서 확인)</div>`}
+ ${s.g==="edit"&&s.edit?`<div class="rxh">✏ 걸려 있는 처치 고치기</div><div class="rxg">${rxPanel(p,bw)}</div>`:""}
  ${groups.map(([g,items])=>`<div class="rxh">${esc(g)}</div><div class="rxg">${grid(g,items)}</div>`).join("")}</div>`}
 function rxRefresh(){const p=find("care",S.tkId);const b=$("#rxBox");if(!p||!b)return;const a=document.activeElement,id=a&&a.id,pos=a&&a.selectionStart;boxPatch(b,rxHtml(p));if(id){const n=$("#"+id);if(n&&n!==document.activeElement){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}}}
 function rxAdd(p,x){const bw=rxBwOf(p),r=rxCalc(x,bw);if(!r){toast(num(x.c)?"체중을 먼저 넣어 주세요":`${x.n} 농도를 💊 약물 설정에서 넣어 주세요`);return}
  const nm=rxName(x,r);if(!rxCfg().ok&&!confirm(`아직 확인 전인 기본값이에요. 맞나요?\n\n${nm}\n체중 ${bw}kg × ${x.d}mg/kg${x.f==="CRI"?"/일":""} ÷ ${x.c}mg/mL`))return;
  const at=($("#rxAt")||{}).value||($("#tAt")||{}).value||hhmm(Date.now()),[h,m]=at.split(":").map(Number),dd=new Date();dd.setHours(h,m,0,0);
- tAddOne(p,nm,RX_FQ[x.f]??12,dd.getTime());const due0=p.tasks[p.tasks.length-1].due;if(!p.bw&&bw)p.bw=String(bw);save("care");S.rx.k=null;render();tkRender();toast(`💉 ${nm} · ${fxWhen(due0)}부터 처치로 걸었어요${x.f==="BID"?" (BID 09:30·20:30)":""}`)}
+ tAddOne(p,nm,RX_FQ[x.f]??12,dd.getTime());const due0=p.tasks[p.tasks.length-1].due;p.tasks[p.tasks.length-1].rx={n:x.n,d:num(x.d),c:num(x.c),f:x.f,i:num(x.i),r:x.r||"IV"};if(!p.bw&&bw)p.bw=String(bw);save("care");S.rx.k=null;render();tkRender();toast(`💉 ${nm} · ${fxWhen(due0)}부터 처치로 걸었어요${x.f==="BID"?" (BID 09:30·20:30)":""}`)}
+/* ---- 🧺 고른 처치 담기 → 한 번에 확정 ---- */
+S.cart={};S.tAddV={n:"",e:"4"};S.tkEd={};
+const cartOf=p=>S.cart[p.id]||(S.cart[p.id]=[]);
+const evTxt=e=>e===12?"BID":e===8?"TID":e===24?"SID":e?e+"시간마다":"1회";
+function cartPut(p,it){const C=cartOf(p);const i=C.findIndex(x=>x.key===it.key);if(i>=0){C.splice(i,1);return false}C.push(it);return true}
+function cartRx(p,x){const bw=rxBwOf(p),r=rxCalc(x,bw);if(!r){toast(num(x.c)?"체중을 먼저 넣어 주세요":`${x.n} 농도를 넣어 주세요`);return}
+ const C=cartOf(p);const i=C.findIndex(y=>y.key==="rx:"+x.n);const it={key:"rx:"+x.n,kind:"rx",x:{...x},name:rxName(x,r),every:RX_FQ[x.f]??12,at:S.rx.atMs||0};if(i>=0)C[i]=it;else C.push(it);S.rx.k=null;tkRender()}
+function cartHtml(p){const C=cartOf(p);if(!C.length)return "";
+ return `<div class="cart"><div class="row" style="align-items:center;gap:6px"><b style="flex:1">🧺 고른 처치 ${C.length}개</b></div>
+ <div class="cartl">${C.map((it,i)=>{const ds=txDose(it.name);return `<div class="cartr"><span style="flex:1;min-width:0"><b>${esc(noRt(txShort(it.name)))}</b> ${rtBadge(it.name)}<small>${[ds.ml,ds.dose,ds.inf,evTxt(it.every),(it.every===12?fxWhen(bidSnap(it.at||Date.now())):it.at?fxWhen(it.at):"지금")+"부터"].filter(Boolean).map(esc).join(" · ")}</small></span><button class="btn-xs" data-act="cartdel" data-id="${p.id}" data-i="${i}" aria-label="빼기">✕</button></div>`}).join("")}</div>
+ <div class="row" style="gap:6px"><button class="btn gh" style="flex:1" data-act="cartclr" data-id="${p.id}">비우기</button><button class="btn" style="flex:2;height:44px" data-act="cartgo" data-id="${p.id}">✓ ${C.length}개 처치표에 확정</button></div></div>`}
+function cartGo(p){const C=cartOf(p);if(!C.length)return;const rx=C.filter(i=>i.kind==="rx");
+ if(rx.length&&!rxCfg().ok&&!confirm(`아직 원장님 확인 전인 약 기본값이에요. 맞나요?\n\n${rx.map(i=>i.name).join("\n")}`))return;
+ const now=Date.now();
+ C.forEach(it=>{const dd={getTime:()=>it.at||now};if(it.kind==="rx"){tAddOne(p,it.name,it.every,dd.getTime());const t=p.tasks[p.tasks.length-1];t.rx={n:it.x.n,d:num(it.x.d),c:num(it.x.c),f:it.x.f,i:num(it.x.i),r:it.x.r||"IV"}}else tAddOne(p,it.name,it.every,dd.getTime())});
+ const bw=rxBwOf(p);if(!p.bw&&bw)p.bw=String(bw);const n=C.length;S.cart[p.id]=[];S.cartAt="";save("care");render();S.tkTab="do";tkRender();toast(`${p.name} · 처치 ${n}개를 처치표에 넣었어요`)}
+/* ---- 처치 묶음 (수술 후 기본 등) · 병원 전체에서 고칠 수 있음 ---- */
+const tbCfg=()=>{const v=ST.bundles&&ST.bundles.v;return v&&Array.isArray(v.list)?v.list:Object.entries(TTPL).map(([n,items])=>({n,items}))};
+function tbEditOpen(){let m=$("#tbM");if(!m){m=document.createElement("div");m.className="mask";m.id="tbM";m.innerHTML='<div class="sheet" id="tbS" style="max-width:460px"></div>';m.addEventListener("click",e=>{if(e.target===m)m.classList.remove("open")});document.body.appendChild(m)}
+ const L=tbCfg(),ro=!S.adm;$("#tbS").innerHTML=`<div class="row" style="align-items:center"><b style="flex:1;font-size:16px">📦 처치 묶음 · 병원 전체</b><button class="btn gh" data-act="tbclose">닫기</button></div>
+ <div class="meta">${ro?"관리자 기기에서만 고칠 수 있어요.":"한 줄에 처치 하나: <b>이름, 간격(시간)</b> · 간격 0은 1회, 12는 BID. 묶음 이름을 비우면 지워져요."}</div>
+ ${[...L,{n:"",items:[]}].map((b,i)=>`<div class="vrow" data-tb="${i}"><input class="in" data-k="n" style="height:34px" placeholder="새 묶음 이름" value="${esc(b.n)}"${ro?" disabled":""}><textarea class="in" data-k="i" rows="${Math.max(3,b.items.length+1)}" style="height:auto;font-size:13px;padding:6px 8px" placeholder="바이탈 측정, 4"${ro?" disabled":""}>${esc(b.items.map(([n,e])=>`${n}, ${e}`).join("\n"))}</textarea></div>`).join("")}
+ ${ro?"":`<button class="btn" data-act="tbsave">저장 · 모든 기기에 반영</button>`}`;m.classList.add("open")}
+/* 첫 시각 고르기: 지금 / 다음 30분 칸 3개 / 다른 시각(30분 단위) / 분 단위는 따로 */
+function tPick(tgt,at){const now=Date.now(),c30=Math.ceil((now+60000)/1800000)*1800000,sl=[c30,c30+1800000,c30+3600000],cur=at||now,isNow=!at;
+ const opts=[];for(let i=0;i<48;i++)opts.push(c30+i*1800000);const det=(tgt==="rx"?S.rx.det:S.tp&&S.tp.det);
+ return `<div class="tpk"><span class="meta">첫 시각</span><div class="sg">${[["지금",0],...sl.map(x=>[hhmm(x),x])].map(([l,v])=>`<button type="button" class="${(v===0&&isNow)||(v&&at===v)?"on":""}" data-act="tpat" data-tgt="${tgt}" data-v="${v}">${l}</button>`).join("")}</div>
+ <select class="in tpsel" data-tgt="${tgt}" style="height:34px;font-size:13px;width:auto"><option value="">다른 시각 ▾</option>${opts.map(x=>`<option value="${x}" ${at===x&&!sl.includes(x)?"selected":""}>${fxWhen(x)}</option>`).join("")}</select>
+ ${det?`<input class="in tpmin" data-tgt="${tgt}" type="time" style="width:110px;height:34px" value="${hhmm(cur)}">`:`<button type="button" class="lnk" data-act="tpdet" data-tgt="${tgt}">분 단위로</button>`}</div>`}
+const TGRP=[["바이탈",["바이탈 측정","심박수 측정","호흡수 측정","체온 측정"]],["관찰·간호",["배변·배뇨 확인","식이 급여","통증 평가","산책"]],["처치",["드레싱","RJ 드레싱","약 투여","수액 확인"]],["영상",["흉부 방사선","복부 방사선","다리 방사선"]]];
+const EVS=[[0,"1회"],[1,"1시간"],[2,"2시간"],[4,"4시간"],[6,"6시간"],[8,"TID"],[12,"BID"],[24,"SID"]];
+function tpPanel(p){const T=S.tp,inC=cartOf(p).some(x=>x.key==="t:"+T.n);
+ return `<div class="rxp"><div class="row" style="align-items:center;gap:6px">${T.custom?`<input class="in" id="tpName" style="flex:1;height:36px" maxlength="30" placeholder="처치 이름 (예: 귀 세정)" value="${esc(T.n)}">`:`<b style="flex:1;font-size:15px">${esc(T.n)}</b>`}<button type="button" class="btn-xs" data-act="tpclose">닫기</button></div>
+ ${T.n==="바이탈 측정"?`<div class="meta">심박수 · 호흡수 · 체온 3칸으로 걸려요</div>`:""}
+ <div><span class="meta">간격</span><div class="sg">${EVS.map(([v,l])=>`<button type="button" class="${+T.e===v?"on":""}" data-act="tpev" data-v="${v}">${l}</button>`).join("")}</div></div>
+ ${tPick("tp",T.at)}
+ <button type="button" class="btn" style="height:46px" data-act="tpput" data-id="${p.id}">${inC?"✓ 담은 내용 바꾸기":"＋ 담기"}</button></div>`}
+function tkAddHtml(p){const C=cartOf(p),T=S.tp,inC=n=>C.some(x=>x.key==="t:"+n);
+ const known=new Set(TGRP.flatMap(g=>g[1])),etc=TPRE.filter(x=>!known.has(x)),groups=[...TGRP,...(etc.length?[["기타",etc]]:[])];
+ const card=(n,g)=>{const e=TPRE_EV[n]??4,on=T&&!T.custom&&T.n===n&&T.g===g,c=C.find(x=>x.key==="t:"+n);return `<button type="button" class="rxc${on?" on":""}${c?" inc":""}" data-act="tpsel" data-v="${esc(n)}" data-g="${esc(g)}"><span class="rxn">${esc(n)}</span><span class="rxd">${c?`<b style="color:#b54708">🧺 담음 · ${evTxt(c.every)}${c.at?` · ${hhmm(c.at)}부터`:""}</b>`:evTxt(e)}</span></button>`+(on?tpPanel(p):"")};
+ return `<div class="tadd" style="border-color:#d9d6fe;background:#f8f7ff;gap:8px"><div class="row" style="align-items:center;gap:6px"><div class="otitle" style="margin:0;flex:1">＋ 다른 처치 <span class="meta" style="font-weight:500">· 누르고 담기</span></div><button type="button" class="btn-xs" data-act="tbedit">📦 묶음 고치기</button></div>
+ <div class="rxh">📦 묶음 · 누르면 한 번에 담기</div><div class="rxg">${tbCfg().map((b,i)=>`<button type="button" class="rxc" data-act="tbput" data-id="${p.id}" data-i="${i}"><span class="rxn">📦 ${esc(b.n)}</span><span class="rxd">${b.items.map(x=>x[0]).slice(0,3).map(esc).join(", ")}${b.items.length>3?` 외 ${b.items.length-3}`:""}</span></button>`).join("")}</div>
+ ${groups.map(([g,L])=>`<div class="rxh">${esc(g)}</div><div class="rxg">${L.map(n=>card(n,g)).join("")}</div>`).join("")}
+ <div class="rxg"><button type="button" class="rxc${T&&T.custom?" on":""}" data-act="tpcustom" style="grid-column:1/-1"><span class="rxn">✏ 직접 입력</span><span class="rxd">목록에 없는 처치</span></button>${T&&T.custom?tpPanel(p):""}</div></div>`}
+function tkAddHtmlOld(p){const C=cartOf(p),inC=n=>C.some(x=>x.key==="t:"+n),V=S.tAddV;
+ return `<div class="tadd" style="gap:8px"><div class="row" style="align-items:center;gap:6px"><div class="otitle" style="margin:0;flex:1">＋ 다른 처치</div><button type="button" class="btn-xs" data-act="tbedit">📦 묶음 고치기</button></div>
+ <div class="rxh">묶음으로 한 번에</div><div class="chips">${tbCfg().map((b,i)=>`<button type="button" class="chip" data-act="tbput" data-id="${p.id}" data-i="${i}">📦 ${esc(b.n)} <small style="opacity:.7">${b.items.length}</small></button>`).join("")}</div>
+ <div class="rxh">하나씩 · 누르면 담기</div><div class="chips">${TPRE.map(x=>`<button type="button" class="chip${inC(x)?" on":""}" data-act="tput" data-id="${p.id}" data-v="${esc(x)}">${inC(x)?"✓ ":""}${esc(x)} <small style="opacity:.6">${evTxt(TPRE_EV[x])}</small></button>`).join("")}</div>
+ <div class="row" style="gap:6px;align-items:center;flex-wrap:wrap"><input class="in" id="tName" maxlength="30" style="flex:1;min-width:130px;height:36px" placeholder="직접 입력 (예: 귀 세정)" value="${esc(V.n)}"><select class="in" id="tEvery" style="width:110px;height:36px">${[["0","1회만"],["1","1시간마다"],["2","2시간마다"],["4","4시간마다"],["6","6시간마다"],["8","8시간마다"],["12","BID"],["24","하루 1번"]].map(([v,l])=>`<option value="${v}" ${V.e===v?"selected":""}>${l}</option>`).join("")}</select><button type="button" class="btn-xs" style="height:36px" data-act="tputc" data-id="${p.id}">＋ 담기</button></div></div>`}
+function rxEditOpen(p,t){const L=rxCfg().list,n=String(t.name||""),R=t.rx||{};const k=L.findIndex(x=>n.startsWith(x.n+" "));const base=k>=0?L[k]:{n:n.split(" ")[0],c:0,r:"IV"};
+ const d=R.d??num((n.match(/\(([\d.]+)\s*mg\/kg/)||[])[1]),f=R.f||((n.match(/\b(SID|BID|TID|CRI)\b/)||[])[1])||evTxt(t.every),i=R.i??num((n.match(/(\d+)분 주입/)||[])[1]),c=R.c||base.c||"";
+ S.rx={k:k>=0?k:null,g:"edit",edit:t.id,d:String(d||""),c:String(c||""),f:RX_FQ[f]!=null?f:"BID",i,ex:{...base,r:R.r||rtOf(n)||base.r||"IV"}};S.tkTab="plan";tkRender();setTimeout(()=>{const e=$("#rxBox .rxp");if(e)e.scrollIntoView({block:"center",behavior:"smooth"})},60)}
 function rxCfgOpen(){let m=$("#rxM");if(!m){m=document.createElement("div");m.className="mask";m.id="rxM";m.innerHTML='<div class="sheet" id="rxS"></div>';m.addEventListener("click",e=>{if(e.target===m)m.classList.remove("open")});document.body.appendChild(m)}
  const cf=rxCfg(),L=JSON.parse(JSON.stringify(cf.list)),ro=!S.adm;S.rxEdit=L;
  $("#rxS").innerHTML=`<div class="row" style="align-items:center"><b style="flex:1;font-size:17px">💊 약물 설정 · 병원 전체</b><button class="btn gh" data-act="rxcfgclose">닫기</button></div>
@@ -1084,11 +1157,19 @@ function rxRow(x,k,ro){const dis=ro?" disabled":"";return `<div class="card" sty
  <div class="row" style="gap:6px;align-items:center;flex-wrap:wrap"><input class="in" data-rxf="d" inputmode="decimal" style="width:64px;height:34px" value="${x.d}"${dis}><span class="meta">mg/kg</span><input class="in" data-rxf="c" inputmode="decimal" style="width:64px;height:34px" value="${x.c||""}" placeholder="?"${dis}><span class="meta">mg/mL</span>
  <select class="in" data-rxf="f" style="width:80px;height:34px"${dis}>${Object.keys(RX_FQ).map(f=>`<option ${x.f===f?"selected":""}>${f}</option>`).join("")}</select><select class="in" data-rxf="r" style="width:70px;height:34px"${dis}>${["IV","SC","IM","PO"].map(r=>`<option ${x.r===r?"selected":""}>${r}</option>`).join("")}</select><select class="in" data-rxf="i" style="width:96px;height:34px"${dis}>${[0,15,30,60].map(m=>`<option value="${m}" ${num(x.i)===m?"selected":""}>${m?m+"분 주입":"주입 시간 없음"}</option>`).join("")}</select></div></div>`}
 function rxCollect(){return [...document.querySelectorAll("#rxRows [data-rxr]")].map(r=>{const g=f=>(r.querySelector(`[data-rxf=${f}]`)||{}).value||"";return {n:g("n").trim().slice(0,30),d:num(g("d")),c:num(g("c")),f:g("f")||"BID",r:g("r")||"IV",i:num(g("i"))}}).filter(x=>x.n)}
-document.addEventListener("input",e=>{const t=e.target;if(t.id==="rxBw"){const p=find("care",S.tkId);if(p){S.rxBw[p.id]=t.value;rxRefresh()}}else if(t.id==="rxD"||t.id==="rxC"){S.rx[t.id==="rxD"?"d":"c"]=t.value;rxRefresh()}else if(t.id==="rxAt")S.rx.at=t.value});
+document.addEventListener("input",e=>{const t=e.target;if(t.id==="rxBw"){const p=find("care",S.tkId);if(p){S.rxBw[p.id]=t.value;rxRefresh()}}else if(t.id==="rxD"||t.id==="rxC"){S.rx[t.id==="rxD"?"d":"c"]=t.value;rxRefresh()}else if(t.id==="rxAt")S.rx.at=t.value;else if(t.id==="tName")S.tAddV.n=t.value;else if(t.id==="tpName"&&S.tp)S.tp.n=t.value;else if(t.id==="cartAt")S.cartAt=t.value;else if(t.classList&&t.classList.contains("tke")){const r=t.closest("[data-tke]");if(r){const k=r.dataset.tke;S.tkEd[k]={...(S.tkEd[k]||{}),[t.dataset.k]:t.value}}}});
+document.addEventListener("change",e=>{const t=e.target;if(t.classList&&(t.classList.contains("tpsel")||t.classList.contains("tpmin"))){let v;if(t.classList.contains("tpsel")){if(!t.value)return;v=+t.value}else{const [h,m]=t.value.split(":").map(Number);const dd=new Date();dd.setHours(h,m,0,0);if(dd.getTime()<Date.now()-6*3600000)dd.setDate(dd.getDate()+1);v=dd.getTime()}if(t.dataset.tgt==="rx"){S.rx.atMs=v;rxRefresh()}else if(S.tp){S.tp.at=v;tkRender()}return}
+ if(t.id==="tEvery")S.tAddV.e=t.value;else if(t.id==="cartAt")S.cartAt=t.value;else if(t.classList&&t.classList.contains("tke")){const r=t.closest("[data-tke]");if(r){const k=r.dataset.tke;S.tkEd[k]={...(S.tkEd[k]||{}),[t.dataset.k]:t.value}}}});
 function vSplitOld(p){let ch=false;(p.tasks||[]).slice().forEach(t=>{if(!t||!/바이탈/.test(t.name||""))return;ch=true;const i=p.tasks.indexOf(t),ks=["hr","rr","t"];
   const nt=VSPLIT.map((n,j)=>({...t,id:t.id+ks[j],name:n,h:(t.h||[]).map(h=>h.v?(h.v[ks[j]]!=null?{...h,v:{[ks[j]]:h.v[ks[j]]}}:{...h,v:undefined}):h).map(h=>{if(!h.v)delete h.v;return h}),pk:undefined}));
   nt.forEach(x=>{if(!x.pk)delete x.pk});p.tasks.splice(i,1,...nt)});if(ch)save("care");return ch}
-function tkOpen(id){{const p0=find("care",id);if(p0)vSplitOld(p0)}S.tkId=id;S.tAdd=id;S.tkTab=null;S.tkDay=0;S.tkSub=null;tkRender();$("#tk").classList.add("open")}
+const p0x=(id,sub)=>{const p=find("care",id);if(!p)return false;const F=sub==="rx"?isDrug:(t=>isMon(t)||isFx(t));return !tasksOf(p).some(F)};
+function tileTk(p){const ts=tasksOf(p),c=cat(p);if(!ts.length&&c==="외래")return "";
+ const b=(v,ic,lab,F,show)=>{if(!show)return "";const L=ts.filter(F),late=L.filter(t=>tStat(t).c==="late").length;
+  return L.length?`<button type="button" class="tkb has${late?" late":""}" data-act="tkopen" data-id="${p.id}" data-v="${v}">${ic} ${lab} <b>${late?`⚠${late}`:hhmm(L[0].due)}</b></button>`:`<button type="button" class="tkb none" data-act="tkopen" data-id="${p.id}" data-v="${v}">＋ ${lab}</button>`};
+ const mon=t=>isMon(t)||isFx(t);
+ return `<div class="tkbs">${b("rx","💊","약물",isDrug,true)}${b("mon","🩺","바이탈",mon,c==="입원"||ts.some(mon))}</div>`}
+function tkOpen(id,sub){{const p0=find("care",id);if(p0)vSplitOld(p0)}S.tkId=id;S.tAdd=id;S.tkTab=null;S.tkDay=0;S.tkSub=sub||null;if(sub&&p0x(id,sub))S.tkTab="plan";tkRender();$("#tk").classList.add("open")}
 /* ⏰ 처치 창: [✅ 처치하기] 걸린 처치를 하고 완료 체크 → 오늘 한 처치를 차트로 복사 / [📋 처치표] 주사·수액·처치를 만들고 언제든 고치기 */
 S.tkTab=null;
 const tkToday=p=>(p.logs||[]).filter(l=>l&&l.d===todayStr()&&/^✓ /.test(l.text||"")).sort((a,b)=>String(a.time).localeCompare(String(b.time)));
@@ -1124,12 +1205,14 @@ function tkDoHtml(p){const ts=tasksOf(p),dn=tkToday(p),cp=p.tkCopied===todayStr(
  ${dn.length?`<div style="display:grid;gap:3px">${dn.map((l,i)=>`<div class="meta" style="color:var(--ink);font-size:12.5px${i<cp?";opacity:.55":""}">${esc(l.time)} ${esc(l.text)}</div>`).join("")}</div>
  <div class="row" style="gap:6px"><button class="btn" style="flex:1" data-act="tkcopy" data-id="${p.id}" data-v="new">📋 새로 한 처치 복사${dn.length-cp>0?` (${dn.length-cp})`:""}</button><button class="btn gh" data-act="tkcopy" data-id="${p.id}" data-v="all">오늘 전체 복사</button></div>
  <div class="meta">복사한 뒤 인투벳 차트에 붙여 넣으세요. 처치한 사람은 완료를 누른 기기 이름으로 남아요.</div>`:`<div class="meta">완료를 누르면 여기에 쌓여요.</div>`}`}
-function tkPlanHtml(p){const ts=tasksOf(p);
- return `<div id="fxBox">${fxHtml(p)}</div><div id="rxBox">${rxHtml(p)}</div>
- <div class="otitle" style="margin:4px 0 0">지금 처치표 ${ts.length}개 <span class="meta" style="font-weight:500">· 이름·간격·다음 시각을 고치고 저장</span></div>
- ${ts.length?ts.map(t=>`<div class="card" style="padding:8px 10px;display:grid;gap:6px" data-tke="${t.id}"><input class="in" data-k="n" style="height:34px;font-size:13px" value="${esc(t.name)}">
-  <div class="row" style="gap:6px;align-items:center;flex-wrap:wrap"><select class="in" data-k="e" style="width:110px;height:34px;font-size:13px">${[["0","1회만"],["1","1시간마다"],["2","2시간마다"],["4","4시간마다"],["6","6시간마다"],["8","8시간마다 (TID)"],["12","12시간마다 (BID)"],["24","하루 1번"]].map(([v,l])=>`<option value="${v}" ${String(t.every||0)===v?"selected":""}>${l}</option>`).join("")}</select><span class="meta">다음</span><input class="in" data-k="d" type="time" style="width:110px;height:34px;font-size:13px" value="${hhmm(t.due)}"><span style="flex:1"></span><button class="btn-xs" data-act="tksave" data-id="${p.id}" data-t="${t.id}">저장</button><button class="btn-xs" data-act="tdel" data-id="${p.id}" data-t="${t.id}">✕</button></div></div>`).join(""):`<div class="meta">아직 없어요. 위에서 주사·수액을 고르거나 아래에서 직접 추가하세요.</div>`}
- ${taskBox(p).replace(/^[\s\S]*?(<div class="tadd">[\s\S]*)<\/div>$/,"$1")}`}
+function tkPlanHtml(p){const ts=tasksOf(p),E=S.tkEd;
+ const row=t=>{const e=E[t.id]||{},nm=e.n??t.name,ev=e.e??String(t.every||0),tm=e.d??hhmm(t.due),dr=isDrug(t);
+  return `<div class="card" style="padding:8px 10px;display:grid;gap:6px" data-tke="${t.id}"><div class="row" style="gap:6px;align-items:center"><input class="in tke" data-k="n" style="flex:1;height:34px;font-size:13px" value="${esc(nm)}">${dr?`<button type="button" class="btn-xs" style="height:34px" data-act="rxedit" data-id="${p.id}" data-t="${t.id}">✏ 용량</button>`:""}</div>
+  <div class="row" style="gap:6px;align-items:center;flex-wrap:wrap"><select class="in tke" data-k="e" style="width:110px;height:34px;font-size:13px">${[["0","1회만"],["1","1시간마다"],["2","2시간마다"],["4","4시간마다"],["6","6시간마다"],["8","8시간마다 (TID)"],["12","12시간마다 (BID)"],["24","하루 1번"]].map(([v,l])=>`<option value="${v}" ${ev===v?"selected":""}>${l}</option>`).join("")}</select><span class="meta">다음</span><input class="in tke" data-k="d" type="time" style="width:110px;height:34px;font-size:13px" value="${tm}"><span style="flex:1"></span><button class="btn-xs${E[t.id]?" tdone":""}" data-act="tksave" data-id="${p.id}" data-t="${t.id}">저장</button><button class="btn-xs" data-act="tdel" data-id="${p.id}" data-t="${t.id}">✕</button></div></div>`};
+ return `<div id="rxBox">${rxHtml(p)}</div>${tkAddHtml(p)}<div id="fxBox">${fxHtml(p)}</div>
+ <div class="otitle" style="margin:4px 0 0">지금 처치표 ${ts.length}개 <span class="meta" style="font-weight:500">· 고친 뒤 저장</span></div>
+ ${ts.length?ts.map(row).join(""):`<div class="meta">아직 없어요. 위에서 고르고 담은 뒤 확정하세요.</div>`}
+ ${cartHtml(p)}`}
 /* 처치 창에서 숫자 입력 중이면 다른 기기 변경으로 화면을 다시 그리지 않음 (키보드 튕김 방지) → 입력칸을 벗어나면 그때 반영 */
 function tkTyping(){const a=document.activeElement;return !!(a&&a.closest&&a.closest("#tk")&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))}
 document.addEventListener("focusout",e=>{if(!S.tkDirty||!e.target.closest||!e.target.closest("#tk"))return;setTimeout(()=>{if(!tkTyping()&&S.tkDirty){S.tkDirty=false;tkRender()}},250)});
@@ -1240,7 +1323,7 @@ function tile(p){const cr=S.room==="care",lg=(p.logs||[])[0],
  bd=(cr||isCareP(p.id))?`<button type="button" class="badge catb ${cat(p)==="호텔"?"h":cat(p)==="외래"?"o":""}" data-act="catpick" data-id="${p.id}" title="외래·입원·호텔 바꾸기">${cat(p)}${cat(p)==="외래"?"":dayN(p)} ▾</button>`:"",
  l2=cr?(p.dx?esc(p.dx):"병명 미입력"):esc(p.breed||"")+(p.owner?" · "+esc(p.owner):"");
  const tx=[p.breed?esc(String(p.breed).replace(/\s*\(.*?\)\s*/g," ").trim()||p.breed):"",p.sex?sexKo(p.sex):"",p.bw?esc(p.bw)+"kg":""].filter(Boolean);
- return `<div class="tile sp-${p.species==="cat"?"cat":"dog"}" role="button" tabindex="0" data-act="sel" data-id="${p.id}"><div class="tt"><div class="av">${p.species==="cat"?"🐱":"🐶"}</div><div class="tn">${esc(p.name)}${p.mjNo?`<span class="mjno${p.mjAt?"":" wait"}">#${esc(p.mjNo)}</span>`:""}</div>${tx.length?`<div class="tx">${tx.map(x=>`<span>${x}</span>`).join("")}</div>`:""}</div><div class="meta">${bd}<span class="badge n">${esc(pno(p))}</span></div><div class="meta td">${l2}</div>${cr&&ocStale(p)?`<div class="meta" style="color:#8a5200;font-weight:700">❓ 확인 필요 · 기록 없음</div>`:""}${cr?alertRow(p):""}${cr&&(tasksOf(p).length||cat(p)!=="외래")?`<button type="button" class="btn-xs" style="justify-self:start${lateN(p)?";border-color:#f04438;color:#b42318;background:#fff4f3":""}" data-act="tkopen" data-id="${p.id}">⏰ ${tasksOf(p).length?(lateN(p)?`처치 ${lateN(p)}건 지남 · 열기`:`다음 처치 ${hhmm(tasksOf(p)[0].due)} · 열기`):"처치표 만들기"}</button>`:""}${cr&&lg?`<div class="meta">🕒 ${logDate(lg)&&logDate(lg)!==todayStr()?esc(fmtD(logDate(lg)).slice(0,5))+" ":""}${esc(lg.time)} 마지막 기록</div>`:""}${cr&&(p.logs||[]).length?`<button type="button" class="btn-xs" style="justify-self:start" data-act="copycare" data-m="new" data-id="${p.id}">📋 새 기록 복사</button>`:""}</div>`}
+ return `<div class="tile sp-${p.species==="cat"?"cat":"dog"}" role="button" tabindex="0" data-act="sel" data-id="${p.id}"><div class="tt"><div class="av">${p.species==="cat"?"🐱":"🐶"}</div><div class="tn">${esc(p.name)}${p.mjNo?`<span class="mjno${p.mjAt?"":" wait"}">#${esc(p.mjNo)}</span>`:""}</div>${tx.length?`<div class="tx">${tx.map(x=>`<span>${x}</span>`).join("")}</div>`:""}</div><div class="meta">${bd}<span class="badge n">${esc(pno(p))}</span></div><div class="meta td">${l2}</div>${cr&&ocStale(p)?`<div class="meta" style="color:#8a5200;font-weight:700">❓ 확인 필요 · 기록 없음</div>`:""}${cr?alertRow(p):""}${cr?tileTk(p):""}${cr&&lg?`<div class="meta">🕒 ${logDate(lg)&&logDate(lg)!==todayStr()?esc(fmtD(logDate(lg)).slice(0,5))+" ":""}${esc(lg.time)} 마지막 기록</div>`:""}${cr&&(p.logs||[]).length?`<button type="button" class="btn-xs" style="justify-self:start" data-act="copycare" data-m="new" data-id="${p.id}">📋 새 기록 복사</button>`:""}</div>`}
 /* ---- PC 차트 보드: 넓은 화면에서 환축을 고르고 인투벳에 붙여넣을 글을 바로 복사 ---- */
 S.pc=false;S.pcSel=null;S.pcCk=[];let PCT;
 const pcNew=p=>careRows(p,"new").length;
@@ -1302,7 +1385,7 @@ const QTESTS={
  "영상":[["흉부 방사선"],["흉복부 방사선","흉부+복부"],["복부 방사선"],["앞다리 방사선"],["뒷다리 방사선"],["치과 방사선"],["복부 초음파"],["심장 초음파"]],
  "혈액":[["CBC","혈구 검사"],["응고검사","PT · aPTT"],["CRP","vc-CRP (강아지)"],["혈액형"]],
  "전해질·혈액가스":[["전해질","Na · K · Cl"],["혈액가스","pH · pCO2 · HCO3 · BE"]],
- "호르몬":[["T4"],["TSH"],["코르티솔"]],
+ "호르몬":[["T4"],["TSH"],["코르티솔"],["ACTH 자극검사","코르티솔 0 · 1시간"],["LDDST","코르티솔 0 · 4 · 8시간"]],
  "특수 검사":[["SDMA"],["proBNP"],["췌장염 키트","cPL · fPL"]],
  "전염병 키트 🐶":[["파보","CPV Ag"],["코로나","CCV Ag"],["파보·코로나","CPV/CCV 콤보"],["디스템퍼","CDV Ag"],["심장사상충","HW Ag"],["4Dx","HW · 라임 · 에를리키아 · 아나플라즈마"],["지아디아","Giardia Ag"],["인플루엔자","CIV Ag"]],
  "전염병 키트 🐱":[["FeLV/FIV","FeLV Ag · FIV Ab"],["범백","FPV Ag"],["FCoV","FCoV Ab"],["고양이 심장사상충","FHW Ag"]],
@@ -1336,8 +1419,9 @@ const qSnd=k=>qls("snd_"+k)==="1",qSndPlay=k=>qSnd(k)&&!(!(Q.view&&!Q.temp)&&Dat
 let QAC=null;
 /* 검사 결과 음성 안내: "초코, 검사 결과가 나왔습니다." (띵-동 뒤에, 소리 켠 PC에서만) */
 function qSay(nm){try{if(!window.speechSynthesis||!window.SpeechSynthesisUtterance)return;nm=String(nm||"").trim();if(/^#|테스트|^$/.test(nm))nm="";
- const u=new SpeechSynthesisUtterance(`${nm?nm+", ":""}검사 결과가 나왔습니다.`);u.lang="ko-KR";u.rate=1;u.volume=1;
- const v=(speechSynthesis.getVoices()||[]).filter(x=>/^ko/i.test(x.lang));if(v.length)u.voice=v.find(x=>/Heami|SunHi|여성|Female/i.test(x.name))||v[0];
+ const u=new SpeechSynthesisUtterance(`${nm?nm+", ":""}검사 결과가 나왔습니다.`);u.lang="ko-KR";u.rate=.95;u.pitch=1.35;u.volume=1;
+ /* 맑은 여자 목소리 우선: 엣지 SunHi(Natural) → 크롬 Google 한국의 → Heami·Yuna */
+ const v=(speechSynthesis.getVoices()||[]).filter(x=>/^ko/i.test(x.lang)),pick=[/SunHi.*Natural|Natural.*SunHi/i,/Google/i,/SunHi/i,/Heami|Yuna|여성|Female/i];if(v.length)u.voice=pick.map(re=>v.find(x=>re.test(x.name))).find(Boolean)||v[0];
  clearTimeout(qSay.t);qSay.t=setTimeout(()=>{try{speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}},650)}catch(e){}}
 if(window.speechSynthesis)try{speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices()}catch(e){}
 function qBeep(kind){try{QAC=QAC||new(window.AudioContext||window.webkitAudioContext)();if(QAC.state==="suspended")QAC.resume();
@@ -1413,7 +1497,7 @@ const QTITLE={tx:"⏰ 처치 현황판",mj:"📋 문진 접수 · 채팅",chat:"
 function scrOpen(mode,temp){setTimeout(fcShow,0);Q.view=mode;Q.temp=!!temp;$("#scr").classList.add("open");document.body.classList.add("scron");if(mode==="chat")qls("chatSeen",String(Date.now()));qBadge();qRender()}
 function scrClose(){setTimeout(fcShow,0);Q.view=null;$("#scr").classList.remove("open");document.body.classList.remove("scron");qBadge()}
 const ANZN={NX700:"NX700",BC2800:"BC-2800",AU10V:"AU10V",ISMART:"i-Smart",ANIKO:"AniKo"};
-function qAnOf(t){const chem=new Set(Object.values(CHEM).flat());if(chem.has(t)||t==="혈청화학"||(PANELS.some(p=>p[0]===t)&&!/요검사/.test(t)))return"NX700";if(t==="CBC")return"BC2800";if(["T4","TSH","코르티솔","SDMA","CRP"].includes(t))return"AU10V";if(["전해질","혈액가스"].includes(t))return"ISMART";if(t==="췌장염 키트")return"ANIKO";return null}
+function qAnOf(t){const chem=new Set(Object.values(CHEM).flat());if(chem.has(t)||t==="혈청화학"||(PANELS.some(p=>p[0]===t)&&!/요검사/.test(t)))return"NX700";if(t==="CBC")return"BC2800";if(["T4","TSH","코르티솔","SDMA","CRP","ACTH 자극검사","LDDST"].includes(t))return"AU10V";if(["전해질","혈액가스"].includes(t))return"ISMART";if(t==="췌장염 키트")return"ANIKO";return null}
 function lisBadge(){const l=ST.lis&&ST.lis.v;if(!l||!l.hb)return"";const age=Date.now()-l.hb,ok=age<180000&&l.st==="ok";return ` · <b style="color:${ok?"#0f8a7e":"#c93a3a"}">LIS 연동 ${ok?"● 정상":age<180000?"● LIS 창 없음":"● 꺼짐"}</b>`}
 Q.notes={};
 function lisAck(t){if(!t)return;fetch(`${base()}/rooms/${encodeURIComponent(S.code)}/lis/acks/${t}.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:"true"}).catch(()=>{})}
@@ -1430,6 +1514,26 @@ function lisOn(){{const ak=ST.lis&&ST.lis.v&&ST.lis.v.acks||{};Object.keys(Q.not
  if(innerWidth>=761&&window.Notification&&Notification.permission==="granted")sbNote(String(e.t),e.title,e.body)}
 document.addEventListener("pointerdown",()=>{if(innerWidth>=761&&window.Notification&&Notification.permission==="default")try{Notification.requestPermission()}catch(e){}},{once:true});
 function qRcv(o){const an=o.an||[],rv=o.recv||{},ks=[...new Set([...an,...Object.keys(rv)])];if(!ks.length)return"";return `<div class="qrcv">${ks.map(a=>`<span class="${rv[a]?"ok":""}">${rv[a]?"📥":"⏳"} ${ANZN[a]||a}${rv[a]?" "+hhmm(rv[a]):""}</span>`).join("")}${o.man&&an.length?`<span class="mn">수기 항목 있음</span>`:""}</div>`}
+/* ---- ⏱ 자극·억제 검사 채혈 시각: 검사실 '접수' = 주사 시각 → ACTH 1시간, LDDST 4·8시간 뒤 채혈, 5분 전 모든 기기 알림 ---- */
+const STIM={"ACTH 자극검사":{s:"ACTH",h:[1],lead:5},"LDDST":{s:"LDDST",h:[4,8],lead:5}};
+const stimOf=o=>(o.tests||[]).filter(x=>STIM[x]);
+function stimPlan(o,t){return stimOf(o).flatMap(x=>STIM[x].h.map(h=>({kind:STIM[x].s,h,at:t+h*3600000,lead:STIM[x].lead})))}
+function stimHtml(k,o){const st=o.stim;if(!st||!st.t)return stimOf(o).length?`<div class="stim wait">⏱ ${stimOf(o).map(x=>STIM[x].s).join("·")} · 주사하고 <b>접수</b>를 누르면 채혈 시각을 알려 드려요</div>`:"";
+ const now=Date.now();return `<div class="stim"><div>💉 주사 <b>${hhmm(st.t)}</b> ${esc(st.by||"")}</div>${(st.d||[]).map((x,i)=>{const dn=st.ok&&st.ok[i],soon=!dn&&now>=x.at-x.lead*60000,late=!dn&&now>x.at+5*60000;
+  return `<div class="row" style="align-items:center;gap:6px"><span class="${dn?"ok":late?"late":soon?"soon":""}" style="flex:1">🩸 ${x.kind} ${x.h}시간 채혈 <b>${hhmm(x.at)}</b>${dn?` ✓ ${hhmm(dn)}`:soon?" · 지금":""}</span>${dn?"":`<button class="qsb ok" data-act="stimok" data-k="${esc(k)}" data-i="${i}">채혈함</button>`}</div>`}).join("")}</div>`}
+async function stimStart(k){const o=Q.ords[k];if(!o||!stimOf(o).length||(o.stim&&o.stim.t))return;const t=Date.now(),d=stimPlan(o,t);
+ try{await fetch(`${QOR()}/${encodeURIComponent(k)}/stim.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({t,by:qMe(),d})})}catch(e){}
+ stimPop(o.pname||"",d,t)}
+function stimPop(name,d,t){let m=$("#stimM");if(!m){m=document.createElement("div");m.className="mask";m.id="stimM";m.innerHTML='<div class="sheet" id="stimS" style="max-width:420px"></div>';m.addEventListener("click",e=>{if(e.target===m)m.classList.remove("open")});document.body.appendChild(m)}
+ $("#stimS").innerHTML=`<b style="font-size:17px">⏱ ${esc(name)} · 주사 ${hhmm(t)}</b><div style="display:grid;gap:6px">${d.map(x=>`<div class="stimbig">🩸 ${x.kind} ${x.h}시간 채혈 <b>${hhmm(x.at)}</b></div>`).join("")}</div><div class="meta">채혈 ${d[0].lead}분 전에 모든 기기에 알림이 떠요. 검사 오더 카드에도 표시돼요.</div><button class="btn" data-act="stimclose">확인</button>`;m.classList.add("open")}
+function stimTick(){const now=Date.now(),L=[];Object.entries(Q.ords||{}).forEach(([k,o])=>{const st=o&&o.stim;if(!st||!st.d||now-st.t>14*3600000)return;st.d.forEach((x,i)=>{if(st.ok&&st.ok[i])return;if(now>=x.at-x.lead*60000&&now<x.at+90*60000)L.push({k,o,x,i})})});
+ let b=$("#stimW");const key=L.map(z=>z.k+z.i).join(","),hid=(qls("stimAck")||"").split(",");const show=L.filter(z=>!hid.includes(z.k+":"+z.i));
+ if(!show.length){if(b)b.remove();return}
+ if(!b){b=document.createElement("div");b.id="stimW";b.style.cssText="position:fixed;left:8px;right:8px;top:62px;z-index:9001;background:#7a2e0e;color:#fff;border-radius:12px;padding:10px 12px;box-shadow:0 6px 20px rgba(0,0,0,.3);display:grid;gap:6px;font-size:14px;max-width:560px;margin:0 auto";document.body.appendChild(b)}
+ const fresh=b.dataset.k!==key;b.dataset.k=key;
+ b.innerHTML=show.map(z=>`<div class="row" style="align-items:center;gap:6px"><span style="flex:1">🩸 <b>${esc(z.o.pname||"")}</b> ${z.x.kind} ${z.x.h}시간 채혈 <b style="font-size:17px">${hhmm(z.x.at)}</b>${now>z.x.at?" · 시간 됐어요":` · ${Math.ceil((z.x.at-now)/60000)}분 남음`}</span><button class="btn-xs" style="height:30px;background:#fff;color:#7a2e0e;border-color:#fff" data-act="stimok" data-k="${esc(z.k)}" data-i="${z.i}">채혈함</button><button class="btn-xs" style="height:30px" data-act="stimhide" data-v="${esc(z.k+":"+z.i)}">닫기</button></div>`).join("");
+ if(fresh){try{qBeep("urg")}catch(e){}try{if(window.Notification&&Notification.permission==="granted")new Notification("🩸 채혈 시각",{body:show.map(z=>`${z.o.pname||""} ${z.x.kind} ${z.x.h}시간 ${hhmm(z.x.at)}`).join(", "),icon:"icon-192.png",tag:"stim"+key})}catch(e){}}}
+setInterval(stimTick,20000);setTimeout(stimTick,4000);
 function qCard(k,o,dp){const p=qParts(o),dps=dp?[dp]:Object.keys(p).sort(),st=dp?p[dp]:null,ing=dp?st&&st.s==="ing":dps.some(d=>p[d].s==="ing");
  const tg=d=>(o.tests||[]).filter(x=>tDept(x)===d);
  const tch=x=>`<span${QSUB[x]&&PANELS.some(p=>p[0]===x)?` title="${esc(QSUB[x])}"`:""}${(o.added||[]).includes(x)?' class="qadd"':""}>${(o.added||[]).includes(x)?"＋":""}${esc(x)}${PANELS.some(p=>p[0]===x)?`<small style="display:block;font-weight:500;font-size:10.5px;opacity:.8">${esc(QSUB[x])}</small>`:""}</span>`;
@@ -1437,8 +1541,8 @@ function qCard(k,o,dp){const p=qParts(o),dps=dp?[dp]:Object.keys(p).sort(),st=dp
  const who=x=>x.s==="ing"?`${esc(x.by||"")} 접수 ${hhmm(x.t)}`:x.s==="done"?`✓ ${esc(x.by||"")} ${hhmm(x.t)}`:"";
  const bd=x=>`<span class="qbd ${x.s}">${x.s==="new"?"대기":x.s==="ing"?"진행 중":"완료"}</span>`;
  let body;
- if(dp)body=`<div class="qtests${dp==="img"?" img":""}">${tg(dp).map(tch).join("")||"<span>기타</span>"}</div>${dp==="lab"?qRcv(o):""}${o.memo?`<div class="memo">${esc(o.memo)}</div>`:""}${st.s==="ing"?`<div class="top">${who(st)}</div>`:""}<div class="qact">${ctl(dp,st)}</div>`;
- else body=(o.memo?`<div class="memo">${esc(o.memo)}</div>`:"")+dps.map(d=>`<div class="qdp"><div class="dl">${QDN[d]} ${bd(p[d])}<span class="meta" style="font-weight:500">${who(p[d])}</span></div><div class="qtests${d==="img"?" img":""}">${tg(d).map(tch).join("")||"<span>기타</span>"}</div>${d==="lab"?qRcv(o):""}${p[d].s!=="done"?`<div class="qact">${ctl(d,p[d])}</div>`:""}</div>`).join("");
+ if(dp)body=`<div class="qtests${dp==="img"?" img":""}">${tg(dp).map(tch).join("")||"<span>기타</span>"}</div>${dp==="lab"?stimHtml(k,o)+qRcv(o):""}${o.memo?`<div class="memo">${esc(o.memo)}</div>`:""}${st.s==="ing"?`<div class="top">${who(st)}</div>`:""}<div class="qact">${ctl(dp,st)}</div>`;
+ else body=(o.memo?`<div class="memo">${esc(o.memo)}</div>`:"")+dps.map(d=>`<div class="qdp"><div class="dl">${QDN[d]} ${bd(p[d])}<span class="meta" style="font-weight:500">${who(p[d])}</span></div><div class="qtests${d==="img"?" img":""}">${tg(d).map(tch).join("")||"<span>기타</span>"}</div>${d==="lab"?stimHtml(k,o)+qRcv(o):""}${p[d].s!=="done"?`<div class="qact">${ctl(d,p[d])}</div>`:""}</div>`).join("");
  const el=Math.max(0,Math.floor((Date.now()-(o.t||Date.now()))/60000)),lim=o.urgent?[5,10]:[15,30],lv=el>=lim[1]?2:el>=lim[0]?1:0;
  return `<div class="qoc${o.urgent?" urg":""}${ing?" ing":""}${lv?" late"+lv:""}${Q.fresh.has(k)?" new-in":""}"><div class="top">${o.urgent?'<b style="color:#c93a3a">🚨 긴급</b>':""}${dp?bd(st):""}${o.addN?`<b class="qaddb">➕ 추가 ${typeof o.addT==='number'?hhmm(o.addT):''}</b>`:""}${o.edN?`<b class="qaddb" style="color:#8a5a00">✏️ 수정 ${typeof o.edT==='number'?hhmm(o.edT):''}</b>`:""}${Object.values(p).some(x=>x&&x.s==="new")?`<button class="qsb qedb" data-act="qedit" data-k="${k}" title="접수 전 항목 넣고 빼기">✏️</button>`:""}<span class="sp"></span><b class="qel l${lv}" title="오더 후 경과 시간">${el<1?"방금":el+"분"}</b><span class="qtm">${hhmm(o.t)}<i class="qby" style="font-style:normal"> · ${esc(o.by||"")}</i></span></div>
   <div class="pt">${esc(o.pname||"환축 미지정")}${o.chart?`<small>#${esc(o.chart)}</small>`:""}${o.room?`<small class="qrm">${esc(o.room)}</small>`:""}</div>${body}</div>`}
@@ -1448,9 +1552,33 @@ function qBoard(dp){const act=qMine(dp).sort((a,b)=>(b[1].urgent?1:0)-(a[1].urge
  const html=`<div class="qboard"><div class="qbh"><h2>진행 중 오더 <b>${act.length}건</b></h2></div><div class="qgrid">${act.map(([k,o])=>qCard(k,o,dp)).join("")||'<div class="meta" style="padding:8px">진행 중인 오더가 없어요</div>'}</div>
   <details class="qdone"><summary>오늘 완료 (${dn.length})</summary>${dn.map(([k,o])=>`<div class="di">✓ <b>${esc(o.pname||"")}</b>${o.chart?" #"+esc(o.chart):""} · ${esc((o.tests||[]).filter(x=>!dp||tDept(x)===dp).join(", "))} <button class="qsb" style="height:24px;padding:0 8px" data-act="qundo" data-k="${k}" data-d="${dp||""}">되돌리기</button></div>`).join("")}</details></div>`;
  Q.fresh.clear();return html}
+/* ---- 📣 호출: 🩺 진료 봐 주세요 → 진료실 기기에 큰 알림, 누가 받았는지 모두에게 / 🪑 대기실 확인 → 채팅·오더 화면에 큰 알림, 40초 뒤 저절로 사라짐 ---- */
+const CALL_TTL={clinic:600000,wait:3000};
+const isClinicDev=()=>qScreen()==="clinic"||/진료/.test(S.devName||"");
+const isChatDev=()=>["chat","mj"].includes(qScreen())||Q.view==="chat"||Q.view==="mj";
+async function callGo(kind){try{const r=await fetch(`${base()}/rooms/${encodeURIComponent(S.code)}/calls.json`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({k:kind,by:qMe(),uid:AU.uid,t:{".sv":"timestamp"},ct:Date.now()})});if(!r.ok)throw 0;const j=await r.json();S.myCall=j&&j.name;qPost(QCH(),{text:kind==="clinic"?"🩺 진료 봐 주세요":"🪑 대기실 확인해 주세요"}).catch(()=>{});
+  toast(kind==="clinic"?"🩺 진료실에 알렸어요 · 누가 받으면 알려 드려요":"🪑 대기실 확인 알림을 보냈어요")}catch(e){toast("보내지 못했어요")}}
+function callsOn(){const C=(ST.calls&&ST.calls.v)||{},now=Date.now(),seen=new Set((qls("callSeen")||"").split(","));let pop=null;
+ Object.entries(C).forEach(([k,c])=>{if(!c)return;const age=now-(c.ct||c.t||0);if(age>CALL_TTL[c.k]+60000||age<-60000)return;const mine=c.uid===AU.uid;
+  if(c.k==="clinic"){if(c.ack){if(!seen.has(k+"a")&&(mine||isClinicDev())){qls("callSeen",[...seen,k+"a"].slice(-40).join(","));seen.add(k+"a");if(mine)callBanner(`✓ <b>${esc(c.ack.by)}</b>에서 진료를 받았어요`,"#0f766e",12000);else{callClose(k)}}return}
+   if(mine){callBanner(`🩺 진료 요청 보냄 · 진료실 응답 기다리는 중…`,"#475467",0,k);return}
+   if(isClinicDev()&&!seen.has(k)&&age<CALL_TTL.clinic)pop={k,c}}
+  else if(c.k==="wait"&&!mine&&isChatDev()&&!seen.has(k)&&age<8000)pop=pop||{k,c}});
+ if(pop)callPop(pop.k,pop.c)}
+function callPop(k,c){const cl=c.k==="clinic";
+ if(cl){let b=$("#callS");if(b&&b.dataset.k===k)return;if(!b){b=document.createElement("div");b.id="callS";document.body.appendChild(b)}b.dataset.k=k;
+  b.innerHTML=`<span style="flex:1">🩺 <b>진료 요청</b> · ${esc(c.by||"")} ${hhmm(c.ct||c.t||Date.now())}</span><button class="btn-xs" style="height:34px;background:#fff;color:#1f6fb2;border-color:#fff;font-weight:900" data-act="callack" data-k="${esc(k)}">✋ 제가 볼게요</button><button class="btn-xs" style="height:34px" data-act="callx" data-k="${esc(k)}">닫기</button>`;
+  try{qBeep("ord")}catch(e){}try{if(document.hidden&&window.Notification&&Notification.permission==="granted")new Notification("🩺 진료 요청",{body:c.by||"",icon:"icon-192.png",tag:"call"+k})}catch(e){}return}
+ let m=$("#callM");if(m&&m.dataset.k===k)return;if(!m){m=document.createElement("div");m.id="callM";document.body.appendChild(m)}m.dataset.k=k;m.className="callm wt";
+ m.innerHTML=`<div class="callb"><div style="font-size:64px">🪑</div><div class="callt">대기실 확인해 주세요</div><div class="callf">${esc(c.by||"")} · ${hhmm(c.ct||c.t||Date.now())}</div></div>`;
+ m.onclick=()=>callClose(k);clearTimeout(m._t);m._t=setTimeout(()=>callClose(k),3000)}
+function callClose(k,seenIt){const m=$("#callM");if(m&&(!k||m.dataset.k===k)){clearTimeout(m._t);m.remove()}const sb=$("#callS");if(sb&&(!k||sb.dataset.k===k))sb.remove();if(k&&seenIt!==false){const a=(qls("callSeen")||"").split(",").filter(Boolean);if(!a.includes(k))a.push(k);qls("callSeen",a.slice(-40).join(","))}}
+function callBanner(html,bg,ms,k){let b=$("#callB");if(!b){b=document.createElement("div");b.id="callB";document.body.appendChild(b)}b.style.cssText=`position:fixed;left:8px;right:8px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:9002;max-width:520px;margin:0 auto;background:${bg};color:#fff;border-radius:12px;padding:10px 14px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.3);display:flex;gap:8px;align-items:center`;
+ b.innerHTML=`<span style="flex:1">${html}</span>${k?`<button class="btn-xs" style="height:30px" data-act="callcancel" data-k="${esc(k)}">취소</button>`:""}<button class="btn-xs" style="height:30px" data-act="callbx">닫기</button>`;clearTimeout(b._t);if(ms)b._t=setTimeout(()=>b.remove(),ms);else b._t=setTimeout(()=>{if(b.isConnected)b.innerHTML=`<span style="flex:1">🩺 3분째 진료실에서 안 받았어요</span><button class="btn-xs" style="height:30px" data-act="callgo" data-v="clinic">다시 울리기</button><button class="btn-xs" style="height:30px" data-act="callbx">닫기</button>`},180000)}
+setInterval(()=>{if(ST.calls)callsOn()},15000);
 function qChatHtml(){const mid=qMid(),arr=Object.entries(Q.chat).filter(([,m])=>m&&(m.t||0)>=mid).sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0);let prev="",h="";
  arr.forEach(([k,m])=>{const d=new Date(m.t),ds=`${d.getMonth()+1}월 ${d.getDate()}일`;if(ds!==prev){h+=`<div class="qday">${ds}</div>`;prev=ds}const me=m.uid===AU.uid;h+=`<div class="ql${me?" me":""}"><span class="qw">${esc(me?"나":m.by||"직원")} ${hhmm(m.t)}</span> ${esc(m.text)}</div>`});
- return `<div class="qchat"><div class="qmsgs" id="qmsgs">${h||'<div class="meta">아직 메시지가 없어요</div>'}</div><button class="qnew" id="qNew" hidden>↓ 새 메시지</button><div class="qcomp"><textarea id="qtxt" rows="1" placeholder="메시지 입력"></textarea><button class="btn" data-act="qsend">보내기</button></div></div>`}
+ return `<div class="qchat"><div class="qcall"><button class="qcb cl" data-act="callgo" data-v="clinic">🩺 진료 봐 주세요</button><button class="qcb wt" data-act="callgo" data-v="wait">🪑 대기실 확인해 주세요</button></div><div class="qmsgs" id="qmsgs">${h||'<div class="meta">아직 메시지가 없어요</div>'}</div><button class="qnew" id="qNew" hidden>↓ 새 메시지</button><div class="qcomp"><textarea id="qtxt" rows="1" placeholder="메시지 입력"></textarea><button class="btn" data-act="qsend">보내기</button></div></div>`}
 function qRender(){if(!Q.view)return;if(Q.drag){Q.pend=true;return}const el=$("#scr"),v=Q.view,on=qMine(null).length;el.classList.remove("fs1","fs2","fs3","fs4","cfs");el.classList.toggle("vchat",v==="chat");if(qFs())el.classList.add("fs"+qFs(),"cfs");
  const keep=$("#qtxt")?$("#qtxt").value:"",foc=document.activeElement&&document.activeElement.id==="qtxt",ms=$("#qmsgs"),stick=!ms||ms.scrollHeight-ms.scrollTop-ms.clientHeight<80,oldTop=ms?ms.scrollTop:0;
  const head=`<div class="qh"><div class="t"><b>${QTITLE[v]}</b><span>${esc(qMe())}${Q.temp?"":" · 이 기기의 기본 화면"}${v!=="xray"?lisBadge():""}</span></div>
@@ -1745,7 +1873,7 @@ function render(){if(Q.view==="tx")setTimeout(qRender,0);setTimeout(fxWarnTick,0
  if(S.room==="calc"){$("#dash").innerHTML="";$("#dis").innerHTML="";sb.style.display="none";L.className="";L.innerHTML=calcView();calcUpdate();return}
  if(S.room==="ord"){$("#dash").innerHTML="";$("#dis").innerHTML="";sb.style.display="none";L.className="";L.innerHTML=ordView();return}
  if(cur){$("#dash").innerHTML="";$("#dis").innerHTML="";sb.style.display="none";L.className="";
-  L.innerHTML=`<div><button class="btn-s" data-act="back">← 목록으로</button></div>`+card(cur);if(S.room==="lab_fluid")labFill(cur);return}
+  L.innerHTML=`<div><button class="btn-s" data-act="back">← 목록으로</button></div><button class="backfab" data-act="back" aria-label="목록으로">← 목록</button>`+card(cur);if(S.room==="lab_fluid")labFill(cur);return}
  sb.style.display="";L.className="tiles";renderDash();
  let list=all;
  if(S.room==="care"&&S.filter!=="ALL")list=list.filter(p=>{const c=cat(p),sp=p.species==="cat"?"cat":"dog";return S.filter==="CHK"?ocStale(p):S.filter===c||S.filter===sp});
@@ -2419,7 +2547,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
  tktab:()=>{S.tkTab=d.v==="plan"?"plan":"do";tkRender()},
  tksave:()=>{const p=find("care",id),t=p&&(p.tasks||[]).find(x=>x.id===d.t),r=document.querySelector(`[data-tke="${d.t}"]`);if(!t||!r)return;
   const n=(r.querySelector("[data-k=n]").value||"").trim(),ev=+r.querySelector("[data-k=e]").value,tm=r.querySelector("[data-k=d]").value;if(!n){toast("처치 이름을 넣어 주세요");return}
-  t.name=n.slice(0,120);t.every=ev;if(tm){const [h,m]=tm.split(":").map(Number),dd=new Date();dd.setHours(h,m,0,0);if(dd.getTime()<Date.now()-12*3600000)dd.setDate(dd.getDate()+1);t.due=dd.getTime()}if(ev===12)t.due=bidSnap(t.due);t.off=false;save("care");render();tkRender();toast(`${n} 고쳤어요 · 다음 ${hhmm(t.due)}`)},
+  delete S.tkEd[t.id];t.name=n.slice(0,120);t.every=ev;if(tm){const [h,m]=tm.split(":").map(Number),dd=new Date();dd.setHours(h,m,0,0);if(dd.getTime()<Date.now()-12*3600000)dd.setDate(dd.getDate()+1);t.due=dd.getTime()}if(ev===12)t.due=bidSnap(t.due);t.off=false;save("care");render();tkRender();toast(`${n} 고쳤어요 · 다음 ${hhmm(t.due)}`)},
  tkcopy:()=>{const p=find("care",id);if(!p)return;const dn=tkToday(p),cp=p.tkCopied===todayStr()?p.tkCopiedN||0:0,L=d.v==="all"?dn:dn.slice(cp);if(!L.length){toast("새로 한 처치가 없어요");return}
   copy(`[처치] ${todayStr()} ${p.name}\n`+L.map(l=>`${l.time} ${l.text.replace(/^✓ /,"")}`).join("\n"),`오늘 처치 ${L.length}건을 복사했어요 · 인투벳에 붙여 넣으세요`);p.tkCopied=todayStr();p.tkCopiedN=dn.length;save("care");tkRender()},
  fxopen:()=>{S.fxOpen=true;if(!S.fx.tSet){const T=fxCfg().types,i=T.findIndex(x=>/생리식염수/.test(x));S.fx.t=i<0?0:i}fxRefresh()},fxclose:()=>{S.fxOpen=false;fxRefresh()},fxt:()=>{S.fx.t=+d.v;S.fx.tSet=true;fxRefresh()},fxb:()=>{S.fx.b=+d.v;fxRefresh()},fxr:()=>{S.fx.rate=d.v;S.fx.mlh="";fxRefresh()},
@@ -2429,8 +2557,26 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
   try{const r=await fetch(`${base()}/rooms/${encodeURIComponent(S.code)}/fluids.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({...v,ok:true,by:qMe(),at:Date.now()})});if(!r.ok)throw 0;ST.fluids={v:{...v,ok:true,by:qMe()},got:true};$("#fxM").classList.remove("open");fxRefresh();toast("수액·CRI 기본값을 저장했어요")}catch(e){toast("저장하지 못했어요")}},
  rxadd:()=>{const p=find("care",S.tkId),x=rxCfg().list[+d.k];if(p&&x)rxAdd(p,x)},
  rxsel:()=>{const x=rxCfg().list[+d.k];if(!x)return;if(S.rx.k===+d.k&&S.rx.g===d.g){S.rx.k=null;rxRefresh();return}S.rx={k:+d.k,g:d.g,d:String(x.d),c:String(x.c||""),f:x.f,i:num(x.i)};rxRefresh()},
- rxfq:()=>{S.rx.f=d.v;rxRefresh()},rxinf:()=>{S.rx.i=+d.v;rxRefresh()},rxcancel:()=>{S.rx.k=null;rxRefresh()},
- rxaddc:()=>{const p=find("care",S.tkId),b=rxCfg().list[S.rx.k];if(!p||!b)return;rxAdd(p,{...b,d:num(S.rx.d),c:num(S.rx.c),f:S.rx.f,i:num(S.rx.i)})},
+ rxfq:()=>{S.rx.f=d.v;rxRefresh()},rxinf:()=>{S.rx.i=+d.v;rxRefresh()},rxcancel:()=>{const ed=S.rx.g==="edit";S.rx={k:null,d:"",c:"",f:"",i:""};ed?tkRender():rxRefresh()},
+ rxaddc:()=>{const p=find("care",S.tkId),b=rxCfg().list[S.rx.k];if(!p||!b)return;cartRx(p,{...b,d:num(S.rx.d),c:num(S.rx.c),f:S.rx.f,i:num(S.rx.i)})},
+ rxedit:()=>{const p=find("care",id),t=p&&(p.tasks||[]).find(x=>x.id===d.t);if(t)rxEditOpen(p,t)},
+ rxeditsave:()=>{const p=find("care",S.tkId),s=S.rx,t=p&&(p.tasks||[]).find(x=>x.id===s.edit);if(!t)return;const L=rxCfg().list,base=s.k!=null?L[s.k]:s.ex,x={...base,d:num(s.d),c:num(s.c),f:s.f,i:num(s.i)},bw=rxBwOf(p),r=rxCalc(x,bw);
+  if(!r){toast("체중·용량·농도를 확인해 주세요");return}const old=t.name,nm=rxName(x,r),ev=RX_FQ[x.f]??12;t.name=nm;t.rx={n:x.n,d:x.d,c:x.c,f:x.f,i:x.i,r:x.r||"IV"};if(t.every!==ev){t.every=ev;if(ev===12)t.due=bidSnap(t.due)}
+  const now=Date.now();p.logs=p.logs||[];p.logs.unshift({id:`l${now}`,time:hhmm(now),d:todayStr(),text:`처치표 수정: ${old} → ${nm} · ${S.devName||"이름 없는 기기"}`});S.rx={k:null,d:"",c:"",f:"",i:""};save("care");render();tkRender();toast(`${txShort(nm)} 수정했어요`)},
+ tpsel:()=>{if(S.tp&&!S.tp.custom&&S.tp.n===d.v&&S.tp.g===d.g){S.tp=null;tkRender();return}const p=find("care",S.tkId),c=p&&cartOf(p).find(x=>x.key==="t:"+d.v);S.tp={n:d.v,g:d.g,e:c?c.every:(TPRE_EV[d.v]??4),at:c?c.at:0};tkRender()},
+ tpcustom:()=>{S.tp=S.tp&&S.tp.custom?null:{n:"",custom:true,e:4,at:0};tkRender()},tpclose:()=>{S.tp=null;tkRender()},
+ tpev:()=>{S.tp.e=+d.v;tkRender()},
+ tpat:()=>{const v=+d.v;if(d.tgt==="rx"){S.rx.atMs=v;rxRefresh()}else{S.tp.at=v;tkRender()}},
+ tpdet:()=>{if(d.tgt==="rx"){S.rx.det=true;rxRefresh()}else{S.tp.det=true;tkRender()}},
+ tpput:()=>{const p=find("care",id),T=S.tp;if(!p||!T)return;const n=(T.custom?(($("#tpName")||{}).value||T.n):T.n).trim();if(!n){toast("처치 이름을 넣어 주세요");return}
+  const C=cartOf(p),it={key:"t:"+n,kind:"t",name:n.slice(0,60),every:+T.e,at:T.at||0},i=C.findIndex(x=>x.key===it.key);if(i>=0)C[i]=it;else C.push(it);S.tp=null;tkRender()},
+ tput:()=>{const p=find("care",id);if(!p)return;cartPut(p,{key:"t:"+d.v,kind:"t",name:d.v,every:TPRE_EV[d.v]??4});tkRender()},
+ tputc:()=>{const p=find("care",id);if(!p)return;const n=(S.tAddV.n||"").trim();if(!n){toast("처치 이름을 넣어 주세요");return}const e=+(S.tAddV.e||4);const C=cartOf(p);if(!C.some(x=>x.key==="t:"+n))C.push({key:"t:"+n,kind:"t",name:n.slice(0,60),every:e});S.tAddV={n:"",e:"4"};tkRender()},
+ tbput:()=>{const p=find("care",id),b=tbCfg()[+d.i];if(!p||!b)return;const C=cartOf(p);b.items.forEach(([n,e])=>{if(!C.some(x=>x.key==="t:"+n))C.push({key:"t:"+n,kind:"t",name:n,every:+e||0})});tkRender();toast(`📦 ${b.n} · ${b.items.length}개 담았어요`)},
+ tbedit:tbEditOpen,tbclose:()=>{const m=$("#tbM");if(m)m.classList.remove("open")},
+ tbsave:async()=>{if(!S.adm)return;const L=[...document.querySelectorAll("#tbS [data-tb]")].map(r=>({n:r.querySelector("[data-k=n]").value.trim(),items:r.querySelector("[data-k=i]").value.split("\n").map(l=>l.split(/[,，]/)).map(([n,e])=>[String(n||"").trim(),num(e)]).filter(([n])=>n)})).filter(b=>b.n&&b.items.length);
+  try{const r=await fetch(`${base()}/rooms/${encodeURIComponent(S.code)}/bundles.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({list:L,by:qMe(),at:Date.now()})});if(!r.ok)throw 0;ST.bundles={v:{list:L},got:true};$("#tbM").classList.remove("open");tkRender();toast("처치 묶음을 저장했어요 · 모든 기기에 반영")}catch(e){toast("저장하지 못했어요")}},
+ cartdel:()=>{const p=find("care",id);if(!p)return;cartOf(p).splice(+d.i,1);tkRender()},cartclr:()=>{const p=find("care",id);if(p){S.cart[p.id]=[];tkRender()}},cartgo:()=>{const p=find("care",id);if(p)cartGo(p)},
  rxcfg:rxCfgOpen,rxcfgclose:()=>{const m=$("#rxM");if(m)m.classList.remove("open")},
  rxrowadd:()=>{const L=rxCollect();L.push({n:"새 약",d:1,c:0,f:"BID",r:"IV",i:0});$("#rxRows").innerHTML=L.map((x,k)=>rxRow(x,k,false)).join("")},
  rxrowdel:()=>{const L=rxCollect();L.splice(+d.k,1);$("#rxRows").innerHTML=L.map((x,k)=>rxRow(x,k,false)).join("")},
@@ -2468,8 +2614,14 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
  quc:()=>{Q.uc=Q.uc===d.v?"":d.v;const t=$("#qTests");if(t)t.innerHTML=qTestsHtml()},
  qpanel:()=>{const a=(PANELS.find(x=>x[0]===d.v)||[,[]])[1],all=a.every(x=>Q.sel.has(x));a.forEach(x=>all?Q.sel.delete(x):Q.sel.add(x));const t=$("#qTests");if(t)t.innerHTML=qTestsHtml()},qosend:qoSend,qedit:()=>qEditOpen(d.k),qedsave:qEditSave,qedcx:qEditCancel,qsend:qSendChat,
  qtab:()=>{Q.tab=d.v;qRender()},ordf:()=>{S.ordF=d.k;render()},
- qst:async()=>{try{const r=await fetch(`${QOR()}/${d.k}/parts/${d.d}.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({s:d.v,by:qMe(),t:Date.now()})});if(!r.ok)throw 0}catch(e){toast("바꾸지 못했어요")}},
- qundo:async()=>{const o=Q.ords[d.k];if(!o)return;const dps=d.d?[d.d]:Object.keys(qParts(o));for(const x of dps)await fetch(`${QOR()}/${d.k}/parts/${x}.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({s:"new"})}).catch(()=>{})},tkopen:()=>tkOpen(id),anopen:()=>anOpen(id),tkclose:()=>$("#tk").classList.remove("open"),alclose:()=>$("#al").classList.remove("open"),
+ qst:async()=>{try{const r=await fetch(`${QOR()}/${d.k}/parts/${d.d}.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({s:d.v,by:qMe(),t:Date.now()})});if(!r.ok)throw 0;if(d.v==="ing"&&d.d==="lab")stimStart(d.k)}catch(e){toast("바꾸지 못했어요")}},
+ stimok:async()=>{try{await fetch(`${QOR()}/${encodeURIComponent(d.k)}/stim/ok/${+d.i}.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(Date.now())});const o=Q.ords[d.k];if(o&&o.stim){o.stim.ok=o.stim.ok||{};o.stim.ok[+d.i]=Date.now()}stimTick();toast("채혈 기록했어요")}catch(e){toast("기록하지 못했어요")}},
+ stimhide:()=>{const a=(qls("stimAck")||"").split(",").filter(Boolean).slice(-30);a.push(d.v);qls("stimAck",a.join(","));stimTick()},
+ callgo:()=>callGo(d.v),callx:()=>callClose(d.k),callbx:()=>{const b=$("#callB");if(b)b.remove()},
+ callack:async()=>{const k=d.k;try{const r=await fetch(`${base()}/rooms/${encodeURIComponent(S.code)}/calls/${encodeURIComponent(k)}/ack.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({by:S.devName||qMe(),t:Date.now()})});if(!r.ok)throw 0;callClose(k);qPost(QCH(),{text:`✋ ${S.devName||qMe()}에서 진료 볼게요`}).catch(()=>{});toast("접수실에 알렸어요")}catch(e){toast("보내지 못했어요")}},
+ callcancel:async()=>{try{await fetch(`${base()}/rooms/${encodeURIComponent(S.code)}/calls/${encodeURIComponent(d.k)}.json`,{method:"DELETE"})}catch(e){}const b=$("#callB");if(b)b.remove();toast("호출을 취소했어요")},
+ stimclose:()=>{const m=$("#stimM");if(m)m.classList.remove("open")},
+ qundo:async()=>{const o=Q.ords[d.k];if(!o)return;const dps=d.d?[d.d]:Object.keys(qParts(o));for(const x of dps)await fetch(`${QOR()}/${d.k}/parts/${x}.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({s:"new"})}).catch(()=>{})},tkopen:()=>tkOpen(id,d.v),anopen:()=>anOpen(id),tkclose:()=>$("#tk").classList.remove("open"),alclose:()=>$("#al").classList.remove("open"),
  altog:()=>{const p=find("care",S.alId);if(!p)return;const a=p.alerts=p.alerts||[],i=a.indexOf(d.v);if(i>=0)a.splice(i,1);else a.push(d.v);alSave(p)},
  aladd:()=>{const p=find("care",S.alId),v=($("#alIn").value||"").trim();if(!p||!v)return;p.alerts=p.alerts||[];if(!p.alerts.includes(v))p.alerts.push(v.slice(0,30));alSave(p)},
  alcpr:()=>{const p=find("care",S.alId);if(!p)return;if(d.v==="미정")delete p.cpr;else p.cpr=d.v;alSave(p)},
