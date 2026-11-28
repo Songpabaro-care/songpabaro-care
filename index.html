@@ -717,7 +717,7 @@ let EGEN=0,RSG=0,RS=null,RSgot=false;const SUB={},RSW=[];
 /* 방 전체를 실시간 연결 1개로 받고, 하위 경로별로 나눠 전달 */
 function rsRoute(seg,path,data,patch){
  if(seg==="chat"||seg==="orders"){qOn(seg==="orders"?"ord":"chat",path,data,patch);return}
- const st=ST[seg]||(ST[seg]={v:null});applyEv(st,{path,data},patch);st.got=true;if(SUB[seg])flush(seg,SUB[seg]);if(seg==="lis")lisOn();if(seg==="rcp"||seg==="config")rcpUpd()}
+ const st=ST[seg]||(ST[seg]={v:null});applyEv(st,{path,data},patch);st.got=true;if(SUB[seg])flush(seg,SUB[seg]);if(seg==="lis")lisOn();if(seg==="rcp"||seg==="config")rcpUpd();if(seg==="ilres")ilOn()}
 function rsEv(d,patch){Q.lastEv=Date.now();Q.down=0;const ps=String(d.path||"/").split("/").filter(Boolean),data=d.data;
  if(!ps.length){
   if(patch)Object.entries(data||{}).forEach(([k,v])=>{const ks=k.split("/").filter(Boolean),seg=ks.shift();if(!seg)return;if(!ks.length)rsRoute(seg,"/",v,false);else rsRoute(seg,"/",{[ks.join("/")]:v},true)});
@@ -889,7 +889,7 @@ function tile(p){const cr=S.room==="care",lg=(p.logs||[])[0],
  bd=(cr||isCareP(p.id))?`<button type="button" class="badge catb ${cat(p)==="호텔"?"h":cat(p)==="외래"?"o":""}" data-act="catpick" data-id="${p.id}" title="외래·입원·호텔 바꾸기">${cat(p)}${cat(p)==="외래"?"":dayN(p)} ▾</button>`:"",
  l2=cr?(p.dx?esc(p.dx):"병명 미입력"):esc(p.breed||"")+(p.owner?" · "+esc(p.owner):"");
  const tx=[p.breed?esc(String(p.breed).replace(/\s*\(.*?\)\s*/g," ").trim()||p.breed):"",p.sex?sexKo(p.sex):"",p.bw?esc(p.bw)+"kg":""].filter(Boolean);
- return `<div class="tile sp-${p.species==="cat"?"cat":"dog"}" role="button" tabindex="0" data-act="sel" data-id="${p.id}"><div class="tt"><div class="av">${p.species==="cat"?"🐱":"🐶"}</div><div class="tn">${esc(p.name)}${p.mjNo?`<span class="mjno${p.mjAt?"":" wait"}">#${esc(p.mjNo)}</span>`:""}</div>${tx.length?`<div class="tx">${tx.map(x=>`<span>${x}</span>`).join("")}</div>`:""}</div><div class="meta">${bd}<span class="badge n">${esc(pno(p))}</span></div><div class="meta td">${l2}</div>${cr?alertRow(p):""}${cr&&tasksOf(p).length?(lateN(p)?`<div class="meta tlate">⏰ 처치 ${lateN(p)}건 지남</div>`:`<div class="meta">⏰ 다음 처치 ${hhmm(tasksOf(p)[0].due)}</div>`):""}${cr&&lg?`<div class="meta">🕒 ${logDate(lg)&&logDate(lg)!==todayStr()?esc(fmtD(logDate(lg)).slice(0,5))+" ":""}${esc(lg.time)} 마지막 기록</div>`:""}${cr&&(p.logs||[]).length?`<button type="button" class="btn-xs" style="justify-self:start" data-act="copycare" data-m="new" data-id="${p.id}">📋 새 기록 복사</button>`:""}</div>`}
+ return `<div class="tile sp-${p.species==="cat"?"cat":"dog"}" role="button" tabindex="0" data-act="sel" data-id="${p.id}"><div class="tt"><div class="av">${p.species==="cat"?"🐱":"🐶"}</div><div class="tn">${esc(p.name)}${p.mjNo?`<span class="mjno${p.mjAt?"":" wait"}">#${esc(p.mjNo)}</span>`:""}</div>${tx.length?`<div class="tx">${tx.map(x=>`<span>${x}</span>`).join("")}</div>`:""}</div><div class="meta">${bd}<span class="badge n">${esc(pno(p))}</span></div><div class="meta td">${l2}</div>${cr&&ocStale(p)?`<div class="meta" style="color:#8a5200;font-weight:700">❓ 확인 필요 · 기록 없음</div>`:""}${cr?alertRow(p):""}${cr&&tasksOf(p).length?(lateN(p)?`<div class="meta tlate">⏰ 처치 ${lateN(p)}건 지남</div>`:`<div class="meta">⏰ 다음 처치 ${hhmm(tasksOf(p)[0].due)}</div>`):""}${cr&&lg?`<div class="meta">🕒 ${logDate(lg)&&logDate(lg)!==todayStr()?esc(fmtD(logDate(lg)).slice(0,5))+" ":""}${esc(lg.time)} 마지막 기록</div>`:""}${cr&&(p.logs||[]).length?`<button type="button" class="btn-xs" style="justify-self:start" data-act="copycare" data-m="new" data-id="${p.id}">📋 새 기록 복사</button>`:""}</div>`}
 /* ---- PC 차트 보드: 넓은 화면에서 환축을 고르고 인투벳에 붙여넣을 글을 바로 복사 ---- */
 S.pc=false;S.pcSel=null;S.pcCk=[];let PCT;
 const pcNew=p=>careRows(p,"new").length;
@@ -1262,6 +1262,8 @@ function syncHtml(){const m=syncMode(),c=ST.config&&ST.config.v&&ST.config.v.syn
  const btn=(v,t)=>`<button class="qtg${m===v?" on":""}" data-act="syncmode" data-v="${v}"${S.adm?"":" disabled"}>${t}</button>`;
  return `<div class="row" style="flex-wrap:wrap;gap:6px">${btn("both","🔗 인투링크 + 차트 읽기")}${btn("lis","🧾 차트 읽기(LIS)만")}</div>
  <div class="meta">${m==="lis"?"지금: <b>차트 읽기(LIS)만</b> · 인투링크는 읽지 않아요. 직원이 인투벳에서 차트를 열 때 외래·입원·호텔이 등록·구분되고 수납완료면 외래 카드가 정리돼요.":"지금: <b>인투링크 + 차트 읽기</b> · 접수실 크롬 확장이 3분마다 인투링크 진료대기를 읽고, 차트 읽기(LIS)도 함께 돌아요."}${c.by?` · 바꾼 기기 ${esc(c.by)} ${c.at?agoTxt(c.at):""}`:""}${c.extSeen?` · 접수실 확장 마지막 확인 ${agoTxt(c.extSeen)}`:""}${S.adm?"":" · 관리자 기기에서만 바꿀 수 있어요"}</div>
+ <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px"><button class="qtg" data-act="ilreq">🔄 인투링크로 맞추기</button><button class="qtg${c.ilApply?"":" on"}" data-act="ilmode" data-v="0"${S.adm?"":" disabled"}>👀 미리보기 후 반영</button><button class="qtg${c.ilApply?" on":""}" data-act="ilmode" data-v="1"${S.adm?"":" disabled"}>⚡ 누르면 바로 반영</button></div>
+ <div class="meta">🔄 맞추기: 누를 때만 접수실 PC가 인투링크 진료대기를 한 번 읽어 입원·호텔 구분, 퇴원, 빠진 아이 등록, 명단에 없는 외래 정리를 해요 (15분에 한 번까지 · 자동 반복 없음). 번호가 확실한 아이만 바꾸고, 직접 바꾼 구분·직접 등록한 카드는 그대로 둬요.</div>
  <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px"><a class="qtg" href="lis/songpabaro-lis-setup.bat" download style="text-decoration:none" title="받은 파일을 한 번 실행하면 설치와 자동 실행 등록까지 끝나요">🧾 차트 읽기(LIS) 설치 파일</a><a class="qtg" href="intolink/songpabaro-intolink.zip" download style="text-decoration:none">🔗 인투링크 연동 확장 받기</a></div>
  <div class="meta">차트 읽기(LIS): 인투벳이 깔린 PC마다 설치 파일을 받아 한 번 실행하세요. 진단 창이 뜨면 🔐 기기 관리에서 "인투벳 차트 읽기 · PC이름"을 승인하고, 진단 창에 차트 정보가 읽히는지 확인한 뒤 진단 창을 닫고 설치 창에서 아무 키나 누르면 돼요. 그다음부터는 창 없이 뒤에서 돌아서 화면·작업표시줄에 파워쉘이나 메모장이 뜨지 않아요. 다시 실행하면 최신 버전으로 바뀌어요.</div>
  <div class="otitle" style="font-size:13px">PC별 차트 읽기 상태</div><div id="rcpBox">${rcpHtml()}</div>`}
@@ -1337,23 +1339,44 @@ async function xsOpen(){if(XS.w)return;if(!window.documentPictureInPicture){toas
 setInterval(()=>{if(XS.w)xsRender()},20000);
 setTimeout(()=>{if(qls("xstrip")!=="1"||!window.documentPictureInPicture)return;const re=ev=>{if(XS.w||qls("xstrip")!=="1"){document.removeEventListener("pointerdown",re,true);return}if(!OKD)return;document.removeEventListener("pointerdown",re,true);xsOpen()};document.addEventListener("pointerdown",re,true);
  let tn=0;const hint=()=>{if(XS.w||qls("xstrip")!=="1")return;if(OKD){toast("📌 화면을 한 번 클릭하면 영상 알림 띠가 다시 BLADE 위에 떠요");return}if(++tn<20)setTimeout(hint,1500)};setTimeout(hint,1500)},0);
-/* ---- 🧹 외래 자동 정리: 차트 읽기(LIS)·인투링크로 자동 등록된 외래 카드 중 기록·오더·문진이 하나도 없고
-   등록 후 4시간이 지났거나 어제 이전에 등록된 것 → 접수 취소·지난 접수로 보고 정리 (⚙ 최근 지운 항목에서 되돌리기 가능) ---- */
+/* ---- ❓ 확인 필요: 자동 등록된 외래 카드 중 기록·오더·문진이 하나도 없고 등록 후 4시간이 지났거나 어제 이전 것.
+   추측해서 지우지 않음 → 표시만 하고, 직원이 [취소됨·입원·호텔·진료 중]을 고르거나 '🔄 인투링크로 맞추기'로 확인 ---- */
 const ocHas=c=>{const n=v=>Array.isArray(v)?v.length:v&&typeof v==="object"?Object.keys(v).length:0;return !!(n(c.logs)||c.dx||c.memo||c.mjNo||n(c.tasks)||n(c.alerts)||c.anes||n(c.anesthesia))};
 const ocTs=c=>{const m=String(c.id||"").match(/^p-care-(\d{12,})/);return m?+m[1]:0};
 const ocDay=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
-function ocStale(c){if(!c||!(c.auto==="intovet"||c.auto==="intolink"))return false;if((c.category||"외래")!=="외래")return false;
+function ocStale(c){if(!c||!["intovet","intolink","ilfix"].includes(c.auto))return false;if((c.category||"외래")!=="외래")return false;if(c.chk===ocDay())return false;
  const ts=ocTs(c),t0=new Date();t0.setHours(0,0,0,0);const old=(c.adm&&c.adm<ocDay())||(ts&&(ts<t0.getTime()||Date.now()-ts>4*3600000));if(!old||ocHas(c))return false;
  const dr=S.drafts&&S.drafts[c.id];if(dr&&((dr.items&&dr.items.length)||(dr.memo&&String(dr.memo).trim())||(dr.f&&Object.values(dr.f).some(v=>v!==""&&v!=null))))return false;
  const ch=String(c.chartNo||"").replace(/\D/g,"");if(Object.values(Q.ords).some(o=>o&&(o.pid===c.id||(ch&&String(o.chart||"").replace(/\D/g,"")===ch))))return false;return true}
-async function ocLock(){const u=`${base()}/rooms/${encodeURIComponent(S.code)}/config/clean.json`;
- try{const r=await fetch(u,{headers:{"X-Firebase-ETag":"true"},cache:"no-store"});if(!r.ok)return false;const et=r.headers.get("ETag"),tx=await r.text();let v=null;try{v=tx?JSON.parse(tx):null}catch(x){}if(v&&v.t&&Date.now()-v.t<9*60000&&v.u!==AU.uid)return false;
-  const h={"Content-Type":"application/json"};if(et)h["if-match"]=et;const w=await fetch(u,{method:"PUT",headers:h,body:JSON.stringify({t:Date.now(),u:AU.uid,by:qMe()})});return w.ok}catch(e){return false}}
-async function ocRun(){if(!OKD||!S.p||!Array.isArray(S.p.care)||!Q.init.ord)return;const L=getL("care").filter(ocStale).slice(0,30);if(!L.length)return;if(!await ocLock())return;
- const ids=new Set(L.map(c=>c.id));S.p.care=getL("care").filter(p=>!ids.has(p.id));L.forEach(c=>{if(S.drafts)delete S.drafts[c.id]});render();save("care");
- for(const c of L){try{await trashPut("patient",`${c.name||"#"+(c.chartNo||"")} (외래 자동 정리)`,{room:"care",p:c})}catch(e){}}
- toast(`🧹 기록 없는 외래 카드 ${L.length}개 정리 (접수 취소·지난 접수) · ⚙ → 최근 지운 항목에서 되돌릴 수 있어요`)}
-setTimeout(()=>{ocRun();setInterval(ocRun,10*60000)},90000);
+const ocN=()=>(S.p.care||[]).filter(ocStale).length;
+function ocBox(p){if(!ocStale(p))return"";return `<div class="card" style="border:1.5px solid #f0c36d;background:#fff8e6;padding:10px 12px;display:grid;gap:8px;margin:6px 0"><b style="color:#8a5200">❓ 확인 필요 · 기록이 없는 자동 등록 외래예요</b><div class="meta">인투벳에서 이 아이 상태를 골라 주세요. 모르면 '🔄 인투링크로 맞추기'를 눌러도 돼요.</div>
+ <div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn gh" data-act="ocx" data-id="${p.id}" data-v="cancel">🗑 접수 취소됨</button><button class="btn gh" data-act="ocx" data-id="${p.id}" data-v="입원">🏥 입원</button><button class="btn gh" data-act="ocx" data-id="${p.id}" data-v="호텔">🏨 호텔</button><button class="btn gh" data-act="ocx" data-id="${p.id}" data-v="ing">🩺 오늘 진료 중</button></div></div>`}
+function ocAct(id,v){const p=(S.p.care||[]).find(x=>x.id===id);if(!p)return;
+ if(v==="cancel"){S.p.care=S.p.care.filter(x=>x.id!==id);if(S.drafts)delete S.drafts[id];if(S.sel===id)S.sel=null;render();save("care");trashed("patient",`${p.name} (접수 취소)`,{room:"care",p},`${p.name} 카드를 정리했어요`);return}
+ if(v==="ing"){p.chk=ocDay();render();save("care");toast(`${p.name} · 오늘은 확인 필요에서 뺐어요`);return}
+ catSet(id,v)}
+
+/* ---- 🔄 인투링크로 맞추기: 누를 때만 접수실 PC 확장이 진료대기 페이지를 한 번 받아 인투링크 명단 기준으로 카드 정리 ---- */
+const IL={mine:null,at:0,tm:null,seen:0};
+const ilWait=()=>{const r=ST.ilres&&ST.ilres.v,n=r&&r.nextAt||0;return n>Date.now()?Math.ceil((n-Date.now())/60000):0};
+async function ilReq(apply,from){if(Date.now()-IL.at<20000){toast("방금 요청했어요 · 잠시 기다려 주세요");return}
+ if(!from&&ilWait()){toast(`인투링크 맞추기는 15분에 한 번까지예요 · ${ilWait()}분 뒤에 다시 눌러 주세요`);return}
+ const id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);IL.mine=id;IL.at=Date.now();
+ try{const r=await fetch(`${base()}/rooms/${encodeURIComponent(S.code)}/ilreq.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,t:Date.now(),by:qMe(),apply:!!apply,...(from?{from}:{})})});if(!r.ok)throw 0;
+  toast(apply?"반영을 요청했어요 · 30초 안에 결과가 떠요":"접수실 PC에 맞추기를 요청했어요 · 30초 안에 결과가 떠요");clearTimeout(IL.tm);IL.tm=setTimeout(()=>{if(IL.mine===id)toast("응답이 없어요 · 접수실 PC 크롬과 인투링크 연동 확장(5.0 이상)이 켜져 있는지 확인해 주세요")},90000)}catch(e){IL.at=0;toast("요청하지 못했어요")}}
+function ilOn(){const r=ST.ilres&&ST.ilres.v;try{renderDash()}catch(e){}if(!r||!r.t||r.t<=IL.seen)return;const first=!IL.seen;IL.seen=r.t;if(first&&Date.now()-r.t>60000)return;
+ if(r.id&&r.id===IL.mine){IL.mine=null;clearTimeout(IL.tm);ilShow(r)}else if(r.apply&&r.nAct)toast(`🔄 인투링크로 맞춤 · ${r.nAct}건 반영 (${r.by||""})`)}
+function ilShow(r){if(!r.apply&&!r.err)IL.last=r.id;let m=$("#ilM");if(!m){m=document.createElement("div");m.className="mask";m.id="ilM";m.innerHTML='<div class="sheet" id="ilS"></div>';m.addEventListener("click",e=>{if(e.target===m)m.classList.remove("open")});document.body.appendChild(m)}
+ const L=r.lines||[],U=r.unknown||[],act=L.filter(x=>!/^(✋|ℹ|⚠)/.test(x));
+ $("#ilS").innerHTML=`<div class="row" style="align-items:center"><b style="flex:1;font-size:17px">🔄 인투링크로 맞추기 ${r.err?"· 못 했어요":r.apply?"· 반영했어요":"· 미리보기"}</b><button class="btn gh" data-act="ilclose">닫기</button></div>
+ ${r.err?`<div class="card" style="border:1.5px solid #f5c2bf;background:#fff4f3;color:#b42318;padding:10px 12px">${esc(r.err)}</div>`:`<div class="meta">인투링크 외래 ${r.n&&r.n.opd||0} · 입원·호텔 ${r.n&&r.n.inp||0} · ${r.apply?`바뀐 것 ${act.length}건`:`바꿀 것 ${act.length}건`}${U.length?` · 번호 못 찾음 ${U.length}`:""}</div>
+ <div style="display:grid;gap:4px">${L.length?L.map(x=>`<div class="meta" style="color:var(--ink);font-size:13.5px">${esc(x)}</div>`).join(""):'<div class="meta">✅ 케어 노트가 인투링크 명단과 같아요. 바꿀 게 없어요.</div>'}</div>
+ ${U.length?`<div class="otitle" style="margin-top:4px">❓ 번호를 못 찾아 건드리지 않은 줄</div><div class="meta">${U.map(esc).join(" · ")}</div><div class="meta">이 아이들은 인투벳에서 차트를 한 번 열면 차트 읽기(LIS)가 번호로 등록해요.</div>`:""}
+ ${!r.apply&&act.length?`<div class="row" style="gap:6px;justify-content:flex-end"><button class="btn" data-act="ilapply">이대로 반영하기</button></div><div class="meta">10분 안에 누르면 인투링크를 다시 읽지 않고 이 미리보기대로 바꿔요 (바로 전에 케어 노트는 다시 확인). 지운 카드는 ⚙ → 최근 지운 항목에서 되돌릴 수 있어요.</div>`:""}`}`
+ m.classList.add("open")}
+/* 맞추기 알림: 오전 9시·오후 1시·오후 7시 (PC·관리자 기기, 기기마다 한 번) */
+setInterval(()=>{if(!OKD||document.hidden||!(innerWidth>=761||S.adm))return;const d=new Date(),h=d.getHours(),slot=[9,13,19].find(x=>h===x&&d.getMinutes()<30);if(slot==null)return;
+ const k=`ilrem:${ocDay()}:${slot}`;if(qls(k))return;qls(k,"1");toast("🧹 인투링크로 맞추기 할 시간이에요",{label:"지금 맞추기",fn:()=>ilReq(false)})},60000);
 S.ordF="all";
 function ordView(){const f=S.ordF,dp=f==="all"?null:f,cnt=d=>qMine(d).length;
  return `<div class="card" style="display:grid;gap:10px"><div class="row" style="align-items:center;gap:6px;flex-wrap:wrap">${[["all","전체",cnt(null)],["lab","검사실",cnt("lab")],["img","영상",cnt("img")]].map(([k,t,n])=>`<button type="button" class="chip ${f===k?"sel":""}" data-act="ordf" data-k="${k}">${t} ${n}</button>`).join("")}<span style="flex:1"></span><button class="btn" style="background:#4655c9" data-act="qord">＋ 검사 오더</button></div>
@@ -1373,7 +1396,7 @@ function render(){{const tk=$("#tk");if(tk&&tk.classList.contains("open"))setTim
   L.innerHTML=`<div><button class="btn-s" data-act="back">← 목록으로</button></div>`+card(cur);if(S.room==="lab_fluid")labFill(cur);return}
  sb.style.display="";L.className="tiles";renderDash();
  let list=all;
- if(S.room==="care"&&S.filter!=="ALL")list=list.filter(p=>{const c=cat(p),sp=p.species==="cat"?"cat":"dog";return S.filter===c||S.filter===sp});
+ if(S.room==="care"&&S.filter!=="ALL")list=list.filter(p=>{const c=cat(p),sp=p.species==="cat"?"cat":"dog";return S.filter==="CHK"?ocStale(p):S.filter===c||S.filter===sp});
  if(S.room==="care"){const rk={"외래":0,"입원":1,"호텔":2},rt=p=>+((String(p.id).match(/(\d{13})/)||[])[1]||0)||Date.parse(p.adm||"")||0;list=[...list].sort((a,b)=>(rk[cat(a)]??1)-(rk[cat(b)]??1)||rt(b)-rt(a))}
  L.innerHTML=list.length?list.map(tile).join(""):`<div class="card empty" style="padding:36px 16px;grid-column:1/-1"><div style="font-size:30px">🐾</div><b>해당하는 환축이 없습니다</b><div class="meta">오른쪽 아래 '환축 등록'으로 추가하세요.</div></div>`;
  renderDis();applyQ();
@@ -1384,7 +1407,7 @@ function renderDash(){
  const a=S.p.care||[],n=f=>a.filter(f).length;
  const st=[["ALL","전체",a.length],["입원","입원",n(p=>cat(p)==="입원")],["호텔","호텔",n(p=>cat(p)==="호텔")],["외래","외래",n(p=>cat(p)==="외래")],["dog","🐶 강아지",n(p=>p.species!=="cat")],["cat","🐱 고양이",n(p=>p.species==="cat")]];
  el.innerHTML=`<div class="stats">${st.map(([k,l,v])=>`<button class="stat ${S.filter===k?"on":""}" data-act="filter" data-k="${k}"><b>${v}</b><small>${l}</small></button>`).join("")}</div>`+
- `<div class="sub" style="margin-top:8px"><button class="pill" data-act="photo">📷 사진 찍어 등록</button></div>`;
+ `<div class="sub" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><button class="pill" data-act="photo">📷 사진 찍어 등록</button><button class="pill" data-act="ilreq">🔄 인투링크로 맞추기${ilWait()?` · ${ilWait()}분 뒤`:""}</button>${ocN()?`<button class="pill" style="border-color:#f0c36d;background:${S.filter==="CHK"?"#f0c36d":"#fff8e6"};color:#8a5200" data-act="filter" data-k="CHK">❓ 확인 필요 ${ocN()}</button>`:""}</div>`;
 }
 
 function qOrdBtn(p){const n=Object.values(Q.ords).filter(o=>o&&o.pid===p.id&&qActive(o)).length;return `<button class="hb${n?" on":""}" style="${n?"border-color:#c7cdf6;background:#eef0fd;color:#4655c9":""}" data-act="qord" data-id="${p.id}">🧪 오더${n?`<i>${n}</i>`:""}</button>`}
@@ -1393,7 +1416,7 @@ function sxw(p){const a=[sexKo(p.sex),p.bw?esc(p.bw)+"kg":""].filter(Boolean);re
 function head(p,r){
  const lc=r!=="care"&&isCareP(p.id),b=(r==="care"||lc)?`<button type="button" class="badge catb ${cat(p)==="호텔"?"h":cat(p)==="외래"?"o":""}" data-act="catpick" data-id="${p.id}" title="외래·입원·호텔 바꾸기">${cat(p)}${cat(p)==="외래"?"":dayN(p)} ▾</button>`:"";
  const ln=r==="care"?lateN(p):0,an=(p.alerts||[]).length+(p.cpr?1:0),tn=r==="care"?tasksOf(p).length:0;
- const bar=r==="care"?`<div class="hbar"><button class="hb${an?" on":""}" data-act="alopen" data-id="${p.id}">⚠ 주의${an?`<i>${an}</i>`:""}</button><button class="hb${ln?" late":tn?" on":""}" data-act="tkopen" data-id="${p.id}">⏰ 처치${ln?`<i>${ln} 지남</i>`:tn?`<i>${tn}</i>`:""}</button>${anBtn(p)}${qOrdBtn(p)}${qqBtn(p)}<button class="hb bad" data-act="discharge" data-id="${p.id}">퇴원</button></div>`:r==="checkup"?`<div class="hbar">${qOrdBtn(p)}</div>`:"";const d="";
+ const bar=r==="care"?ocBox(p)+`<div class="hbar"><button class="hb${an?" on":""}" data-act="alopen" data-id="${p.id}">⚠ 주의${an?`<i>${an}</i>`:""}</button><button class="hb${ln?" late":tn?" on":""}" data-act="tkopen" data-id="${p.id}">⏰ 처치${ln?`<i>${ln} 지남</i>`:tn?`<i>${tn}</i>`:""}</button>${anBtn(p)}${qOrdBtn(p)}${qqBtn(p)}<button class="hb bad" data-act="discharge" data-id="${p.id}">퇴원</button></div>`:r==="checkup"?`<div class="hbar">${qOrdBtn(p)}</div>`:"";const d="";
  return `<div class="top"><div class="av">${p.species==="cat"?"🐱":"🐶"}</div><div class="sp"><div class="nm">${esc(p.name)}${r==="care"||r==="checkup"?`<button type="button" class="mjno${p.mjNo?(p.mjAt?"":" wait"):" add"}" data-act="mjnum" data-id="${p.id}" title="${p.mjNo?(p.mjAt?"문진 연결됨 · 눌러서 수정":"문진 도착 전 · 도착하면 자동 연결"):"문진번호 입력"}">${p.mjNo?"#"+esc(p.mjNo)+(p.mjAt?"":" 대기"):"+ 문진번호"}</button>`:""}</div>
  <div class="meta">${b}<span class="badge n">${esc(pno(p))}</span>${esc(p.breed||"")}${sxw(p)}${r==="care"?"":(p.owner?" · 보호자 "+esc(p.owner):"")}</div>${r==="care"?`<div class="meta" id="dxm-${p.id}">${p.dx?"병명 "+esc(p.dx):""}</div>`+alertRow(p):""}</div>
  <div class="act">${d}${lc?"":`<button class="btn-s" data-act="remove" data-id="${p.id}" aria-label="삭제">✕</button>`}</div></div>${bar}`}
@@ -2041,6 +2064,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
  alopen:()=>alOpen(id),
  qchat:()=>scrOpen("chat",true),scrclose:scrClose,scrhide:scrClose,scrback:()=>scrOpen(qScreen(),false),
  qset:()=>{qsRender();$("#qs").classList.add("open")},
+ ocx:()=>ocAct(id,d.v),ilreq:()=>ilReq(false),ilapply:()=>{const m=$("#ilM");if(m)m.classList.remove("open");IL.at=0;ilReq(true,IL.last)},ilclose:()=>{const m=$("#ilM");if(m)m.classList.remove("open")},
+ ilmode:async()=>{if(!S.adm){toast("관리자 기기에서만 바꿀 수 있어요");return}try{const r=await fetch(`${base()}/rooms/${encodeURIComponent(S.code)}/config/sync.json`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({ilApply:d.v==="1"})});if(!r.ok)throw 0;toast(d.v==="1"?"이제 맞추기를 누르면 바로 반영돼요":"맞추기는 미리보기 후 반영해요")}catch(e){toast("저장하지 못했어요")}},
  qqopen:()=>qqOpen(id),qqclose:()=>{const m=$("#qqM");if(m)m.classList.remove("open")},qqsc:()=>{QQ.sc=d.v==="all"?"all":"me";qqRender()},qqsave:qqSave,qqcancel:()=>{QQ.edit=null;qqRender()},
  qqed:()=>{QQ.edit={id:d.k,sc:d.sc};qqRender();setTimeout(()=>{const t=$("#qqT");if(t)t.focus()},30)},qqdel:()=>qqDel(d.k,d.sc),
  qquse:()=>{const x=qqAll().find(y=>y.id===d.k&&y.sc===d.sc);if(x)qqFill(qqApply(x.text,qqPat()))},

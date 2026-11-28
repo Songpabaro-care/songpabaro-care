@@ -92,7 +92,37 @@ async function petInfo(q) {
   } catch (e) { out.err = e.message; }
   return out;
 }
+// 🔄 맞추기용: 진료대기 페이지 '한 번만' 받아서 외래·입원·호텔 명단과 동물번호 읽기 (다른 페이지는 받지 않음)
+// 동물번호: 칸 속 번호 → 차트 여는 코드의 몇 번째 숫자(케어 노트 카드로 배움) → 케어 노트 번호와 하나만 일치. 못 찾으면 '번호 못 찾음'(추측 안 함)
+async function collectWait(q = {}) {
+  const res = { at: Date.now(), err: [], items: [], unknown: [], learn: { ...(q.learn || {}) }, nOpd: 0, nInp: 0 };
+  const now = new Date(), mm = String(now.getMonth() + 1).padStart(2, '0'), dd = String(now.getDate()).padStart(2, '0'), ymd = `${now.getFullYear()}-${mm}-${dd}`;
+  let w;
+  try { w = await getDoc('/plus/waitList'); } catch (e) { res.err.push('진료대기 읽기 실패: ' + e.message); return res; }
+  if (w._login) { res.err.push('인투링크 로그인 필요 · 접수실 크롬에서 인투링크에 다시 로그인해 주세요'); return res; }
+  if (!w.getElementById('waitListTable') && !w.getElementById('fixedWaitTab2Tab2') && !w.getElementById('fixedWaitTab2Tab3')) { res.err.push('진료대기 화면 모양이 예전과 달라요 · 아무것도 바꾸지 않았어요'); return res; }
+  const opd = [...w.querySelectorAll('#waitListTable tr')].filter(r => r.querySelector('td')).map(r => { const c = cells(r); return { kind: '외래', owner: c[0], pet: c[1], time: c[2], vet: c[3], room: c[4], all: c.join(' '), cl: clues(r) }; }).filter(o => String(o.time || '').startsWith(ymd));
+  const inp = [...readInner(w.getElementById('fixedWaitTab2Tab2'), '입원'), ...readInner(w.getElementById('fixedWaitTab2Tab3'), '호텔')].filter(o => !o.old);
+  res.nOpd = opd.length; res.nInp = inp.length;
+  const pets = q.pets || [], K = new Set(pets.map(p => String(p.psno)));
+  const nn = x => nz(x).replace(/\(.*?\)/g, '').replace(/님$/, '').replace(/\d+$/, '');
+  const byName = new Map(); pets.forEach(p => { const k = nn(p.pet); if (!k) return; if (!byName.has(k)) byName.set(k, new Set()); byName.get(k).add(String(p.psno)); });
+  const uniq = name => { const s = byName.get(nn(name)); return s && s.size === 1 ? [...s][0] : ''; };
+  // 차트 여는 코드의 몇 번째 숫자가 동물번호인지: 이름이 하나뿐인 케어 노트 카드로 배우기
+  [...opd, ...inp].forEach(o => { const ps = uniq(o.pet); if (!ps) return; o.cl.calls.forEach(c => { const i = c.nums.indexOf(ps); if (i >= 0) res.learn[c.fn] = i; }); });
+  const numOf = o => { const cl = o.cl || { calls: [], data: {} };
+    if (cl.pno) return [String(cl.pno), '칸 속 번호'];
+    for (const c of cl.calls) { const i = res.learn[c.fn]; if (i != null && c.nums[i]) return [String(c.nums[i]), '차트 여는 코드']; }
+    const hit = [...new Set([...cl.calls.flatMap(c => c.nums), ...Object.values(cl.data)].map(String).filter(v => K.has(v)))];
+    if (hit.length === 1) return [hit[0], '케어 노트 번호와 일치'];
+    return ['', '']; };
+  [...opd, ...inp].forEach(o => { const [ps, how] = numOf(o);
+    const it = { kind: o.kind, pet: String(o.pet || '').slice(0, 30), sp: o.sp || '', room: o.kind === '외래' ? '' : String(o.room || '').slice(0, 30), hold: o.kind === '외래' ? sbSkipOf(o) : '' };
+    if (ps) res.items.push({ ...it, psno: ps, how }); else res.unknown.push(it); });
+  return res;
+}
 chrome.runtime.onMessage.addListener((m, s, send) => {
   if (m.t === 'collect' && m.to === 'off') { collect(m.opt || {}).then(send, e => send({ err: [e.message] })); return true; }
+  if (m.t === 'collectWait' && m.to === 'off') { collectWait(m.q || {}).then(send, e => send({ err: [e.message] })); return true; }
   if (m.t === 'petinfo' && m.to === 'off') { petInfo(m.q).then(send, e => send({ err: e.message })); return true; }
 });

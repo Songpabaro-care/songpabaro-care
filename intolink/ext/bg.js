@@ -17,3 +17,4 @@ async function bgRule(on) {
 }
 importScripts('bgsync.js');
 importScripts('realsync.js');
+importScripts('correct.js');

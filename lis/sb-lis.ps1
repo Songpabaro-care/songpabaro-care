@@ -167,6 +167,8 @@ if (-not $got) {
 }
 $UPURL = 'https://songpabaro-care.github.io/songpabaro-care/lis/sb-lis.ps1'
 function Try-Update {
+  # 기록 파일이 1MB를 넘으면 예전 기록은 log.old.txt로 한 번만 보관하고 새로 시작 (계속 커지지 않게)
+  try { if ((Test-Path $LOGF) -and (Get-Item $LOGF).Length -gt 1MB) { Move-Item $LOGF (Join-Path $DIR 'log.old.txt') -Force } } catch {}
   try {
     $tmp = Join-Path $env:TEMP 'sb-lis.new.ps1'
     Invoke-WebRequest -UseBasicParsing -Uri ($UPURL + '?v=' + (NowMs)) -OutFile $tmp
@@ -653,11 +655,23 @@ if ($Reception) {
     if (-not $x -and $fullAge -gt 2) { Load-Idx 2; $x = Care-One $no }
     return $x
   }
+  # 인투링크 맞추기로 이름·번호만 들어온 카드: 차트를 열면 비어 있는 품종·성별·체중·생일·종을 채움 (있는 값은 안 건드림)
+  function Fill-Missing($x, $g) {
+    $pt = @{}
+    if (-not $x.breed -and $g.breed) { $pt.breed = $g.breed }
+    if (-not $x.sex -and $g.sex) { $pt.sex = $g.sex }
+    if (-not $x.bw -and $g.bw) { $pt.bw = $g.bw }
+    if (-not $x.birth -and $g.birth) { $pt.birth = $g.birth }
+    if ($x.spUnk -and $g.sp) { $pt.species = $(if ($g.sp -eq 'Feline') { 'cat' } else { 'dog' }); $pt.spUnk = $null }
+    if ((("" + $x.name) -match '^#\d+$') -and $g.name) { $pt.name = $g.name }
+    if ($pt.Count) { try { Fb 'Patch' "rooms/$ROOM/care_patients/$($x.id)" $pt | Out-Null; Log "✏ 빈 정보 채움 · #$($g.no) $($g.name) ($($pt.Keys -join ', '))" } catch { Log "빈 정보 채우기 실패: $(ErrTxt $_)" } }
+  }
   function Recent($k) { $script:DONE.ContainsKey($k) -and ((Get-Date) - $script:DONE[$k]).TotalMinutes -lt 30 }
   function Opd-Register($g, $c = '외래') {
     $k = "$($g.no)|R"; if (Recent $k) { return }; $script:DONE[$k] = Get-Date
     # 등록 전엔 항상 새로 확인 (다른 PC·인투링크가 방금 등록했을 수 있음 → 중복 카드 방지)
-    if (Find-Card $g.no 0) { Log "이미 케어 노트에 있음 · #$($g.no) $($g.name)"; return }
+    $ex = Find-Card $g.no 0
+    if ($ex) { Fill-Missing $ex $g; Log "이미 케어 노트에 있음 · #$($g.no) $($g.name)"; return }
     $id = "p-care-$(NowMs)"; $today = Get-Date -Format 'yyyy-MM-dd'
     $sp = if ($g.sp -eq 'Feline') { 'cat' } else { 'dog' }
     $info = (@($g.sex, $(if ($g.bw) { "$($g.bw)kg" }), $g.birth) | Where-Object { $_ }) -join ' · '
@@ -671,6 +685,7 @@ if ($Reception) {
     $k = "$($g.no)|C$c"; if (Recent $k) { return }; $script:DONE[$k] = Get-Date
     $x = Find-Card $g.no 15
     if ($x) {
+      Fill-Missing $x $g
       if ($x.category -ne $c) { Fb 'Patch' "rooms/$ROOM/care_patients/$($x.id)" (@{ category = $c; catBy = 'intovet'; catAt = @{ '.sv' = 'timestamp' } }) | Out-Null; Log "🏥 $c(으)로 바꿈 · #$($g.no) $($x.name)" }
       return
     }
