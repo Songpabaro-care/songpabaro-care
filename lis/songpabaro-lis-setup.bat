@@ -6,6 +6,8 @@ echo  Downloading the latest version...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop';[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12;$t=Join-Path $env:TEMP 'sb-lis-setup\songpabaro-lis';if(Test-Path $t){Remove-Item $t -Recurse -Force};New-Item -ItemType Directory -Path $t -Force | Out-Null;$v=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();foreach($f in 'sb-lis.ps1','jinstall.bat','jrun.bat','jcheck.bat','jdiag.bat'){Invoke-WebRequest -UseBasicParsing -Uri ('https://songpabaro-care.github.io/songpabaro-care/lis/'+$f+'?v='+$v) -OutFile (Join-Path $t $f)};if((Get-Item (Join-Path $t 'sb-lis.ps1')).Length -lt 3000){throw 'bad download'}"
 if errorlevel 1 goto fail
 if not exist "%TEMP%\sb-lis-setup\songpabaro-lis\jinstall.bat" goto fail
+echo  Stopping the chart reader that is already running (if any)...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-CimInstance Win32_Process -Filter \"Name='powershell.exe'\" | Where-Object { $_.CommandLine -like '*sb-lis.ps1*-Reception*' -and $_.ProcessId -ne $PID } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"
 call "%TEMP%\sb-lis-setup\songpabaro-lis\jinstall.bat"
 echo.
 echo  Done. A check window is open.

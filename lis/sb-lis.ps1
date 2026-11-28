@@ -220,7 +220,17 @@ function Get-Tok {
   if (-not $script:A -and (Test-Path $AUTHF)) { $script:A = Get-Content $AUTHF -Raw -Encoding UTF8 | ConvertFrom-Json }
   $script:STEP = '로그인 갱신'
   if ($script:A) {
-    $r = Invoke-RestMethod -Method Post -Uri "https://securetoken.googleapis.com/v1/token?key=$KEY" -ContentType 'application/x-www-form-urlencoded' -Body "grant_type=refresh_token&refresh_token=$($script:A.rt)"
+    $r = $null
+    try { $r = Invoke-RestMethod -Method Post -Uri "https://securetoken.googleapis.com/v1/token?key=$KEY" -ContentType 'application/x-www-form-urlencoded' -Body ("grant_type=refresh_token&refresh_token=" + [uri]::EscapeDataString("$($script:A.rt)")) }
+    catch {
+      # 실패 이유(서버 응답)를 기록하고, 저장된 로그인 파일을 다시 읽어 한 번 더 시도
+      $why = ''; try { $sr = New-Object IO.StreamReader($_.Exception.Response.GetResponseStream()); $why = $sr.ReadToEnd() -replace '\s+', ' ' } catch {}
+      Log "로그인 갱신 실패 · 저장된 로그인으로 다시 시도 · $($why.Substring(0, [Math]::Min(160, $why.Length)))"
+      $script:A = $null; if (Test-Path $AUTHF) { $script:A = Get-Content $AUTHF -Raw -Encoding UTF8 | ConvertFrom-Json }
+      if (-not $script:A) { throw }
+      $r = Invoke-RestMethod -Method Post -Uri "https://securetoken.googleapis.com/v1/token?key=$KEY" -ContentType 'application/x-www-form-urlencoded' -Body ("grant_type=refresh_token&refresh_token=" + [uri]::EscapeDataString("$($script:A.rt)"))
+    }
+    if (-not $r.refresh_token -or -not $r.id_token) { throw '로그인 갱신 응답이 비어 있어요' }
     $script:A.rt = $r.refresh_token; $script:tok = $r.id_token; $script:exp = (Get-Date).AddSeconds([int]$r.expires_in - 120)
   } else {
     $r = Invoke-RestMethod -Method Post -Uri "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=$KEY" -ContentType 'application/json' -Body '{"returnSecureToken":true}'
@@ -267,8 +277,8 @@ Get-Tok | Out-Null
 $uid = $script:A.uid
 $code = $uid.Substring([Math]::Max(0, $uid.Length - 6)).ToUpper()
 # 이미 이름이 있으면(전에 승인됐거나 🔐에서 원장님이 바꾼 이름) 덮어쓰지 않음
-$curNm = $null; try { $curNm = Fb 'Get' "devices/$uid/name" $null } catch {}
-if ($curNm) { $NAME = "$curNm" } else { Fb 'Put' "devices/$uid/name" (JsonStr $NAME) | Out-Null }
+$curNm = $null; try { $curNm = "$(Fb 'Get' "devices/$uid/name" $null)".Trim() } catch {}
+if ($curNm -and $curNm -ne 'null') { $NAME = $curNm } else { Fb 'Put' "devices/$uid/name" (JsonStr $NAME) | Out-Null }
 Fb 'Put' "devices/$uid/t" (NowMs) | Out-Null
 while ($true) {
   $ok = $false
@@ -678,7 +688,7 @@ if ($Reception) {
     return $g
   }
   $last = ''
-  $script:rHb = [datetime]::MinValue; $script:readMs = $null; $script:geSeen = $null; $script:nmAt = [datetime]::MinValue; $script:DNM = $NAME
+  $script:rHb = [datetime]::MinValue; $script:readMs = $null; $script:geSeen = $null; $script:nmAt = [datetime]::MinValue; $script:DNM = $NAME; $script:rHbFail = 0
   while ($true) {
     try {
       # 키보드·마우스를 쓰는 중이면(1초 안) 이번 차례는 쉬고 다음에 읽음 → 입력할 때 버벅임 없음
@@ -707,9 +717,11 @@ if ($Reception) {
         $script:rHb = Get-Date
         $hb = [ordered]@{ hb = @{ '.sv' = 'timestamp' }; pc = "$env:COMPUTERNAME"; ge = $(if ($script:geSeen -and ((Get-Date) - $script:geSeen).TotalMinutes -lt 5) { 'ok' } else { 'noge' }) }
         if ($script:readMs) { $hb.read = $script:readMs }
-        if (((Get-Date) - $script:nmAt).TotalMinutes -ge 10) { $script:nmAt = Get-Date; try { $n2 = Fb 'Get' "devices/$uid/name" $null; if ($n2) { $script:DNM = "$n2" } } catch {} }
+        if (((Get-Date) - $script:nmAt).TotalMinutes -ge 10) { $script:nmAt = Get-Date; try { $n2 = "$(Fb 'Get' "devices/$uid/name" $null)".Trim(); if ($n2 -and $n2 -ne 'null') { $script:DNM = $n2 } } catch {} }
         if ($script:DNM) { $hb.nm = $script:DNM }
+        $script:rHbFail++
         Fb 'Patch' "rooms/$ROOM/rcp/$code" $hb | Out-Null
+        $script:rHbFail = 0
         # 케어 노트 ⚙ 설정에서 보낸 요청: 창 띄우기 / 다시 시작
         $cm = $null; try { $cm = Fb 'Get' "rooms/$ROOM/rcp/$code/cmd" $null } catch {}
         if ($cm -and $cm.c) {
@@ -718,7 +730,16 @@ if ($Reception) {
           elseif ($cm.c -eq 'restart') { Log "↻ 케어 노트에서 다시 시작 요청 ($($cm.by))"; Restart-Self }
         }
       }
-    } catch { Log "오류: $(ErrTxt $_)"; $script:GEC = $null; Start-Sleep -Seconds 7 }
+    } catch {
+      Log "오류: $(ErrTxt $_)"; $script:GEC = $null
+      # 상태 신호가 3번(약 3분) 연속 실패하면 스스로 다시 시작 (로그인 갱신이 꼬였을 때 다시 시작하면 풀림) · 10분에 한 번까지
+      if ($script:rHbFail -ge 3) {
+        $rf = Join-Path $DIR 'restart-r.txt'; $lastR = [datetime]::MinValue
+        try { if (Test-Path $rf) { $lastR = [datetime](Get-Content $rf -Raw).Trim() } } catch {}
+        if (((Get-Date) - $lastR).TotalMinutes -ge 10) { try { Set-Content -Path $rf -Value (Get-Date -Format 'o') } catch {}; Log "↻ 연결이 계속 실패해서 다시 시작합니다"; Restart-Self }
+      }
+      Start-Sleep -Seconds 7
+    }
     if ($script:GEC) { Start-Sleep -Milliseconds 1500 } else { Start-Sleep -Seconds 4 }
   }
 }

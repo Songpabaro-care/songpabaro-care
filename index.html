@@ -1027,9 +1027,9 @@ function qOn(name,path,data,patch){const isO=name==="ord",store=isO?Q.ords:Q.cha
   if(x&&x.s==="done"&&pre[k].p[d]!=="done"&&x.by!==qMe()&&!x.auto&&mine){const ts=(o.tests||[]).filter(t=>tDept(t)===d).join(", ");if(qSndPlay("ord")){qBeep("res");qSay(o.pname)}toast(`✅ ${o.pname||""} · ${QDN[d]} ${x.auto?"결과 도착·자동 완료":"완료"}${ts?" ("+ts.slice(0,30)+")":""}`);qNotify(`✅ ${o.pname||""} ${QDN[d]} 완료`,ts)}})});
   if(!first)nk.forEach(k=>{const m=store[k];if(!m||m.uid===AU.uid)return;
    if(isO){Q.fresh.add(k);const sc=Q.view||qScreen(),dp=sc==="lab"?"lab":sc==="xray"?"img":null,hit=!dp||qParts(m)[dp];
-    if(hit&&qSndPlay("ord"))qBeep(m.urgent?"urg":"ord");if(!Q.view)toast(`🧪 ${m.urgent?"긴급 ":""}검사 오더 · ${m.pname||""} · ${(m.tests||[]).join(", ")}`);qNotify(`${m.urgent?"🚨 긴급 ":""}검사 오더 · ${m.pname||""}${m.chart?" #"+m.chart:""}`,(m.tests||[]).join(", "))}
+    if(hit&&qSndPlay("ord"))qBeep(m.urgent?"urg":"ord");if(!Q.view)toast(`🧪 ${m.urgent?"긴급 ":""}검사 오더 · ${m.pname||""} · ${(m.tests||[]).join(", ")}`);if(!(XS&&XS.w&&qParts(m).img))qNotify(`${m.urgent?"🚨 긴급 ":""}검사 오더 · ${m.pname||""}${m.chart?" #"+m.chart:""}`,(m.tests||[]).join(", "))}
    else{if(qSndPlay("chat"))qBeep("chat");if(Q.view!=="chat")toast(`💬 ${m.by||"직원"}: ${String(m.text||"").slice(0,40)}`)}});
-  qBadge();qRender();fcRender();if(isO&&S.room==="ord"&&!Q.view)softRender()}
+  qBadge();qRender();fcRender();if(isO&&XS&&XS.w)xsRender();if(isO&&S.room==="ord"&&!Q.view)softRender()}
 function qListen(){rsOpen()}
 function qStart(){fcShow();rsOpen();setTimeout(qPrune,10000)}
 setInterval(()=>{if(document.hidden)return;if(Q.view)qRender();else if(S.room==="ord")softRender()},30000);
@@ -1104,7 +1104,7 @@ function qRender(){if(!Q.view)return;if(Q.drag){Q.pend=true;return}const el=$("#
  const keep=$("#qtxt")?$("#qtxt").value:"",foc=document.activeElement&&document.activeElement.id==="qtxt",ms=$("#qmsgs"),stick=!ms||ms.scrollHeight-ms.scrollTop-ms.clientHeight<80,oldTop=ms?ms.scrollTop:0;
  const head=`<div class="qh"><div class="t"><b>${QTITLE[v]}</b><span>${esc(qMe())}${Q.temp?"":" · 이 기기의 기본 화면"}${v!=="xray"?lisBadge():""}</span></div>
   <button class="qtg${qSnd("chat")?" on":""}" data-act="qsnd" data-k="chat">🔔 채팅 소리</button><button class="qtg${qSnd("ord")?" on":""}" data-act="qsnd" data-k="ord">🧪 오더 소리</button>
-  ${v==="chat"?`<button class="qtg" data-act="qfs">가 채팅 글씨 ${QFSN[qFs()]}</button>`:""}<button class="qtg" data-act="qofs">가 오더 글씨 ${QOFN[qOfs()]}</button><button class="qtg pri" data-act="qord">＋ 검사 오더</button><button class="qtg" data-act="${Q.temp?"scrclose":"scrhide"}">${Q.temp?"닫기":"케어 노트 보기"}</button><button class="qtg" data-act="qset">⚙</button></div>`;
+  ${v==="chat"?`<button class="qtg" data-act="qfs">가 채팅 글씨 ${QFSN[qFs()]}</button>`:""}<button class="qtg" data-act="qofs">가 오더 글씨 ${QOFN[qOfs()]}</button>${v==="xray"?`<button class="qtg${XS&&XS.w?" on":""}" data-act="xstrip" title="BLADE 같은 다른 프로그램 위에 항상 떠 있는 작은 알림 띠">📌 BLADE 위 알림 띠 ${XS&&XS.w?"켜짐":"띄우기"}</button>`:""}<button class="qtg pri" data-act="qord">＋ 검사 오더</button><button class="qtg" data-act="${Q.temp?"scrclose":"scrhide"}">${Q.temp?"닫기":"케어 노트 보기"}</button><button class="qtg" data-act="qset">⚙</button></div>`;
  let body;if(v==="mj")body=`<div class="qbody two"${innerWidth>760?` style="grid-template-columns:minmax(260px,${qSplit()}%) 9px minmax(0,1fr)"`:""}>${qChatHtml()}<div class="qsplit" title="끌어서 폭 조절"></div><div class="qboard"><div class="qbh"><h2>📋 사전 문진</h2><span class="sp" style="flex:1"></span><button class="qtg" data-act="mjscr">새로고침</button><button class="qtg" data-act="mjlink">문진 링크 복사</button></div><div id="mjScrSlot"></div></div></div>`;else if(v==="chat")body=`<div class="qbody two ${Q.tab==="ord"?"tab-ord":""}"${innerWidth>760?` style="grid-template-columns:minmax(260px,${qSplit()}%) 9px minmax(0,1fr)"`:""}>${qChatHtml()}<div class="qsplit" title="끌어서 채팅·오더 폭 조절 (두 번 누르면 기본값)"></div>${qBoard(null)}</div>${innerWidth<=760?`<div style="position:fixed;left:0;right:0;bottom:0"></div>`:""}`;
  else body=`<div class="qbody">${qBoard(v==="lab"?"lab":"img")}</div>`;
  const mjKeep=v==="mj"?$("#mjScr"):null;el.innerHTML=head+(v==="chat"&&innerWidth<=760?`<div class="qh" style="padding:6px 10px"><button class="qtg${Q.tab!=="ord"?" on":""}" style="flex:1" data-act="qtab" data-v="chat">💬 채팅</button><button class="qtg${Q.tab==="ord"?" on":""}" style="flex:1" data-act="qtab" data-v="ord">🧪 오더 (${on})</button></div>`:"")+body;
@@ -1228,8 +1228,8 @@ function fcInit(){const el=$("#fchat"),h=$("#fcH");
   fcPipOpen()};
  addEventListener("beforeunload",()=>{FC.unloading=true});addEventListener("pagehide",()=>{FC.unloading=true});
  if(qls("fcpip")==="1"&&window.documentPictureInPicture){/* 어느 화면이든: 띄워 쓰던 채팅창은 새로고침·재시작 뒤 화면 한 번 클릭으로 복원 (기기 승인 확인 전 클릭은 무시하고 계속 대기) */
-  const re=ev=>{if(ev.target.closest&&ev.target.closest("#fcPip"))return;if(FC.pip||!fcPref()){document.removeEventListener("pointerdown",re,true);return}if(!OKD)return;document.removeEventListener("pointerdown",re,true);fcPipOpen()};
-  document.addEventListener("pointerdown",re,true);let tn=0;const hint=()=>{if(FC.pip||!fcPref())return;if(OKD){toast("📌 화면을 한 번 클릭하면 채팅창이 다시 맨 위에 떠요");return}if(++tn<20)setTimeout(hint,1500)};setTimeout(hint,1500)}
+  const re=ev=>{if(ev.target.closest&&ev.target.closest("#fcPip"))return;if(FC.pip||!fcPref()||qls("xstrip")==="1"){document.removeEventListener("pointerdown",re,true);return}if(!OKD)return;document.removeEventListener("pointerdown",re,true);fcPipOpen()};
+  document.addEventListener("pointerdown",re,true);let tn=0;const hint=()=>{if(FC.pip||!fcPref()||qls("xstrip")==="1")return;if(OKD){toast("📌 화면을 한 번 클릭하면 채팅창이 다시 맨 위에 떠요");return}if(++tn<20)setTimeout(hint,1500)};setTimeout(hint,1500)}
  let dr=null;h.addEventListener("pointerdown",e=>{if(FC.pip||e.target.closest("button"))return;const r=el.getBoundingClientRect();dr={dx:e.clientX-r.left,dy:e.clientY-r.top};h.setPointerCapture(e.pointerId)});
  h.addEventListener("pointermove",e=>{if(!dr)return;fcPlace(e.clientX-dr.dx,e.clientY-dr.dy)});
  h.addEventListener("pointerup",e=>{if(!dr)return;dr=null;const r=el.getBoundingClientRect();qls("fcx",String(Math.round(r.left)));qls("fcy",String(Math.round(r.top)))});
@@ -1257,7 +1257,7 @@ const agoTxt=t=>{if(!t)return"기록 없음";const m=Math.round((Date.now()-t)/6
 function rcpList(){const r=ST.rcp&&ST.rcp.v||{};return Object.entries(r).filter(([k,v])=>v&&v.hb&&Date.now()-v.hb<7*86400000).map(([k,v])=>({k,...v})).sort((a,b)=>String(a.pc||a.k).localeCompare(String(b.pc||b.k)))}
 function rcpHtml(){const L=rcpList();if(!L.length)return `<div class="meta">아직 차트 읽기(LIS)가 깔린 PC가 없어요. 위 설치 파일을 PC마다 한 번씩 실행해 주세요.</div>`;
  return `<div style="display:grid;gap:4px">${L.map(x=>{const alive=Date.now()-x.hb<180000,st=!alive?["#c93a3a","● 꺼짐"]:x.ge==="ok"?["#0f8a7e","● 켜짐"]:["#b7791f","● 인투벳 창 없음"];
-  return `<div class="meta" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b style="color:var(--ink)">${esc(x.nm||x.pc||x.k)}</b>${x.nm&&x.pc?`<span>(${esc(x.pc)})</span>`:""}<b style="color:${st[0]}">${st[1]}</b><span>신호 ${agoTxt(x.hb)}</span><span>· 마지막으로 차트 읽음 ${agoTxt(x.read)}</span>${x.cmd&&x.cmd.c?`<span style="color:#b7791f">· ${x.cmd.c==="show"?"창 띄우기":"다시 시작"} 요청 보냄 (1분 안에 처리)</span>`:S.adm?`<button class="qtg" style="padding:2px 8px;font-size:12px" data-act="rcpcmd" data-k="${esc(x.k)}" data-v="show">🪟 그 PC에 창 띄우기</button><button class="qtg" style="padding:2px 8px;font-size:12px" data-act="rcpcmd" data-k="${esc(x.k)}" data-v="restart">↻ 다시 시작</button>`:""}</div>`}).join("")}</div>`}
+  return `<div class="meta" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b style="color:var(--ink)">${esc((x.nm&&x.nm!=="null"?x.nm:"")||x.pc||x.k)}</b>${x.nm&&x.nm!=="null"&&x.pc?`<span>(${esc(x.pc)})</span>`:""}<b style="color:${st[0]}">${st[1]}</b><span>신호 ${agoTxt(x.hb)}</span><span>· 마지막으로 차트 읽음 ${agoTxt(x.read)}</span>${x.cmd&&x.cmd.c?`<span style="color:#b7791f">· ${x.cmd.c==="show"?"창 띄우기":"다시 시작"} 요청 보냄 (1분 안에 처리)</span>`:S.adm?`<button class="qtg" style="padding:2px 8px;font-size:12px" data-act="rcpcmd" data-k="${esc(x.k)}" data-v="show">🪟 그 PC에 창 띄우기</button><button class="qtg" style="padding:2px 8px;font-size:12px" data-act="rcpcmd" data-k="${esc(x.k)}" data-v="restart">↻ 다시 시작</button>`:""}</div>`}).join("")}</div>`}
 function syncHtml(){const m=syncMode(),c=ST.config&&ST.config.v&&ST.config.v.sync||{};
  const btn=(v,t)=>`<button class="qtg${m===v?" on":""}" data-act="syncmode" data-v="${v}"${S.adm?"":" disabled"}>${t}</button>`;
  return `<div class="row" style="flex-wrap:wrap;gap:6px">${btn("both","🔗 인투링크 + 차트 읽기")}${btn("lis","🧾 차트 읽기(LIS)만")}</div>
@@ -1274,6 +1274,69 @@ function rcpUpd(){const b=$("#syncBox");if(b&&$("#qs").classList.contains("open"
  if(!w){w=document.createElement("button");w.id="rcpWarn";w.type="button";w.dataset.act="qset";w.style.cssText="position:fixed;left:12px;bottom:12px;z-index:60;max-width:min(92vw,520px);text-align:left;border:1px solid #f5c2bf;background:#fff4f3;color:#b42318;font-weight:700;font-size:12.5px;border-radius:12px;padding:8px 12px;box-shadow:0 4px 14px rgba(0,0,0,.12);cursor:pointer";document.body.appendChild(w)}
  w.textContent=t+" · 눌러서 확인"}
 setInterval(()=>{if(!document.hidden)rcpUpd()},60000);
+/* ---- 💬 자주 쓰는 채팅 (환축 카드): 누르면 '이름 + 문구'가 채팅 입력칸에 바로 써짐 · 이 기기만 / 모든 기기 ---- */
+const QQ={pid:null,edit:null,sc:"me"};
+const qqLocal=()=>{try{const a=JSON.parse(qls("qq")||"[]");return Array.isArray(a)?a:[]}catch(e){return[]}};
+const qqSetLocal=a=>qls("qq",JSON.stringify(a));
+function qqAll(){const g=ST.quick&&ST.quick.v||{};
+ return [...qqLocal().map(x=>({...x,sc:"me"})),...Object.entries(g).filter(([,v])=>v&&v.text).map(([k,v])=>({id:k,text:v.text,sc:"all",t:v.t||0})).sort((a,b)=>(a.t||0)-(b.t||0))]}
+function qqBtn(p){return `<button class="hb" data-act="qqopen" data-id="${p.id}">💬 채팅</button>`}
+function qqPat(){const id=QQ.pid;for(const n of ["care","checkup","lab_fluid"]){const x=getL(n).find(v=>v&&v.id===id);if(x)return x}return null}
+function qqApply(tx,p){const n=p&&p.name?p.name:"";return /\{이름\}/.test(tx)?tx.replace(/\{이름\}/g,n):(n?n+" "+tx:tx)}
+function qqOpen(pid){QQ.pid=pid;QQ.edit=null;let m=$("#qqM");if(!m){m=document.createElement("div");m.className="mask";m.id="qqM";m.innerHTML='<div class="sheet" id="qqS"></div>';m.addEventListener("click",e=>{if(e.target===m)m.classList.remove("open")});document.body.appendChild(m)}qqRender();m.classList.add("open")}
+function qqRender(){const b=$("#qqS");if(!b)return;const p=qqPat(),L=qqAll(),ed=QQ.edit;
+ const row=x=>`<div class="row" style="gap:6px;align-items:stretch"><button class="btn gh" style="flex:1;text-align:left;justify-content:flex-start;white-space:normal;height:auto;min-height:44px;padding:8px 12px" data-act="qquse" data-k="${esc(x.id)}" data-sc="${x.sc}"><span>${esc(qqApply(x.text,p))}</span></button>
+  <span class="meta" style="align-self:center;white-space:nowrap">${x.sc==="all"?"🏥 모든 기기":"💻 이 기기"}</span><button class="btn gh" style="padding:0 10px" data-act="qqed" data-k="${esc(x.id)}" data-sc="${x.sc}" title="고치기">✏️</button><button class="btn gh" style="padding:0 10px" data-act="qqdel" data-k="${esc(x.id)}" data-sc="${x.sc}" title="지우기">🗑</button></div>`;
+ const cur=ed?(ed.sc==="all"?((ST.quick&&ST.quick.v||{})[ed.id]||{}).text:(qqLocal().find(x=>x.id===ed.id)||{}).text)||"":"",sc=ed?ed.sc:QQ.sc;
+ b.innerHTML=`<div class="row" style="align-items:center"><b style="flex:1;font-size:17px">💬 자주 쓰는 채팅${p?` · ${esc(p.name||"")}`:""}</b><button class="btn gh" data-act="qqclose">닫기</button></div>
+ <div class="meta">누르면 채팅 입력칸에 바로 써져요. 확인하고 보내기만 누르면 돼요.</div>
+ <div style="display:grid;gap:6px">${L.length?L.map(row).join(""):'<div class="meta">아직 등록된 문구가 없어요. 아래에서 추가해 주세요.</div>'}</div>
+ <div class="otitle" style="margin-top:4px">${ed?"✏️ 문구 고치기":"＋ 새 문구 추가"}</div>
+ <textarea id="qqT" rows="2" class="in" style="width:100%;min-height:60px" placeholder="예: 다음 약 해서 가면 돼요 / {이름} 보호자분 면회 오셨어요">${esc(cur)}</textarea>
+ <div class="meta">{이름} 자리에 환축 이름이 들어가요. {이름}이 없으면 문구 맨 앞에 이름이 붙어요.</div>
+ <div class="row" style="gap:6px;flex-wrap:wrap"><button class="qtg${sc==="me"?" on":""}" data-act="qqsc" data-v="me"${ed?" disabled":""}>💻 이 기기에서만</button><button class="qtg${sc==="all"?" on":""}" data-act="qqsc" data-v="all"${ed?" disabled":""}>🏥 모든 기기에서</button><span style="flex:1"></span>${ed?`<button class="btn gh" data-act="qqcancel">취소</button>`:""}<button class="btn" data-act="qqsave">${ed?"고치기 저장":"추가"}</button></div>
+ <div class="meta">접수실에서만 쓰는 말은 '이 기기에서만', 병원 전체가 같이 쓰는 말은 '모든 기기에서'로 저장하세요.</div>`}
+async function qqSave(){const t=($("#qqT")||{}).value||"",v=t.trim().slice(0,300);if(!v){toast("문구를 입력해 주세요");return}const ed=QQ.edit,sc=ed?ed.sc:QQ.sc;
+ if(sc==="me"){const a=qqLocal();if(ed){const x=a.find(y=>y.id===ed.id);if(x)x.text=v}else a.push({id:"l"+Date.now().toString(36),text:v});qqSetLocal(a);QQ.edit=null;qqRender();toast(ed?"고쳤어요":"이 기기에 저장했어요");return}
+ try{const k=ed?ed.id:"q"+Date.now().toString(36);const r=await fetch(`${base()}/rooms/${encodeURIComponent(S.code)}/quick/${k}.json`,{method:ed?"PATCH":"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(ed?{text:v,by:qMe()}:{text:v,by:qMe(),t:Date.now()})});if(!r.ok)throw 0;
+  if(!ST.quick)ST.quick={v:{}};if(!ST.quick.v)ST.quick.v={};ST.quick.v[k]={...(ST.quick.v[k]||{t:Date.now()}),text:v};QQ.edit=null;qqRender();toast(ed?"고쳤어요 · 모든 기기에 반영돼요":"모든 기기에 저장했어요")}catch(e){toast("저장하지 못했어요")}}
+async function qqDel(id,sc){if(!confirm(sc==="all"?"이 문구를 지울까요? 모든 기기에서 사라져요.":"이 문구를 지울까요?"))return;
+ if(sc==="me"){qqSetLocal(qqLocal().filter(x=>x.id!==id));qqRender();return}
+ try{const r=await fetch(`${base()}/rooms/${encodeURIComponent(S.code)}/quick/${id}.json`,{method:"DELETE"});if(!r.ok)throw 0;if(ST.quick&&ST.quick.v)delete ST.quick.v[id];qqRender()}catch(e){toast("지우지 못했어요")}}
+function qqFill(text){const m=$("#qqM");if(m)m.classList.remove("open");
+ const put=(d,el)=>{el.value=(el.value?el.value.replace(/\s*$/," "):"")+text;try{el.focus();el.setSelectionRange(el.value.length,el.value.length)}catch(e){}};
+ if(FC.pip){const d=FC.pip.document,el=d.getElementById("fcT");if(el){if(FC.pmin){const mb=d.getElementById("fcMin");if(mb)mb.click()}put(d,el);try{FC.pip.focus()}catch(e){}toast("떠 있는 채팅창에 써 뒀어요 · 보내기를 눌러 주세요");return}}
+ const fc=$("#fchat");if(fc&&fc.style.display!=="none"&&fcOn()){if(qls("fcmin")==="1"){qls("fcmin","0");fcShow()}put(document,$("#fcT"));toast("채팅창에 써 뒀어요 · 보내기를 눌러 주세요");return}
+ scrOpen("chat",true);setTimeout(()=>{const el=$("#qtxt");if(el)put(document,el)},60)}
+
+/* ---- 📷 영상실 PC: BLADE 위에 띄우는 '영상 오더 알림 띠' (항상 위 작은 창) ---- */
+var XS={w:null,arm:null,at:0,msg:"",mt:0};
+const xsIsX=t=>/방사선/.test(t);
+function xsList(){return Object.entries(Q.ords).filter(([,o])=>{if(!o)return false;const x=qParts(o).img;return x&&x.s!=="done"&&(o.tests||[]).some(t=>tDept(t)==="img"&&xsIsX(t))}).sort((a,b)=>(b[1].urgent?1:0)-(a[1].urgent?1:0)||(a[1].t||0)-(b[1].t||0))}
+const XCSS=`*{box-sizing:border-box}html,body{margin:0;height:100%;background:#15181c;color:#e9edf1;font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;overflow:hidden}
+#xs{display:flex;gap:6px;align-items:stretch;height:100vh;padding:5px 6px;overflow-x:auto;overflow-y:hidden}
+.xc{flex:0 0 auto;max-width:300px;border:0;border-radius:10px;background:#ffb020;color:#1b1300;padding:4px 10px;text-align:left;cursor:pointer;display:flex;flex-direction:column;justify-content:center;gap:1px;font:inherit}
+.xc b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.xc span{font-size:11.5px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.xc.u{background:#ff5a4f;color:#fff}.xc.ing{background:#ffd98a}.xc.arm{background:#22c55e;color:#04130a}.xc.nw{animation:xb 1s ease-in-out 6}
+@keyframes xb{50%{filter:brightness(1.35);transform:scale(1.03)}}
+.xe{align-self:center;font-size:13px;color:#9aa4ae;white-space:nowrap;padding:0 6px}.xm{align-self:center;font-size:13px;color:#7ee2a8;white-space:nowrap;padding:0 6px}`;
+function xsRender(){if(!XS.w)return;const d=XS.w.document,box=d.getElementById("xs");if(!box)return;if(XS.arm&&Date.now()-XS.at>5000)XS.arm=null;
+ const L=xsList(),msg=XS.msg&&Date.now()-XS.mt<8000?`<div class="xm">${esc(XS.msg)}</div>`:"";
+ box.innerHTML=(L.length?L.map(([k,o])=>{const x=qParts(o).img,ts=(o.tests||[]).filter(t=>tDept(t)==="img"),arm=XS.arm===k,us=ts.some(t=>/초음파/.test(t));
+  return `<button class="xc${o.urgent?" u":""}${x.s==="ing"?" ing":""}${arm?" arm":""}${Date.now()-(o.t||0)<90000?" nw":""}" data-k="${esc(k)}" title="촬영 끝나면 두 번 눌러 완료"><b>${arm?"✓ 한 번 더 누르면 완료":`${o.urgent?"🚨 ":"📷 "}${esc(o.pname||"")}${o.chart?" #"+esc(o.chart):""}`}</b><span>${arm?(us?"초음파도 같이 완료돼요":"다른 PC에 완료 알림이 가요"):`${esc(ts.join(", "))} · ${esc(o.by||"")} ${hhmm(o.t)}${x.s==="ing"?" · 접수됨":""}`}</span></button>`}).join(""):`<div class="xe">📷 영상 오더 없음</div>`)+msg}
+async function xsClick(e){const b=e.target.closest(".xc");if(!b)return;const k=b.dataset.k,o=Q.ords[k];if(!o)return;
+ if(XS.arm!==k||Date.now()-XS.at>5000){XS.arm=k;XS.at=Date.now();xsRender();setTimeout(xsRender,5100);return}
+ XS.arm=null;try{const r=await fetch(`${QOR()}/${k}/parts/img.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({s:"done",by:qMe(),t:Date.now()})});if(!r.ok)throw 0;XS.msg=`✅ ${o.pname||""} 영상 완료 · 다른 PC에 알렸어요`}catch(x){XS.msg="⚠ 완료 저장 실패 · 다시 눌러 주세요"}XS.mt=Date.now();xsRender();setTimeout(xsRender,8100)}
+async function xsOpen(){if(XS.w)return;if(!window.documentPictureInPicture){toast("이 브라우저는 '항상 위에 띄우기'를 지원하지 않아요 (PC 크롬·엣지에서 가능)");return}
+ if(FC.pip){try{FC.pip.close()}catch(e){}}
+ try{const w=await documentPictureInPicture.requestWindow({width:+(qls("xpw")||640),height:+(qls("xph")||72)});XS.w=w;qls("xstrip","1");w.document.title="송파바로 영상 알림";
+  const st=w.document.createElement("style");st.textContent=XCSS;w.document.head.appendChild(st);w.document.body.innerHTML='<div id="xs"></div>';w.document.body.addEventListener("click",xsClick);
+  let rt;w.addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{qls("xpw",String(w.innerWidth));qls("xph",String(w.innerHeight))},400)});
+  w.addEventListener("pagehide",()=>{if(!FC.unloading)qls("xstrip","0");XS.w=null;qRender()});xsRender();qRender();
+  toast("작은 알림 띠를 BLADE 위쪽 빈 곳(BLADE 글씨 오른쪽)으로 끌어다 놓으세요 · 다음부터 그 자리에 떠요")}catch(x){toast("띄우지 못했어요")}}
+setInterval(()=>{if(XS.w)xsRender()},20000);
+setTimeout(()=>{if(qls("xstrip")!=="1"||!window.documentPictureInPicture)return;const re=ev=>{if(XS.w||qls("xstrip")!=="1"){document.removeEventListener("pointerdown",re,true);return}if(!OKD)return;document.removeEventListener("pointerdown",re,true);xsOpen()};document.addEventListener("pointerdown",re,true);
+ let tn=0;const hint=()=>{if(XS.w||qls("xstrip")!=="1")return;if(OKD){toast("📌 화면을 한 번 클릭하면 영상 알림 띠가 다시 BLADE 위에 떠요");return}if(++tn<20)setTimeout(hint,1500)};setTimeout(hint,1500)},0);
 S.ordF="all";
 function ordView(){const f=S.ordF,dp=f==="all"?null:f,cnt=d=>qMine(d).length;
  return `<div class="card" style="display:grid;gap:10px"><div class="row" style="align-items:center;gap:6px;flex-wrap:wrap">${[["all","전체",cnt(null)],["lab","검사실",cnt("lab")],["img","영상",cnt("img")]].map(([k,t,n])=>`<button type="button" class="chip ${f===k?"sel":""}" data-act="ordf" data-k="${k}">${t} ${n}</button>`).join("")}<span style="flex:1"></span><button class="btn" style="background:#4655c9" data-act="qord">＋ 검사 오더</button></div>
@@ -1313,7 +1376,7 @@ function sxw(p){const a=[sexKo(p.sex),p.bw?esc(p.bw)+"kg":""].filter(Boolean);re
 function head(p,r){
  const lc=r!=="care"&&isCareP(p.id),b=(r==="care"||lc)?`<button type="button" class="badge catb ${cat(p)==="호텔"?"h":cat(p)==="외래"?"o":""}" data-act="catpick" data-id="${p.id}" title="외래·입원·호텔 바꾸기">${cat(p)}${cat(p)==="외래"?"":dayN(p)} ▾</button>`:"";
  const ln=r==="care"?lateN(p):0,an=(p.alerts||[]).length+(p.cpr?1:0),tn=r==="care"?tasksOf(p).length:0;
- const bar=r==="care"?`<div class="hbar"><button class="hb${an?" on":""}" data-act="alopen" data-id="${p.id}">⚠ 주의${an?`<i>${an}</i>`:""}</button><button class="hb${ln?" late":tn?" on":""}" data-act="tkopen" data-id="${p.id}">⏰ 처치${ln?`<i>${ln} 지남</i>`:tn?`<i>${tn}</i>`:""}</button>${anBtn(p)}${qOrdBtn(p)}<button class="hb bad" data-act="discharge" data-id="${p.id}">퇴원</button></div>`:r==="checkup"?`<div class="hbar">${qOrdBtn(p)}</div>`:"";const d="";
+ const bar=r==="care"?`<div class="hbar"><button class="hb${an?" on":""}" data-act="alopen" data-id="${p.id}">⚠ 주의${an?`<i>${an}</i>`:""}</button><button class="hb${ln?" late":tn?" on":""}" data-act="tkopen" data-id="${p.id}">⏰ 처치${ln?`<i>${ln} 지남</i>`:tn?`<i>${tn}</i>`:""}</button>${anBtn(p)}${qOrdBtn(p)}${qqBtn(p)}<button class="hb bad" data-act="discharge" data-id="${p.id}">퇴원</button></div>`:r==="checkup"?`<div class="hbar">${qOrdBtn(p)}</div>`:"";const d="";
  return `<div class="top"><div class="av">${p.species==="cat"?"🐱":"🐶"}</div><div class="sp"><div class="nm">${esc(p.name)}${r==="care"||r==="checkup"?`<button type="button" class="mjno${p.mjNo?(p.mjAt?"":" wait"):" add"}" data-act="mjnum" data-id="${p.id}" title="${p.mjNo?(p.mjAt?"문진 연결됨 · 눌러서 수정":"문진 도착 전 · 도착하면 자동 연결"):"문진번호 입력"}">${p.mjNo?"#"+esc(p.mjNo)+(p.mjAt?"":" 대기"):"+ 문진번호"}</button>`:""}</div>
  <div class="meta">${b}<span class="badge n">${esc(pno(p))}</span>${esc(p.breed||"")}${sxw(p)}${r==="care"?"":(p.owner?" · 보호자 "+esc(p.owner):"")}</div>${r==="care"?`<div class="meta" id="dxm-${p.id}">${p.dx?"병명 "+esc(p.dx):""}</div>`+alertRow(p):""}</div>
  <div class="act">${d}${lc?"":`<button class="btn-s" data-act="remove" data-id="${p.id}" aria-label="삭제">✕</button>`}</div></div>${bar}`}
@@ -1961,6 +2024,10 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
  alopen:()=>alOpen(id),
  qchat:()=>scrOpen("chat",true),scrclose:scrClose,scrhide:scrClose,scrback:()=>scrOpen(qScreen(),false),
  qset:()=>{qsRender();$("#qs").classList.add("open")},
+ qqopen:()=>qqOpen(id),qqclose:()=>{const m=$("#qqM");if(m)m.classList.remove("open")},qqsc:()=>{QQ.sc=d.v==="all"?"all":"me";qqRender()},qqsave:qqSave,qqcancel:()=>{QQ.edit=null;qqRender()},
+ qqed:()=>{QQ.edit={id:d.k,sc:d.sc};qqRender();setTimeout(()=>{const t=$("#qqT");if(t)t.focus()},30)},qqdel:()=>qqDel(d.k,d.sc),
+ qquse:()=>{const x=qqAll().find(y=>y.id===d.k&&y.sc===d.sc);if(x)qqFill(qqApply(x.text,qqPat()))},
+ xstrip:()=>{if(XS.w){qls("xstrip","0");try{XS.w.close()}catch(e){}return}xsOpen()},
  rcpcmd:async()=>{if(!S.adm){toast("관리자 기기에서만 할 수 있어요");return}const c=d.v==="restart"?"restart":"show";
   if(c==="restart"&&!confirm("그 PC의 차트 읽기(LIS)를 다시 시작할까요?"))return;
   try{const r=await fetch(`${base()}/rooms/${encodeURIComponent(S.code)}/rcp/${encodeURIComponent(d.k)}/cmd.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({c,by:qMe(),t:{".sv":"timestamp"}})});if(!r.ok)throw 0;toast(c==="show"?"1분 안에 그 PC 화면에 LIS 기록 창이 떠요":"1분 안에 그 PC의 LIS가 다시 시작돼요")}catch(x){toast("보내지 못했어요. 다시 눌러 주세요")}},
