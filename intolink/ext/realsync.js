@@ -53,7 +53,8 @@ async function runSync(why) {
     // 케어 노트 ⚙ 설정의 연동 방식: 'LIS만'이면 인투링크를 읽지 않고 쉼 (휴대폰에서도 끄고 켤 수 있음)
     let mode = 'both';
     try { const cf = await fb('GET', P('config/sync')); if (cf && cf.mode === 'lis') mode = 'lis'; } catch (e) {}
-    try { await fb('PATCH', P('config/sync'), { extSeen: { '.sv': 'timestamp' } }); } catch (e) {}
+    // '접수실 확장 마지막 확인'은 30분에 한 번만 기록 (쓰기는 모든 기기로 퍼지므로 트래픽 절약)
+    if (Date.now() - ((await rsGet('extSeenAt')) || 0) > 30 * 60000) { try { await fb('PATCH', P('config/sync'), { extSeen: { '.sv': 'timestamp' } }); await rsSet('extSeenAt', Date.now()); } catch (e) {} }
     if (mode === 'lis') { await rsSet('rsLast', { t: Date.now(), msg: '쉬는 중 · 케어 노트 설정이 "차트 읽기(LIS)만"이라 인투링크를 읽지 않아요' }); return { skip: 'LIS만' }; }
     const st = (await rsGet('rsState')) || {}; st.seen = st.seen || {}; st.cache = st.cache || {};
     const deep = !st.deepAt || Date.now() - st.deepAt > 30 * 60000;

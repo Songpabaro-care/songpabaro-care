@@ -1256,7 +1256,7 @@ const syncMode=()=>{const c=ST.config&&ST.config.v&&ST.config.v.sync;return c&&c
 const agoTxt=t=>{if(!t)return"기록 없음";const m=Math.round((Date.now()-t)/60000);return m<1?"방금":m<60?`${m}분 전`:m<1440?`${Math.floor(m/60)}시간 전`:`${Math.floor(m/1440)}일 전`};
 function rcpList(){const r=ST.rcp&&ST.rcp.v||{};return Object.entries(r).filter(([k,v])=>v&&v.hb&&Date.now()-v.hb<7*86400000).map(([k,v])=>({k,...v})).sort((a,b)=>String(a.pc||a.k).localeCompare(String(b.pc||b.k)))}
 function rcpHtml(){const L=rcpList();if(!L.length)return `<div class="meta">아직 차트 읽기(LIS)가 깔린 PC가 없어요. 위 설치 파일을 PC마다 한 번씩 실행해 주세요.</div>`;
- return `<div style="display:grid;gap:4px">${L.map(x=>{const alive=Date.now()-x.hb<180000,st=!alive?["#c93a3a","● 꺼짐"]:x.ge==="ok"?["#0f8a7e","● 켜짐"]:["#b7791f","● 인투벳 창 없음"];
+ return `<div style="display:grid;gap:4px">${L.map(x=>{const alive=Date.now()-x.hb<420000,st=!alive?["#c93a3a","● 꺼짐"]:x.ge==="ok"?["#0f8a7e","● 켜짐"]:["#b7791f","● 인투벳 창 없음"];
   return `<div class="meta" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b style="color:var(--ink)">${esc((x.nm&&x.nm!=="null"?x.nm:"")||x.pc||x.k)}</b>${x.nm&&x.nm!=="null"&&x.pc?`<span>(${esc(x.pc)})</span>`:""}<b style="color:${st[0]}">${st[1]}</b><span>신호 ${agoTxt(x.hb)}</span><span>· 마지막으로 차트 읽음 ${agoTxt(x.read)}</span>${x.cmd&&x.cmd.c?`<span style="color:#b7791f">· ${x.cmd.c==="show"?"창 띄우기":"다시 시작"} 요청 보냄 (1분 안에 처리)</span>`:S.adm?`<button class="qtg" style="padding:2px 8px;font-size:12px" data-act="rcpcmd" data-k="${esc(x.k)}" data-v="show">🪟 그 PC에 창 띄우기</button><button class="qtg" style="padding:2px 8px;font-size:12px" data-act="rcpcmd" data-k="${esc(x.k)}" data-v="restart">↻ 다시 시작</button>`:""}</div>`}).join("")}</div>`}
 function syncHtml(){const m=syncMode(),c=ST.config&&ST.config.v&&ST.config.v.sync||{};
  const btn=(v,t)=>`<button class="qtg${m===v?" on":""}" data-act="syncmode" data-v="${v}"${S.adm?"":" disabled"}>${t}</button>`;
@@ -1266,7 +1266,7 @@ function syncHtml(){const m=syncMode(),c=ST.config&&ST.config.v&&ST.config.v.syn
  <div class="meta">차트 읽기(LIS): 인투벳이 깔린 PC마다 설치 파일을 받아 한 번 실행하세요. 진단 창이 뜨면 🔐 기기 관리에서 "인투벳 차트 읽기 · PC이름"을 승인하고, 진단 창에 차트 정보가 읽히는지 확인한 뒤 진단 창을 닫고 설치 창에서 아무 키나 누르면 돼요. 그다음부터는 창 없이 뒤에서 돌아서 화면·작업표시줄에 파워쉘이나 메모장이 뜨지 않아요. 다시 실행하면 최신 버전으로 바뀌어요.</div>
  <div class="otitle" style="font-size:13px">PC별 차트 읽기 상태</div><div id="rcpBox">${rcpHtml()}</div>`}
 function rcpWarnTxt(){const L=rcpList(),h=new Date().getHours();if(!L.length||h<9||h>=20)return"";
- if(!L.some(x=>Date.now()-x.hb<600000))return"⚠ 인투벳 차트 읽기(LIS)가 모든 PC에서 꺼져 있어요";
+ if(!L.some(x=>Date.now()-x.hb<900000))return"⚠ 인투벳 차트 읽기(LIS)가 모든 PC에서 꺼져 있어요";
  const last=Math.max(0,...L.map(x=>x.read||0));if(Date.now()-last>3600000)return"⚠ 1시간 넘게 어느 PC도 인투벳 차트를 못 읽었어요 · 인투벳 화면이 바뀌었거나 창이 꺼져 있을 수 있어요";return""}
 function rcpUpd(){const b=$("#syncBox");if(b&&$("#qs").classList.contains("open"))b.innerHTML=syncHtml();
  const t=rcpWarnTxt();let w=document.getElementById("rcpWarn");

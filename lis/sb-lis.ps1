@@ -625,11 +625,38 @@ if ($Reception) {
     if (-not $x) { $script:CI.Remove($no); return $null }
     return $x
   }
+  # 동물번호로 케어 노트 카드 1장만 찾기 (Firebase 규칙에 chartNo 색인이 있으면 목록 전체를 받지 않음 · 없으면 예전처럼 전체 목록)
+  $script:NOIDX = $false
+  function Find-Card($no, [int]$fullAge = 0) {
+    if (-not $script:NOIDX) {
+      try {
+        $script:STEP = "GET 동물번호 $no 찾기"
+        $u = "$DB/rooms/$ROOM/care_patients.json?orderBy=%22chartNo%22&equalTo=%22$no%22&auth=$(Get-Tok)"
+        $q = Invoke-RestMethod -Method Get -Uri $u
+        $hit = $null
+        if ($q) { foreach ($pp in $q.PSObject.Properties) { if ($pp.Value -and $pp.Value.id) { $hit = $pp.Value; break } } }
+        if ($hit) { $script:CI[$no] = $hit.id; return $hit }
+        # 색인 검색에서 못 찾으면, 숫자로 저장된 번호일 수 있어 한 번 더
+        $u2 = "$DB/rooms/$ROOM/care_patients.json?orderBy=%22chartNo%22&equalTo=$([int64]$no)&auth=$(Get-Tok)"
+        try { $q2 = Invoke-RestMethod -Method Get -Uri $u2; if ($q2) { foreach ($pp in $q2.PSObject.Properties) { if ($pp.Value -and $pp.Value.id) { $script:CI[$no] = $pp.Value.id; return $pp.Value } } } } catch {}
+        $script:CI.Remove($no) | Out-Null
+        return $null
+      } catch {
+        $why = ''; try { $sr = New-Object IO.StreamReader($_.Exception.Response.GetResponseStream()); $why = $sr.ReadToEnd() } catch {}
+        if ($why -match 'Index not defined|indexOn') { $script:NOIDX = $true; Log "ℹ Firebase 규칙에 chartNo 색인이 없어 전체 목록으로 확인해요 (규칙에 색인을 넣으면 트래픽이 줄어요)" }
+        else { throw }
+      }
+    }
+    Load-Idx $fullAge
+    $x = Care-One $no
+    if (-not $x -and $fullAge -gt 2) { Load-Idx 2; $x = Care-One $no }
+    return $x
+  }
   function Recent($k) { $script:DONE.ContainsKey($k) -and ((Get-Date) - $script:DONE[$k]).TotalMinutes -lt 30 }
   function Opd-Register($g, $c = '외래') {
     $k = "$($g.no)|R"; if (Recent $k) { return }; $script:DONE[$k] = Get-Date
-    Load-Idx 0   # 인투링크 연동이 방금 등록했을 수 있어 등록 전엔 항상 새로 확인 (중복 카드 방지)
-    if (Care-One $g.no) { Log "이미 케어 노트에 있음 · #$($g.no) $($g.name)"; return }
+    # 등록 전엔 항상 새로 확인 (다른 PC·인투링크가 방금 등록했을 수 있음 → 중복 카드 방지)
+    if (Find-Card $g.no 0) { Log "이미 케어 노트에 있음 · #$($g.no) $($g.name)"; return }
     $id = "p-care-$(NowMs)"; $today = Get-Date -Format 'yyyy-MM-dd'
     $sp = if ($g.sp -eq 'Feline') { 'cat' } else { 'dog' }
     $info = (@($g.sex, $(if ($g.bw) { "$($g.bw)kg" }), $g.birth) | Where-Object { $_ }) -join ' · '
@@ -641,9 +668,7 @@ if ($Reception) {
   # 인투벳 상태가 입원·호텔이면 케어 노트 구분을 자동으로 바꿈 (없으면 그 구분으로 등록)
   function Opd-Cat($g, $c) {
     $k = "$($g.no)|C$c"; if (Recent $k) { return }; $script:DONE[$k] = Get-Date
-    Load-Idx 15
-    $x = Care-One $g.no
-    if (-not $x) { Load-Idx 2; $x = Care-One $g.no }
+    $x = Find-Card $g.no 15
     if ($x) {
       if ($x.category -ne $c) { Fb 'Patch' "rooms/$ROOM/care_patients/$($x.id)" (@{ category = $c; catBy = 'intovet'; catAt = @{ '.sv' = 'timestamp' } }) | Out-Null; Log "🏥 $c(으)로 바꿈 · #$($g.no) $($x.name)" }
       return
@@ -652,9 +677,7 @@ if ($Reception) {
   }
   function Opd-Out($g) {
     $k = "$($g.no)|O"; if (Recent $k) { return }; $script:DONE[$k] = Get-Date
-    Load-Idx 15
-    $x = Care-One $g.no
-    if (-not $x) { Load-Idx 2; $x = Care-One $g.no }
+    $x = Find-Card $g.no 15
     if (-not $x) { return }
     if ($x.category -ne '외래') { Log "입원·호텔 환축이라 자동 정리 안 함 · #$($g.no)"; return }
     $x | Add-Member -NotePropertyName dischargedAt -NotePropertyValue ((Get-Date -Format 'yyyy-MM-dd HH:mm')) -Force
@@ -688,7 +711,7 @@ if ($Reception) {
     return $g
   }
   $last = ''
-  $script:rHb = [datetime]::MinValue; $script:readMs = $null; $script:geSeen = $null; $script:nmAt = [datetime]::MinValue; $script:DNM = $NAME; $script:rHbFail = 0
+  $script:rHb = [datetime]::MinValue; $script:readMs = $null; $script:geSeen = $null; $script:nmAt = [datetime]::MinValue; $script:DNM = $NAME; $script:rHbFail = 0; $script:rHbW = [datetime]::MinValue; $script:geLast = $null; $script:nmLast = $null
   while ($true) {
     try {
       # 키보드·마우스를 쓰는 중이면(1초 안) 이번 차례는 쉬고 다음에 읽음 → 입력할 때 버벅임 없음
@@ -712,18 +735,23 @@ if ($Reception) {
         }
       }
       if (((Get-Date) - $lastUp).TotalMinutes -ge 60) { $lastUp = Get-Date; Try-Update }
-      # 상태 신호 (1분마다): 케어 노트 설정에서 PC별로 '살아 있음 / 마지막으로 차트를 읽은 시각'을 보고, 오래 못 읽으면 경고
+      # 상태 신호: 5분마다 또는 인투벳 창 상태가 바뀔 때만 씀 (쓰기는 켜져 있는 모든 기기로 퍼져서 트래픽 절약)
+      # 케어 노트에서 보낸 요청(창 띄우기·다시 시작)은 1분마다 확인 (읽기만이라 다른 기기로 퍼지지 않음)
       if (((Get-Date) - $script:rHb).TotalSeconds -ge 60) {
         $script:rHb = Get-Date
-        $hb = [ordered]@{ hb = @{ '.sv' = 'timestamp' }; pc = "$env:COMPUTERNAME"; ge = $(if ($script:geSeen -and ((Get-Date) - $script:geSeen).TotalMinutes -lt 5) { 'ok' } else { 'noge' }) }
-        if ($script:readMs) { $hb.read = $script:readMs }
-        if (((Get-Date) - $script:nmAt).TotalMinutes -ge 10) { $script:nmAt = Get-Date; try { $n2 = "$(Fb 'Get' "devices/$uid/name" $null)".Trim(); if ($n2 -and $n2 -ne 'null') { $script:DNM = $n2 } } catch {} }
-        if ($script:DNM) { $hb.nm = $script:DNM }
+        $geNow = $(if ($script:geSeen -and ((Get-Date) - $script:geSeen).TotalMinutes -lt 5) { 'ok' } else { 'noge' })
+        if (((Get-Date) - $script:nmAt).TotalMinutes -ge 30) { $script:nmAt = Get-Date; try { $n2 = "$(Fb 'Get' "devices/$uid/name" $null)".Trim(); if ($n2 -and $n2 -ne 'null') { $script:DNM = $n2 } } catch {} }
         $script:rHbFail++
-        Fb 'Patch' "rooms/$ROOM/rcp/$code" $hb | Out-Null
-        $script:rHbFail = 0
+        if (((Get-Date) - $script:rHbW).TotalMinutes -ge 5 -or $geNow -ne $script:geLast -or $script:DNM -ne $script:nmLast) {
+          $hb = [ordered]@{ hb = @{ '.sv' = 'timestamp' }; pc = "$env:COMPUTERNAME"; ge = $geNow }
+          if ($script:readMs) { $hb.read = $script:readMs }
+          if ($script:DNM) { $hb.nm = $script:DNM }
+          Fb 'Patch' "rooms/$ROOM/rcp/$code" $hb | Out-Null
+          $script:rHbW = Get-Date; $script:geLast = $geNow; $script:nmLast = $script:DNM
+        }
         # 케어 노트 ⚙ 설정에서 보낸 요청: 창 띄우기 / 다시 시작
-        $cm = $null; try { $cm = Fb 'Get' "rooms/$ROOM/rcp/$code/cmd" $null } catch {}
+        $cm = Fb 'Get' "rooms/$ROOM/rcp/$code/cmd" $null
+        $script:rHbFail = 0
         if ($cm -and $cm.c) {
           Fb 'Delete' "rooms/$ROOM/rcp/$code/cmd" $null | Out-Null
           if ($cm.c -eq 'show') { Log "🪟 케어 노트에서 창 띄우기 요청 ($($cm.by))"; Open-View }
