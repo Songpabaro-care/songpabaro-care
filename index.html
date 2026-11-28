@@ -859,7 +859,7 @@ function alRender(){const p=find("care",S.alId);if(!p)return;const a=p.alerts||[
  <div class="f"><label>심폐소생술 (CPR)</label><div class="chips">${["미정",...CPRS].map(x=>`<button type="button" class="chip ${(p.cpr||"미정")===x?"sel":""}" data-act="alcpr" data-v="${x}">${x}</button>`).join("")}</div></div>`}
 function alSave(p){save("care");alRender();render()}
 /* ---- 처치 스케줄: 시간이 지나도 완료 안 하면 빨갛게 표시 ---- */
-const TPRE=["바이탈 측정","체온 측정","약 투여","수액 확인","배변·배뇨 확인","식이 급여","통증 평가","드레싱","산책"];
+const TPRE_EV={"바이탈 측정":8,"체온 측정":8,"약 투여":12,"수액 확인":4,"배변·배뇨 확인":4,"식이 급여":8,"통증 평가":8,"드레싱":24,"RJ 드레싱":24,"산책":8,"흉부 방사선":0,"복부 방사선":0,"다리 방사선":0},TPRE=Object.keys(TPRE_EV);
 const TTPL={"수술 후 기본":[["바이탈 측정",4],["통증 평가",4],["수액 확인",2]],"수액 입원 기본":[["수액 확인",2],["바이탈 측정",6],["배변·배뇨 확인",4]]};
 const hhmm=ts=>{const d=new Date(ts);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")},GRACE=15*60000;
 const tasksOf=p=>(p.tasks||[]).filter(t=>t&&!t.off).sort((a,b)=>a.due-b.due);
@@ -912,12 +912,12 @@ function txBoard(){const td0=new Date();td0.setHours(0,0,0,0);
 setInterval(()=>{if(Q.view==="tx"&&!document.hidden)qRender()},60000);
 /* ---- 💧 수액 처방: 수액 종류·백 용량·속도 + 백에 섞는 약(비타민 B·C, 타우린, KCl) + 시린지 CRI(푸로세마이드·도부타민·도파민·니트로프루시드·도부+니트로 합제)
    기본값은 병원 전체 '설정'(관리자)에서 바꿈 · 원장님 확인 전에는 걸 때 계산식을 한 번 더 보여 주고 물어봄 ---- */
-const FX_DEF={types:["하트만(LRS)","0.9% 생리식염수","5% 포도당","0.45% NS+2.5% 포도당","플라스마솔루션"],bags:[100,250,500,1000],rate:2,
+const FX_DEF={types:["하트만(LRS)","0.9% 생리식염수","5% 포도당","0.45% NS+2.5% 포도당","플라스마솔루션"],bags:[100,250,500,1000],rate:2.5,
  add:[{n:"비타민 B",per:2,u:"mL/L",c:0},{n:"비타민 C",per:500,u:"mg/L",c:100},{n:"타우린",per:0,u:"mg/L",c:0},{n:"KCl",per:20,u:"mEq/L",c:2}],
  cri:[{n:"푸로세마이드",r:.5,u:"mg/kg/h",s:10,dil:10},{n:"도부타민",r:5,u:"mcg/kg/min",s:12.5,dil:.5},{n:"도파민",r:5,u:"mcg/kg/min",s:40,dil:.5},{n:"니트로프루시드",r:1,u:"mcg/kg/min",s:25,dil:.1,note:"빛 차단"}],
  mix:{V:50,Q:2,ra:5,rb:1},shift:"09:00",lead:60,after:2};
 const fxCfg=()=>{const v=ST.fluids&&ST.fluids.v;return v&&Array.isArray(v.add)?{...FX_DEF,...v}:{...FX_DEF,ok:false}};
-S.fx={t:0,b:500,rate:"",mlh:"",add:{},adv:{},cri:{},crv:{},mix:false,mx:{}};
+S.fx={t:1,b:500,rate:"",mlh:"",add:{},adv:{},cri:{},crv:{},mix:false,mx:{}};
 const fxR=x=>Math.round(x*100)/100;
 function fxCalc(p){const cf=fxCfg(),f=S.fx,bw=rxBwOf(p),bag=num(f.b)||500,rate=f.rate!==""?num(f.rate):num(cf.rate),mlh=f.mlh!==""?num(f.mlh):fxR(bw*rate);
  const add=cf.add.map((a,k)=>{const per=f.adv[k]!=null?num(f.adv[k]):num(a.per),amt=per*bag/1000,ml=a.u==="mL/L"?amt:num(a.c)?amt/num(a.c):null;return {...a,k,per,amt:fxR(amt),ml:ml==null?null:fxR(ml),on:!!f.add[k]}});
@@ -932,7 +932,7 @@ function fxHtml(p){const x=fxCalc(p),f=S.fx,cf=x.cf;if(!S.fxOpen)return `<button
  ${cf.ok?"":`<div class="wn" style="color:#8a5200">⚠ 기본값을 원장님이 아직 확인하지 않았어요 (⚙ 기본값에서 확인)</div>`}
  ${seg(cf.types,f.t,"fxt",v=>v)}
  <div class="ln"><i>백</i>${seg(cf.bags,f.b,"fxb",v=>v+"mL")}</div>
- <div class="ln"><i>속도</i>${seg([1,2,3,4,5],f.rate!==""?num(f.rate):num(cf.rate),"fxr",v=>v+" mL/kg/h")}<i>또는</i><input class="nm" id="fxMlh" inputmode="decimal" placeholder="mL/h" value="${esc(f.mlh)}"><i>mL/h</i></div>
+ <div class="ln"><i>속도</i>${seg([1,2,2.5,3,4,5],f.rate!==""?num(f.rate):num(cf.rate),"fxr",v=>v+" mL/kg/h")}<i>또는</i><input class="nm" id="fxMlh" inputmode="decimal" placeholder="mL/h" value="${esc(f.mlh)}"><i>mL/h</i></div>
  <div class="rs">→ ${x.mlh||"?"} mL/h · 하루 ${x.day||"?"} mL · 이 백 약 ${x.hours||"?"}시간</div>
  <div class="ln"><i>백에 섞기</i><div class="sg">${x.add.map(a=>`<button type="button" class="ad${a.on?" on":""}" data-act="fxadd" data-k="${a.k}">${esc(a.n)}</button>`).join("")}</div></div>
  ${x.add.filter(a=>a.on).map(a=>`<div class="ln"><b style="min-width:62px">${esc(a.n)}</b><input class="nm fxa" data-k="${a.k}" inputmode="decimal" value="${a.per}"><i>${esc(a.u)}</i><span class="rs" style="font-size:12.5px">= ${a.amt}${a.u.split("/")[0]}${a.ml!=null&&a.u!=="mL/L"?` · ${a.ml} mL`:""}${a.ml==null?' <span class="wn">원액 농도 설정 필요</span>':""}</span></div>`).join("")}
@@ -945,8 +945,15 @@ function fxHtml(p){const x=fxCalc(p),f=S.fx,cf=x.cf;if(!S.fxOpen)return `<button
   <div class="${x.mix.ok?"rs":"wn"}" style="font-size:12.5px">→ 도부 ${x.mix.mgA}mg(원액 ${x.mix.sa}mL) + 니트로 ${x.mix.mgB}mg(원액 ${x.mix.sb}mL) + 희석액 ${x.mix.dl}mL · ${x.mix.Q}mL/h로 약 ${x.mix.h}시간${x.mix.ok?"":" ⚠ 원액이 시린지보다 많아요 · 속도를 올리거나 시린지를 키우세요"}</div></div>`:""}
  </div></details>
  <button type="button" class="go" data-act="fxgo">＋ 이대로 처치 계획에 걸기</button></div>`}
+function morph(a,b){if(a.nodeType!==b.nodeType||a.nodeName!==b.nodeName){a.replaceWith(b);return}
+ if(a.nodeType===3){if(a.nodeValue!==b.nodeValue)a.nodeValue=b.nodeValue;return}if(a.nodeType!==1)return;
+ [...a.attributes].forEach(x=>{if(!b.hasAttribute(x.name))a.removeAttribute(x.name)});[...b.attributes].forEach(x=>{if(a.getAttribute(x.name)!==x.value)a.setAttribute(x.name,x.value)});
+ if(a.tagName==="INPUT"||a.tagName==="TEXTAREA"){if(a!==document.activeElement&&a.value!==b.value)a.value=b.value;return}
+ if(a.tagName==="SELECT"){if(a.innerHTML!==b.innerHTML)a.innerHTML=b.innerHTML;a.value=b.value;return}
+ const ac=[...a.childNodes],bc=[...b.childNodes];bc.forEach((n,i)=>{if(ac[i])morph(ac[i],n);else a.appendChild(n)});for(let i=bc.length;i<ac.length;i++)ac[i].remove()}
+function boxPatch(b,html){const tmp=document.createElement("div");tmp.innerHTML=html;const ac=[...b.childNodes],bc=[...tmp.childNodes];bc.forEach((n,i)=>{if(ac[i])morph(ac[i],n);else b.appendChild(n)});for(let i=bc.length;i<ac.length;i++)ac[i].remove()}
 function fxRefresh(){const p=find("care",S.tkId),b=$("#fxBox");if(!p||!b)return;const a=document.activeElement,sel=a&&a.classList&&a.classList.contains("nm")?(a.id?"#"+a.id:`.${[...a.classList].find(c=>/^fx[acm]$/.test(c))}[data-k="${a.dataset.k||""}"]${a.dataset.f?`[data-f="${a.dataset.f}"]`:""}`):null,pos=a&&a.selectionStart;
- b.innerHTML=fxHtml(p);if(sel){const n=b.querySelector(sel);if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}}}
+ boxPatch(b,fxHtml(p));if(sel){const n=b.querySelector(sel);if(n&&n!==document.activeElement){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}}}
 function fxGo(p){const x=fxCalc(p),f=S.fx,cf=x.cf;if(!x.bw){toast("체중을 먼저 넣어 주세요");return}if(!x.mlh){toast("속도를 골라 주세요");return}
  const ads=x.add.filter(a=>a.on),bad=ads.find(a=>a.ml==null);if(bad){toast(`${bad.n} 원액 농도를 ⚙ 기본값에서 넣어 주세요`);return}
  if(x.kr>.5&&!confirm(`K 주입 속도가 ${x.kr} mEq/kg/h로 0.5를 넘어요. 그래도 걸까요?`))return;
@@ -998,11 +1005,11 @@ function rxHtml(p){const cf=rxCfg(),L=cf.list,bw=rxBwOf(p),s=S.rx,cur=s.k!=null?
   <div class="row" style="gap:6px;flex-wrap:wrap">${Object.keys(RX_FQ).map(f=>`<button type="button" class="qtg${s.f===f?" on":""}" data-act="rxfq" data-v="${f}">${f}</button>`).join("")}<span style="width:8px"></span>${[0,30,60].map(m=>`<button type="button" class="qtg${num(s.i)===m?" on":""}" data-act="rxinf" data-v="${m}">${m?m+"분 주입":"주입 시간 없음"}</button>`).join("")}</div>
   <div class="meta" id="rxRes" style="font-weight:700;color:#0f766e">${cr?(s.f==="CRI"?`= 하루 ${cr.mg} mg · ${cr.ml} mL → ${cr.mlh} mL/h`:`= ${cr.mg} mg → ${cr.ml} mL · ${s.f}`):"체중·용량·농도를 넣어 주세요"}</div>
   <div class="row" style="gap:6px;justify-content:flex-end"><button type="button" class="btn gh" data-act="rxcancel">취소</button><button type="button" class="btn" data-act="rxaddc">＋ 처치 계획에 추가</button></div></div>`:""}</div>`}
-function rxRefresh(){const p=find("care",S.tkId);const b=$("#rxBox");if(!p||!b)return;const a=document.activeElement,id=a&&a.id,pos=a&&a.selectionStart;b.innerHTML=rxHtml(p);if(id){const n=$("#"+id);if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}}}
+function rxRefresh(){const p=find("care",S.tkId);const b=$("#rxBox");if(!p||!b)return;const a=document.activeElement,id=a&&a.id,pos=a&&a.selectionStart;boxPatch(b,rxHtml(p));if(id){const n=$("#"+id);if(n&&n!==document.activeElement){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}}}
 function rxAdd(p,x){const bw=rxBwOf(p),r=rxCalc(x,bw);if(!r){toast(num(x.c)?"체중을 먼저 넣어 주세요":`${x.n} 농도를 💊 약물 설정에서 넣어 주세요`);return}
  const nm=rxName(x,r);if(!rxCfg().ok&&!confirm(`아직 확인 전인 기본값이에요. 맞나요?\n\n${nm}\n체중 ${bw}kg × ${x.d}mg/kg${x.f==="CRI"?"/일":""} ÷ ${x.c}mg/mL`))return;
  const at=($("#tAt")||{}).value||hhmm(Date.now()),[h,m]=at.split(":").map(Number),dd=new Date();dd.setHours(h,m,0,0);
- tAddOne(p,nm,RX_FQ[x.f]??12,dd.getTime());if(!p.bw&&bw)p.bw=String(bw);save("care");S.rx.k=null;render();tkRender();toast(`💉 ${nm} · ${hhmm(dd.getTime())}부터 처치로 걸었어요`)}
+ tAddOne(p,nm,RX_FQ[x.f]??12,dd.getTime());const due0=p.tasks[p.tasks.length-1].due;if(!p.bw&&bw)p.bw=String(bw);save("care");S.rx.k=null;render();tkRender();toast(`💉 ${nm} · ${fxWhen(due0)}부터 처치로 걸었어요${x.f==="BID"?" (BID 09:30·20:30)":""}`)}
 function rxCfgOpen(){let m=$("#rxM");if(!m){m=document.createElement("div");m.className="mask";m.id="rxM";m.innerHTML='<div class="sheet" id="rxS"></div>';m.addEventListener("click",e=>{if(e.target===m)m.classList.remove("open")});document.body.appendChild(m)}
  const cf=rxCfg(),L=JSON.parse(JSON.stringify(cf.list)),ro=!S.adm;S.rxEdit=L;
  $("#rxS").innerHTML=`<div class="row" style="align-items:center"><b style="flex:1;font-size:17px">💊 약물 설정 · 병원 전체</b><button class="btn gh" data-act="rxcfgclose">닫기</button></div>
@@ -1035,11 +1042,16 @@ function tkRender(){const p=find("care",S.tkId);if(!p){$("#tk").classList.remove
  if(!S.tkTab)S.tkTab=tasksOf(p).length?"do":"plan";const tab=S.tkTab;
  $("#tkBody").innerHTML=`<div class="row" style="gap:6px;position:sticky;top:0;z-index:5;background:var(--card);padding:2px 0 6px"><button class="qtg${tab==="do"?" on":""}" style="flex:1;height:38px;font-size:13.5px" data-act="tktab" data-v="do">✅ 처치하기 ${tasksOf(p).length?`(${tasksOf(p).length})`:""}</button><button class="qtg${tab==="plan"?" on":""}" style="flex:1;height:38px;font-size:13.5px" data-act="tktab" data-v="plan">📋 처치표 만들기·고치기</button></div>
  <div style="display:grid;gap:8px">${tab==="do"?tkDoHtml(p):tkPlanHtml(p)}</div>`}
-function tAddOne(p,name,every,due){(p.tasks=p.tasks||[]).push({id:`t${Date.now()}${Math.random().toString(36).slice(2,5)}`,name,every,due})}
+/* BID(12시간마다)는 병원 고정 시각 09:30·20:30에 맞춤 */
+const BID_FIX=["09:30","20:30"];
+function bidSlots(from,days){const L=[];for(let k=-1;k<=(days||2);k++)BID_FIX.forEach(x=>{const [h,m]=x.split(":").map(Number),d=new Date(from);d.setDate(d.getDate()+k);d.setHours(h,m,0,0);L.push(d.getTime())});return L.sort((a,b)=>a-b)}
+function bidSnap(t){return bidSlots(t).find(x=>x>=t-2*3600000)}
+function bidAfter(t){return bidSlots(t).find(x=>x>t+60000)}
+function tAddOne(p,name,every,due){if(every===12)due=bidSnap(due);(p.tasks=p.tasks||[]).push({id:`t${Date.now()}${Math.random().toString(36).slice(2,5)}`,name,every,due})}
 function tDone(p,tid){const t=(p.tasks||[]).find(x=>x.id===tid);if(!t)return;const now=Date.now(),late=now-t.due;
  p.logs=p.logs||[];p.logs.unshift({id:`l${now}`,time:hhmm(now),d:todayStr(),text:`✓ ${t.name} 완료 (${hhmm(t.due)} 예정${late>GRACE?`, ${lateTxt(Math.round(late/60000))} 늦음`:""}) · 처치: ${S.devName||"이름 없는 기기"}`});
  t.last={t:now,by:S.devName||"이름 없는 기기"};t.n=(t.n||0)+1;
- if(t.every){let d=t.due+t.every*3600000;while(d<now-GRACE)d+=t.every*3600000;t.due=d}else t.off=true;
+ if(t.every===12){let d=bidAfter(t.due);while(d<now-GRACE)d=bidAfter(d);t.due=d}else if(t.every){let d=t.due+t.every*3600000;while(d<now-GRACE)d+=t.every*3600000;t.due=d}else t.off=true;
  save("care");render();toast(`${p.name} · ${t.name} 완료${t.every?" · 다음 "+hhmm(t.due):""}`)}
 setInterval(()=>{if(OKD&&!document.hidden)softRender()},60000);
 /* 외래·입원·호텔 바꾸기 (카드의 구분 버튼) */
@@ -2234,10 +2246,10 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
  tktab:()=>{S.tkTab=d.v==="plan"?"plan":"do";tkRender()},
  tksave:()=>{const p=find("care",id),t=p&&(p.tasks||[]).find(x=>x.id===d.t),r=document.querySelector(`[data-tke="${d.t}"]`);if(!t||!r)return;
   const n=(r.querySelector("[data-k=n]").value||"").trim(),ev=+r.querySelector("[data-k=e]").value,tm=r.querySelector("[data-k=d]").value;if(!n){toast("처치 이름을 넣어 주세요");return}
-  t.name=n.slice(0,120);t.every=ev;if(tm){const [h,m]=tm.split(":").map(Number),dd=new Date();dd.setHours(h,m,0,0);if(dd.getTime()<Date.now()-12*3600000)dd.setDate(dd.getDate()+1);t.due=dd.getTime()}t.off=false;save("care");render();tkRender();toast(`${n} 고쳤어요 · 다음 ${hhmm(t.due)}`)},
+  t.name=n.slice(0,120);t.every=ev;if(tm){const [h,m]=tm.split(":").map(Number),dd=new Date();dd.setHours(h,m,0,0);if(dd.getTime()<Date.now()-12*3600000)dd.setDate(dd.getDate()+1);t.due=dd.getTime()}if(ev===12)t.due=bidSnap(t.due);t.off=false;save("care");render();tkRender();toast(`${n} 고쳤어요 · 다음 ${hhmm(t.due)}`)},
  tkcopy:()=>{const p=find("care",id);if(!p)return;const dn=tkToday(p),cp=p.tkCopied===todayStr()?p.tkCopiedN||0:0,L=d.v==="all"?dn:dn.slice(cp);if(!L.length){toast("새로 한 처치가 없어요");return}
   copy(`[처치] ${todayStr()} ${p.name}\n`+L.map(l=>`${l.time} ${l.text.replace(/^✓ /,"")}`).join("\n"),`오늘 처치 ${L.length}건을 복사했어요 · 인투벳에 붙여 넣으세요`);p.tkCopied=todayStr();p.tkCopiedN=dn.length;save("care");tkRender()},
- fxopen:()=>{S.fxOpen=true;fxRefresh()},fxclose:()=>{S.fxOpen=false;fxRefresh()},fxt:()=>{S.fx.t=+d.v;fxRefresh()},fxb:()=>{S.fx.b=+d.v;fxRefresh()},fxr:()=>{S.fx.rate=d.v;S.fx.mlh="";fxRefresh()},
+ fxopen:()=>{S.fxOpen=true;if(!S.fx.tSet){const T=fxCfg().types,i=T.findIndex(x=>/생리식염수/.test(x));S.fx.t=i<0?0:i}fxRefresh()},fxclose:()=>{S.fxOpen=false;fxRefresh()},fxt:()=>{S.fx.t=+d.v;S.fx.tSet=true;fxRefresh()},fxb:()=>{S.fx.b=+d.v;fxRefresh()},fxr:()=>{S.fx.rate=d.v;S.fx.mlh="";fxRefresh()},
  fxadd:()=>{S.fx.add[d.k]=!S.fx.add[d.k];fxRefresh()},fxcri:()=>{S.fx.cri[d.k]=!S.fx.cri[d.k];fxRefresh()},fxmix:()=>{S.fx.mix=!S.fx.mix;fxRefresh()},
  fxgo:()=>{const p=find("care",S.tkId);if(p)fxGo(p)},fxcfg:fxCfgOpen,fxcfgclose:()=>{const m=$("#fxM");if(m)m.classList.remove("open")},
  fxcfgsave:async()=>{if(!S.adm)return;const v=fxCfgCollect();if(!v.types.length||!v.bags.length){toast("수액 종류와 백 용량을 하나 이상 넣어 주세요");return}
@@ -2289,9 +2301,9 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
  aladd:()=>{const p=find("care",S.alId),v=($("#alIn").value||"").trim();if(!p||!v)return;p.alerts=p.alerts||[];if(!p.alerts.includes(v))p.alerts.push(v.slice(0,30));alSave(p)},
  alcpr:()=>{const p=find("care",S.alId);if(!p)return;if(d.v==="미정")delete p.cpr;else p.cpr=d.v;alSave(p)},
  taddopen:()=>{S.tAdd=S.tAdd===id?null:id;render()},
- tpre:()=>{const i=$("#tName");if(i)i.value=d.v},
+ tpre:()=>{const i=$("#tName"),e=$("#tEvery");if(i)i.value=d.v;if(e&&TPRE_EV[d.v]!=null)e.value=String(TPRE_EV[d.v])},
  tadd:()=>{const p=find("care",id),n=($("#tName").value||"").trim(),ev=+$("#tEvery").value,at=$("#tAt").value;if(!p)return;if(!n){toast("처치 이름을 입력하거나 위에서 골라 주세요");return}
-  const [h,m]=(at||hhmm(Date.now())).split(":").map(Number),dd=new Date();dd.setHours(h,m,0,0);tAddOne(p,n,ev,dd.getTime());save("care");render();toast(`${n} 처치를 걸었어요 · ${hhmm(dd.getTime())}`)},
+  const [h,m]=(at||hhmm(Date.now())).split(":").map(Number),dd=new Date();dd.setHours(h,m,0,0);tAddOne(p,n,ev,dd.getTime());const due0=p.tasks[p.tasks.length-1].due;save("care");render();tkRender();toast(`${n} 처치를 걸었어요 · ${fxWhen(due0)}`)},
  ttpl:()=>{const p=find("care",id);if(!p)return;const now=Date.now();(TTPL[d.v]||[]).forEach(([n,ev])=>tAddOne(p,n,ev,now));save("care");render();toast(`'${d.v}' 처치 ${TTPL[d.v].length}개를 걸었어요`)},
  tdone:()=>{const p=find("care",id);if(p)tDone(p,d.t)},
  fxack:()=>{const b=$("#fxWarn");if(b){qls("fxAck",b.dataset.k);b.remove()}},
