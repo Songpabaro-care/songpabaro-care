@@ -118,9 +118,10 @@ main{padding-top:16px;display:grid;gap:14px}
 .dis{display:flex;align-items:center;gap:10px;background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:10px 14px}
 .dis .sp{flex:1;min-width:0}
 .fab{position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom,0));z-index:15;height:52px;padding:0 20px;border-radius:99px;background:var(--brand);color:#fff;font-weight:800;box-shadow:0 8px 24px rgba(11,122,117,.4);display:flex;align-items:center;gap:8px}
-.mask{position:fixed;inset:0;background:rgba(8,16,15,.55);z-index:40;display:none;align-items:flex-end;justify-content:center}
+.mask{position:fixed;inset:0;background:rgba(8,16,15,.55);z-index:40;display:none;align-items:flex-end;justify-content:center;overscroll-behavior:contain;touch-action:pan-y}
+body.scrlock{position:fixed;left:0;right:0;overflow:hidden;width:100%}
 .mask.open{display:flex}.sheet>.row:first-child{position:sticky;top:-18px;z-index:8;background:var(--card);margin:-18px -18px 0;padding:12px 18px 10px;border-bottom:1px solid var(--line);border-radius:22px 22px 0 0}
-.sheet{background:var(--card);width:100%;max-width:520px;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0));display:grid;gap:12px}
+.sheet{background:var(--card);width:100%;max-width:520px;max-height:92vh;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;border-radius:22px 22px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0));display:grid;gap:12px}
 @media(min-width:600px){.mask{align-items:center}.sheet{border-radius:22px}}
 .sheet h3{font-size:17px;font-weight:800}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -249,7 +250,14 @@ button.gc{cursor:pointer}.gc small{font-size:9.5px;font-weight:700;margin-top:1p
 .stim{display:grid;gap:4px;margin:6px 0;padding:7px 9px;border-radius:9px;background:#fff4ed;border:1.5px solid #f79009;font-size:13px}.stim.wait{background:#fffaf2;border-style:dashed;color:#8a5200}
 .stim .soon{color:#b42318;font-weight:800}.stim .late{color:#b42318;font-weight:900}.stim .ok{color:#0f766e;opacity:.8}
 .stimbig{font-size:18px;padding:10px 12px;border-radius:10px;background:#fff4ed;border:1.5px solid #f79009}.stimbig b{font-size:24px;color:#b42318}
-.tpk{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.tpk .sg{display:flex;gap:4px;flex:1 1 220px}.tpk .sg button{flex:1;white-space:nowrap;min-width:52px;height:34px;padding:0 8px;border-radius:9px;border:1px solid #d0d5dd;background:#fff;font:inherit;font-weight:700;font-size:13px;cursor:pointer}.tpk .sg button.on{background:#0f8a7e;color:#fff;border-color:#0f8a7e}
+.tpk{display:grid;gap:4px}
+.tpw{height:196px;overflow-y:auto;border:1px solid #d0d5dd;border-radius:10px;background:#fff;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.tpd{position:sticky;top:0;z-index:1;background:#475467;color:#fff;font-size:11.5px;font-weight:800;padding:3px 10px}
+.tpr{display:grid;grid-template-columns:68px 1fr 1fr;gap:4px;align-items:center;padding:2px 6px;border-bottom:1px solid #f2f4f7}.tpr span{font-size:12px;color:#98a2b3;font-weight:700}
+.tpr.band{background:#f3fbf9}.tpr.band span{color:#0f766e}.tpr.past button{opacity:.45}
+.tpr button{height:32px;border-radius:8px;border:1px solid #d0d5dd;background:#fff;font:inherit;font-weight:700;font-size:13.5px;cursor:pointer}.tpr button.on{background:#0f8a7e;color:#fff;border-color:#0f8a7e}
+.tpnow{height:32px;padding:0 12px;border-radius:9px;border:1px solid #d0d5dd;background:#fff;font:inherit;font-weight:700;cursor:pointer}.tpnow.on{background:#0f8a7e;color:#fff;border-color:#0f8a7e}.tpsel2{color:#0f766e;font-size:13.5px}
+.tpkold{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.tpk .sg{display:flex;gap:4px;flex:1 1 220px}.tpk .sg button{flex:1;white-space:nowrap;min-width:52px;height:34px;padding:0 8px;border-radius:9px;border:1px solid #d0d5dd;background:#fff;font:inherit;font-weight:700;font-size:13px;cursor:pointer}.tpk .sg button.on{background:#0f8a7e;color:#fff;border-color:#0f8a7e}
 .lnk{border:0;background:none;color:#1f6fb2;font:inherit;font-size:12.5px;text-decoration:underline;cursor:pointer;padding:0}
 .tkbs{display:flex;gap:5px;flex-wrap:wrap}
 .tkb{height:32px;padding:0 9px;max-width:100%;overflow:hidden;text-overflow:ellipsis;border-radius:9px;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;white-space:nowrap}
@@ -1089,7 +1097,7 @@ function rxHtml(p){const cf=rxCfg(),L=cf.list,bw=rxBwOf(p),s=S.rx,F=rxFreq();
  ${cf.ok?"":`<div class="meta" style="color:#8a5200">⚠ 기본 용량·농도 확인 전이에요 (⚙에서 확인)</div>`}
  ${s.g==="edit"&&s.edit?`<div class="rxh">✏ 걸려 있는 처치 고치기</div><div class="rxg">${rxPanel(p,bw)}</div>`:""}
  ${groups.map(([g,items])=>`<div class="rxh">${esc(g)}</div><div class="rxg">${grid(g,items)}</div>`).join("")}</div>`}
-function rxRefresh(){const p=find("care",S.tkId);const b=$("#rxBox");if(!p||!b)return;const a=document.activeElement,id=a&&a.id,pos=a&&a.selectionStart;boxPatch(b,rxHtml(p));if(id){const n=$("#"+id);if(n&&n!==document.activeElement){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}}}
+function rxRefresh(){const p=find("care",S.tkId);const b=$("#rxBox");if(!p||!b)return;setTimeout(tpwScroll,0);const a=document.activeElement,id=a&&a.id,pos=a&&a.selectionStart;boxPatch(b,rxHtml(p));if(id){const n=$("#"+id);if(n&&n!==document.activeElement){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}}}
 function rxAdd(p,x){const bw=rxBwOf(p),r=rxCalc(x,bw);if(!r){toast(num(x.c)?"체중을 먼저 넣어 주세요":`${x.n} 농도를 💊 약물 설정에서 넣어 주세요`);return}
  const nm=rxName(x,r);if(!rxCfg().ok&&!confirm(`아직 확인 전인 기본값이에요. 맞나요?\n\n${nm}\n체중 ${bw}kg × ${x.d}mg/kg${x.f==="CRI"?"/일":""} ÷ ${x.c}mg/mL`))return;
  const at=($("#rxAt")||{}).value||($("#tAt")||{}).value||hhmm(Date.now()),[h,m]=at.split(":").map(Number),dd=new Date();dd.setHours(h,m,0,0);
@@ -1118,11 +1126,13 @@ function tbEditOpen(){let m=$("#tbM");if(!m){m=document.createElement("div");m.c
  ${[...L,{n:"",items:[]}].map((b,i)=>`<div class="vrow" data-tb="${i}"><input class="in" data-k="n" style="height:34px" placeholder="새 묶음 이름" value="${esc(b.n)}"${ro?" disabled":""}><textarea class="in" data-k="i" rows="${Math.max(3,b.items.length+1)}" style="height:auto;font-size:13px;padding:6px 8px" placeholder="바이탈 측정, 4"${ro?" disabled":""}>${esc(b.items.map(([n,e])=>`${n}, ${e}`).join("\n"))}</textarea></div>`).join("")}
  ${ro?"":`<button class="btn" data-act="tbsave">저장 · 모든 기기에 반영</button>`}`;m.classList.add("open")}
 /* 첫 시각 고르기: 지금 / 다음 30분 칸 3개 / 다른 시각(30분 단위) / 분 단위는 따로 */
-function tPick(tgt,at){const now=Date.now(),c30=Math.ceil((now+60000)/1800000)*1800000,sl=[c30,c30+1800000,c30+3600000],cur=at||now,isNow=!at;
- const opts=[];for(let i=0;i<48;i++)opts.push(c30+i*1800000);const det=(tgt==="rx"?S.rx.det:S.tp&&S.tp.det);
- return `<div class="tpk"><span class="meta">첫 시각</span><div class="sg">${[["지금",0],...sl.map(x=>[hhmm(x),x])].map(([l,v])=>`<button type="button" class="${(v===0&&isNow)||(v&&at===v)?"on":""}" data-act="tpat" data-tgt="${tgt}" data-v="${v}">${l}</button>`).join("")}</div>
- <select class="in tpsel" data-tgt="${tgt}" style="height:34px;font-size:13px;width:auto"><option value="">다른 시각 ▾</option>${opts.map(x=>`<option value="${x}" ${at===x&&!sl.includes(x)?"selected":""}>${fxWhen(x)}</option>`).join("")}</select>
- ${det?`<input class="in tpmin" data-tgt="${tgt}" type="time" style="width:110px;height:34px" value="${hhmm(cur)}">`:`<button type="button" class="lnk" data-act="tpdet" data-tgt="${tgt}">분 단위로</button>`}</div>`}
+function tPick(tgt,at){const now=Date.now(),d0=new Date();d0.setHours(0,0,0,0);const T0=d0.getTime(),det=(tgt==="rx"?S.rx.det:S.tp&&S.tp.det);
+ const defDay=new Date().getHours()>=21?1:0,rows=[];
+ for(const day of [0,1]){rows.push(`<div class="tpd">${day?"내일":"오늘"}</div>`);for(let h=0;h<24;h++){const a=T0+day*864e5+h*3600000,b=a+1800000,band=h>=9&&h<21,past=b<now-3600000;
+  rows.push(`<div class="tpr${band?" band":""}${past?" past":""}"${day===defDay&&h===9?' data-def="1"':""}><span>${h<12?"오전":"오후"} ${h%12||12}시</span>${[a,b].map(x=>`<button type="button" class="${at===x?"on":""}"${at===x?' data-on="1"':""} data-act="tpat" data-tgt="${tgt}" data-v="${x}">${hhmm(x)}</button>`).join("")}</div>`)}}
+ return `<div class="tpk"><div class="row" style="align-items:center;gap:6px;width:100%"><span class="meta">첫 시각</span><button type="button" class="tpnow${at?"":" on"}" data-act="tpat" data-tgt="${tgt}" data-v="0">지금</button><b class="tpsel2">${at?fxWhen(at):""}</b><span style="flex:1"></span>${det?`<input class="in tpmin" data-tgt="${tgt}" type="time" style="width:108px;height:32px" value="${hhmm(at||now)}">`:`<button type="button" class="lnk" data-act="tpdet" data-tgt="${tgt}">분 단위로</button>`}</div>
+ <div class="tpw" data-tgt="${tgt}">${rows.join("")}</div><div class="meta" style="font-size:11px">위아래로 밀면 다른 시간 · 진한 칸이 오전 9시~오후 9시</div></div>`}
+function tpwScroll(){document.querySelectorAll(".tpw").forEach(w=>{if(w.dataset.sc===String(w.querySelector("[data-on]")?1:0)+"x")return;const el=w.querySelector("[data-on]")||w.querySelector("[data-def]");if(el){const r=el.closest(".tpr")||el;w.scrollTop=Math.max(0,r.offsetTop-w.offsetTop-26)}w.dataset.sc=String(w.querySelector("[data-on]")?1:0)+"x"})}
 const TGRP=[["바이탈",["바이탈 측정","심박수 측정","호흡수 측정","체온 측정"]],["관찰·간호",["배변·배뇨 확인","식이 급여","통증 평가","산책"]],["처치",["드레싱","RJ 드레싱","약 투여","수액 확인"]],["영상",["흉부 방사선","복부 방사선","다리 방사선"]]];
 const EVS=[[0,"1회"],[1,"1시간"],[2,"2시간"],[4,"4시간"],[6,"6시간"],[8,"TID"],[12,"BID"],[24,"SID"]];
 function tpPanel(p){const T=S.tp,inC=cartOf(p).some(x=>x.key==="t:"+T.n);
@@ -1216,11 +1226,15 @@ function tkPlanHtml(p){const ts=tasksOf(p),E=S.tkEd;
 /* 처치 창에서 숫자 입력 중이면 다른 기기 변경으로 화면을 다시 그리지 않음 (키보드 튕김 방지) → 입력칸을 벗어나면 그때 반영 */
 function tkTyping(){const a=document.activeElement;return !!(a&&a.closest&&a.closest("#tk")&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))}
 document.addEventListener("focusout",e=>{if(!S.tkDirty||!e.target.closest||!e.target.closest("#tk"))return;setTimeout(()=>{if(!tkTyping()&&S.tkDirty){S.tkDirty=false;tkRender()}},250)});
+/* 팝업(시트)이 열려 있으면 뒤 화면이 같이 스크롤되지 않게 몸통 고정 (아이폰 포함) */
+(function(){let y=0,on=false;const chk=()=>{const open=!!document.querySelector(".mask.open")&&!document.body.classList.contains("pcmode");if(open===on)return;on=open;const b=document.body;
+ if(open){y=window.scrollY||0;b.style.top=`-${y}px`;b.classList.add("scrlock")}else{b.classList.remove("scrlock");b.style.top="";window.scrollTo(0,y)}};
+ new MutationObserver(()=>chk()).observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:["class"],childList:true});})();
 function tkRender(){const p=find("care",S.tkId);if(!p){$("#tk").classList.remove("open");return}$("#tkTitle").textContent=`⏰ ${p.name} 처치`;
  if(!S.tkTab)S.tkTab=tasksOf(p).length?"do":"plan";const tab=S.tkTab;const ow=$("#tkBody .gwrap"),okey=S.gKey,osc=ow?[ow.scrollTop,ow.scrollLeft]:null;
  $("#tkBody").innerHTML=`<div class="row" style="gap:6px;position:sticky;top:0;z-index:5;background:var(--card);padding:2px 0 6px"><button class="qtg${tab==="do"?" on":""}" style="flex:1;height:38px;font-size:13.5px" data-act="tktab" data-v="do">✅ 처치하기 ${tasksOf(p).length?`(${tasksOf(p).length})`:""}</button><button class="qtg${tab==="plan"?" on":""}" style="flex:1;height:38px;font-size:13.5px" data-act="tktab" data-v="plan">📋 처치표 만들기·고치기</button></div>
  <div style="display:grid;gap:8px">${tab==="do"?tkDoHtml(p):tkPlanHtml(p)}</div>`;
- const w=$("#tkBody .gwrap");S.gKey=[S.tkId,tab,S.tkSub,S.tkDay||0].join("|");if(w){if(osc&&okey===S.gKey){w.scrollTop=osc[0];w.scrollLeft=osc[1]}else{const r=w.querySelector("tr.gnowr");if(r)w.scrollTop=Math.max(0,r.offsetTop-(w.querySelector("thead")||{offsetHeight:0}).offsetHeight-30)}}}
+ setTimeout(tpwScroll,0);const w=$("#tkBody .gwrap");S.gKey=[S.tkId,tab,S.tkSub,S.tkDay||0].join("|");if(w){if(osc&&okey===S.gKey){w.scrollTop=osc[0];w.scrollLeft=osc[1]}else{const r=w.querySelector("tr.gnowr");if(r)w.scrollTop=Math.max(0,r.offsetTop-(w.querySelector("thead")||{offsetHeight:0}).offsetHeight-30)}}}
 /* BID(12시간마다)는 병원 고정 시각 09:30·20:30에 맞춤 */
 const BID_FIX=["09:30","20:30"];
 function bidSlots(from,days){const L=[];for(let k=-1;k<=(days||2);k++)BID_FIX.forEach(x=>{const [h,m]=x.split(":").map(Number),d=new Date(from);d.setDate(d.getDate()+k);d.setHours(h,m,0,0);L.push(d.getTime())});return L.sort((a,b)=>a-b)}
