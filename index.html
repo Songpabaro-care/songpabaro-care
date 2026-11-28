@@ -987,6 +987,7 @@ function txShort(n){n=String(n||"");let m;
  if((m=n.match(/^💧\s*수액 확인\s*·\s*(.+?)\s+\d+\s*mL/u)))return "💧 수액 · "+m[1].trim();
  if(/^💧/u.test(n))return "💧 수액";
  if((m=n.match(/^🧪\s*CRI 확인\s*·\s*(.+?)(\s+CRI|\s+\d)/u)))return "🧪 "+m[1].trim()+" CRI";
+ if(/^경구약 PO/.test(n))return n.replace(/\s*\((SID|BID|TID)\)\s*$/,"");
  if((m=n.match(/^(.+?)\s+[\d.]+\s*mL/)))return m[1].trim();
  return n.replace(/\s*[\d(].*$/,"").trim()||n.slice(0,20)}
 function txBoard(){const td0=new Date();td0.setHours(0,0,0,0);
@@ -1109,7 +1110,20 @@ function rxHtml(p){const cf=rxCfg(),L=cf.list,bw=rxBwOf(p),s=S.rx,F=rxFreq();
  return `<div class="tadd" style="border-color:#c7e5df;background:#f3fbf9;gap:8px"><div class="row" style="align-items:center;gap:6px"><div class="otitle" style="margin:0;flex:1">💉 주사 처방 <span class="meta" style="font-weight:500">· 약 누르고 담기</span></div><span class="meta">체중</span><input class="in" id="rxBw" inputmode="decimal" style="width:64px;height:34px" value="${bw||""}" placeholder="kg"><span class="meta">kg</span><button type="button" class="btn-xs" data-act="rxcfg">⚙</button></div>
  ${cf.ok?"":`<div class="meta" style="color:#8a5200">⚠ 기본 용량·농도 확인 전이에요 (⚙에서 확인)</div>`}
  ${s.g==="edit"&&s.edit?`<div class="rxh">✏ 걸려 있는 처치 고치기</div><div class="rxg">${rxPanel(p,bw)}</div>`:""}
- ${groups.map(([g,items])=>`<div class="rxh">${esc(g)}</div><div class="rxg">${grid(g,items)}</div>`).join("")}</div>`}
+ ${groups.map(([g,items])=>`<div class="rxh">${esc(g)}</div><div class="rxg">${grid(g,items)}</div>`).join("")}
+ <div class="rxh">💊 경구제</div><div class="rxg">${(()=>{const c=cartOf(p).find(x=>x.kind==="po"),got=tasksOf(p).filter(t=>/^경구약 PO/.test(t.name||"")).length;return `<button type="button" class="rxc${S.po?" on":""}${c?" inc":""}" data-act="posel" style="grid-column:1/-1"><span class="rxn">경구약 투여 ${rtBadge(" PO ")}</span><span class="rxm"><small>${c?"🧺 담음":got?`✓ ${got}개 걸림`:"처치만 걸기"}</small></span><span class="rxd">약 이름·양은 적어도 되고 안 적어도 돼요</span></button>${S.po?poPanel(p):""}`})()}</div></div>`}
+function poName(P){const amt=P.q?`${P.q}${({가루약:"포",알약:"정",캡슐:"캡슐",시럽:"mL"})[P.f]||""}`:"",det=[P.n,[P.f,amt].filter(Boolean).join(" "),P.m].filter(Boolean).join(" · ");return `경구약 PO${det?" · "+det:""} (${P.fq})`}
+function poPanel(p){const P=S.po,ch=(k,arr)=>arr.map(v=>`<button type="button" class="${P[k]===v?"on":""}" data-act="poset" data-k="${k}" data-v="${esc(v)}">${esc(v)}</button>`).join("");
+ return `<div class="rxp"><div class="row" style="align-items:center;gap:6px"><b style="flex:1;font-size:15px">경구약 투여 ${rtBadge(" PO ")}</b><button type="button" class="btn-xs" data-act="poclose">닫기</button></div>
+ <div class="sg">${["SID","BID","TID"].map(f=>`<button type="button" class="${P.fq===f?"on":""}" data-act="poset" data-k="fq" data-v="${f}">${f}</button>`).join("")}</div>
+ <details${P.n||P.f||P.q||P.m?" open":""}><summary class="meta" style="cursor:pointer">＋ 약 이름·형태·양 적기 (선택)</summary><div style="display:grid;gap:6px;margin-top:6px">
+  <input class="in" id="poN" style="height:36px" maxlength="40" placeholder="약 이름 (예: 처방약, 메트로·파모)" value="${esc(P.n||"")}">
+  <div class="sg">${ch("f",["가루약","알약","캡슐","시럽"])}</div>
+  <div class="sg">${ch("q",["½","1","1½","2"])}</div>
+  <div class="sg">${ch("m",["식전","식후","사료에 섞어"])}</div></div></details>
+ ${tPick("po",P.at)}${P.fq==="BID"?`<div class="meta">BID는 09:30·20:30 칸에 맞춰져요</div>`:""}
+ <div class="meta" style="font-weight:700;color:var(--ink)">→ ${esc(poName(P))}</div>
+ <button type="button" class="btn" style="height:46px" data-act="poput" data-id="${p.id}">＋ 담기</button></div>`}
 function rxRefresh(){const p=find("care",S.tkId);const b=$("#rxBox");if(!p||!b)return;setTimeout(tpwScroll,0);const a=document.activeElement,id=a&&a.id,pos=a&&a.selectionStart;boxPatch(b,rxHtml(p));if(id){const n=$("#"+id);if(n&&n!==document.activeElement){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}}}
 function rxAdd(p,x){const bw=rxBwOf(p),r=rxCalc(x,bw);if(!r){toast(num(x.c)?"체중을 먼저 넣어 주세요":`${x.n} 농도를 💊 약물 설정에서 넣어 주세요`);return}
  const nm=rxName(x,r);if(!rxCfg().ok&&!confirm(`아직 확인 전인 기본값이에요. 맞나요?\n\n${nm}\n체중 ${bw}kg × ${x.d}mg/kg${x.f==="CRI"?"/일":""} ÷ ${x.c}mg/mL`))return;
@@ -1139,7 +1153,7 @@ function tbEditOpen(){let m=$("#tbM");if(!m){m=document.createElement("div");m.c
  ${[...L,{n:"",items:[]}].map((b,i)=>`<div class="vrow" data-tb="${i}"><input class="in" data-k="n" style="height:34px" placeholder="새 묶음 이름" value="${esc(b.n)}"${ro?" disabled":""}><textarea class="in" data-k="i" rows="${Math.max(3,b.items.length+1)}" style="height:auto;font-size:13px;padding:6px 8px" placeholder="바이탈 측정, 4"${ro?" disabled":""}>${esc(b.items.map(([n,e])=>`${n}, ${e}`).join("\n"))}</textarea></div>`).join("")}
  ${ro?"":`<button class="btn" data-act="tbsave">저장 · 모든 기기에 반영</button>`}`;m.classList.add("open")}
 /* 첫 시각 고르기: 지금 / 다음 30분 칸 3개 / 다른 시각(30분 단위) / 분 단위는 따로 */
-function tPick(tgt,at){const now=Date.now(),d0=new Date();d0.setHours(0,0,0,0);const T0=d0.getTime(),det=(tgt==="rx"?S.rx.det:S.tp&&S.tp.det);
+function tPick(tgt,at){const now=Date.now(),d0=new Date();d0.setHours(0,0,0,0);const T0=d0.getTime(),det=(tgt==="rx"?S.rx.det:tgt==="po"?S.po&&S.po.det:S.tp&&S.tp.det);
  const defDay=new Date().getHours()>=21?1:0,rows=[];
  for(const day of [0,1]){rows.push(`<div class="tpd">${day?"내일":"오늘"}</div>`);for(let h=0;h<24;h++){const a=T0+day*864e5+h*3600000,b=a+1800000,band=h>=9&&h<21,past=b<now-3600000;
   rows.push(`<div class="tpr${band?" band":""}${past?" past":""}"${day===defDay&&h===9?' data-def="1"':""}><span>${h<12?"오전":"오후"} ${h%12||12}시</span>${[a,b].map(x=>`<button type="button" class="${at===x?"on":""}"${at===x?' data-on="1"':""} data-act="tpat" data-tgt="${tgt}" data-v="${x}">${hhmm(x)}</button>`).join("")}</div>`)}}
@@ -1180,8 +1194,8 @@ function rxRow(x,k,ro){const dis=ro?" disabled":"";return `<div class="card" sty
  <div class="row" style="gap:6px;align-items:center;flex-wrap:wrap"><input class="in" data-rxf="d" inputmode="decimal" style="width:64px;height:34px" value="${x.d}"${dis}><span class="meta">mg/kg</span><input class="in" data-rxf="c" inputmode="decimal" style="width:64px;height:34px" value="${x.c||""}" placeholder="?"${dis}><span class="meta">mg/mL</span>
  <select class="in" data-rxf="f" style="width:80px;height:34px"${dis}>${Object.keys(RX_FQ).map(f=>`<option ${x.f===f?"selected":""}>${f}</option>`).join("")}</select><select class="in" data-rxf="r" style="width:70px;height:34px"${dis}>${["IV","SC","IM","PO"].map(r=>`<option ${x.r===r?"selected":""}>${r}</option>`).join("")}</select><select class="in" data-rxf="i" style="width:96px;height:34px"${dis}>${[0,15,30,60].map(m=>`<option value="${m}" ${num(x.i)===m?"selected":""}>${m?m+"분 주입":"주입 시간 없음"}</option>`).join("")}</select></div></div>`}
 function rxCollect(){return [...document.querySelectorAll("#rxRows [data-rxr]")].map(r=>{const g=f=>(r.querySelector(`[data-rxf=${f}]`)||{}).value||"";return {n:g("n").trim().slice(0,30),d:num(g("d")),c:num(g("c")),f:g("f")||"BID",r:g("r")||"IV",i:num(g("i"))}}).filter(x=>x.n)}
-document.addEventListener("input",e=>{const t=e.target;if(t.id==="rxBw"){const p=find("care",S.tkId);if(p){S.rxBw[p.id]=t.value;rxRefresh()}}else if(t.id==="rxD"||t.id==="rxC"){S.rx[t.id==="rxD"?"d":"c"]=t.value;rxRefresh()}else if(t.id==="rxAt")S.rx.at=t.value;else if(t.id==="tName")S.tAddV.n=t.value;else if(t.id==="tpName"&&S.tp)S.tp.n=t.value;else if(t.id==="cartAt")S.cartAt=t.value;else if(t.classList&&t.classList.contains("tke")){const r=t.closest("[data-tke]");if(r){const k=r.dataset.tke;S.tkEd[k]={...(S.tkEd[k]||{}),[t.dataset.k]:t.value}}}});
-document.addEventListener("change",e=>{const t=e.target;if(t.classList&&(t.classList.contains("tpsel")||t.classList.contains("tpmin"))){let v;if(t.classList.contains("tpsel")){if(!t.value)return;v=+t.value}else{const [h,m]=t.value.split(":").map(Number);const dd=new Date();dd.setHours(h,m,0,0);if(dd.getTime()<Date.now()-6*3600000)dd.setDate(dd.getDate()+1);v=dd.getTime()}if(t.dataset.tgt==="rx"){S.rx.atMs=v;rxRefresh()}else if(S.tp){S.tp.at=v;tkRender()}return}
+document.addEventListener("input",e=>{const t=e.target;if(t.id==="rxBw"){const p=find("care",S.tkId);if(p){S.rxBw[p.id]=t.value;rxRefresh()}}else if(t.id==="rxD"||t.id==="rxC"){S.rx[t.id==="rxD"?"d":"c"]=t.value;rxRefresh()}else if(t.id==="rxAt")S.rx.at=t.value;else if(t.id==="tName")S.tAddV.n=t.value;else if(t.id==="tpName"&&S.tp)S.tp.n=t.value;else if(t.id==="poN"&&S.po)S.po.n=t.value;else if(t.id==="cartAt")S.cartAt=t.value;else if(t.classList&&t.classList.contains("tke")){const r=t.closest("[data-tke]");if(r){const k=r.dataset.tke;S.tkEd[k]={...(S.tkEd[k]||{}),[t.dataset.k]:t.value}}}});
+document.addEventListener("change",e=>{const t=e.target;if(t.classList&&(t.classList.contains("tpsel")||t.classList.contains("tpmin"))){let v;if(t.classList.contains("tpsel")){if(!t.value)return;v=+t.value}else{const [h,m]=t.value.split(":").map(Number);const dd=new Date();dd.setHours(h,m,0,0);if(dd.getTime()<Date.now()-6*3600000)dd.setDate(dd.getDate()+1);v=dd.getTime()}if(t.dataset.tgt==="rx"){S.rx.atMs=v;rxRefresh()}else if(t.dataset.tgt==="po"&&S.po){S.po.at=v;rxRefresh()}else if(S.tp){S.tp.at=v;tkRender()}return}
  if(t.id==="tEvery")S.tAddV.e=t.value;else if(t.id==="cartAt")S.cartAt=t.value;else if(t.classList&&t.classList.contains("tke")){const r=t.closest("[data-tke]");if(r){const k=r.dataset.tke;S.tkEd[k]={...(S.tkEd[k]||{}),[t.dataset.k]:t.value}}}});
 function vSplitOld(p){let ch=false;(p.tasks||[]).slice().forEach(t=>{if(!t||!/바이탈/.test(t.name||""))return;ch=true;const i=p.tasks.indexOf(t),ks=["hr","rr","t"];
   const nt=VSPLIT.map((n,j)=>({...t,id:t.id+ks[j],name:n,h:(t.h||[]).map(h=>h.v?(h.v[ks[j]]!=null?{...h,v:{[ks[j]]:h.v[ks[j]]}}:{...h,v:undefined}):h).map(h=>{if(!h.v)delete h.v;return h}),pk:undefined}));
@@ -1262,7 +1276,7 @@ function tDone(p,tid,o){o=o||{};const vtx=(o.v?" · "+vTxt(o.v):"")+(o.c?" · "+
  if(t.every===12){let d=bidAfter(t.due);while(d<now-GRACE)d=bidAfter(d);t.due=d}else if(t.every){let d=t.due+t.every*3600000;while(d<now-GRACE)d+=t.every*3600000;t.due=d}else t.off=true;
  if(o.quiet)return;save("care");render();toast(`${p.name} · ${txShort(t.name)} 완료${t.every?" · 다음 "+hhmm(t.due):""}`)}
 /* ---- 주사 세트: 같은 시각에 걸린 처치를 하나씩 체크 → 마지막 체크 때 자동 완료 / 일부 빼고 '세트 완료'로 마무리 ---- */
-const rtOf=n=>(String(n||"").match(/\s(SC|IM|IV|PO)\s/)||[])[1]||"";
+const rtOf=n=>(String(n||"").match(/\s(SC|IM|IV|PO)(?=\s|$)/)||[])[1]||"";
 const rtBadge=n=>{const r=rtOf(n);return r==="SC"?`<span class="rb sc">SC 피하</span>`:r==="IM"?`<span class="rb im">IM 근육</span>`:r==="PO"?`<span class="rb po">PO 경구</span>`:""};
 const noRt=n=>String(n||"").replace(/\s(SC|IM|PO)(?=\s|$)/,"");
 const isFx=t=>!!(t&&(t.fl||/^[💧🧪]/u.test(t.name||"")));
@@ -2598,11 +2612,15 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
  rxeditsave:()=>{const p=find("care",S.tkId),s=S.rx,t=p&&(p.tasks||[]).find(x=>x.id===s.edit);if(!t)return;const L=rxCfg().list,base=s.k!=null?L[s.k]:s.ex,x={...base,d:num(s.d),c:num(s.c),f:s.f,i:num(s.i)},bw=rxBwOf(p),r=rxCalc(x,bw);
   if(!r){toast("체중·용량·농도를 확인해 주세요");return}const old=t.name,nm=rxName(x,r),ev=RX_FQ[x.f]??12;t.name=nm;t.rx={n:x.n,d:x.d,c:x.c,f:x.f,i:x.i,r:x.r||"IV"};if(t.every!==ev){t.every=ev;if(ev===12)t.due=bidSnap(t.due)}
   const now=Date.now();p.logs=p.logs||[];p.logs.unshift({id:`l${now}`,time:hhmm(now),d:todayStr(),text:`처치표 수정: ${old} → ${nm} · ${S.devName||"이름 없는 기기"}`});S.rx={k:null,d:"",c:"",f:"",i:""};save("care");render();tkRender();toast(`${txShort(nm)} 수정했어요`)},
+ posel:()=>{if(S.po){S.po=null;rxRefresh();return}const p=find("care",S.tkId),c=p&&cartOf(p).find(x=>x.kind==="po");S.po=c?{...c.P}:{fq:"BID",at:0};rxRefresh()},
+ poclose:()=>{S.po=null;rxRefresh()},
+ poset:()=>{const P=S.po;P.n=($("#poN")||{}).value||P.n||"";P[d.k]=(d.k!=="fq"&&P[d.k]===d.v)?"":d.v;rxRefresh()},
+ poput:()=>{const p=find("care",id),P=S.po;if(!p||!P)return;P.n=(($("#poN")||{}).value||"").trim();const C=cartOf(p),it={key:"po:"+poName(P),kind:"po",P:{...P},name:poName(P),every:RX_FQ[P.fq]??12,at:P.at||0};C.push(it);S.po=null;tkRender();toast("경구약을 담았어요")},
  tpsel:()=>{if(S.tp&&!S.tp.custom&&S.tp.n===d.v&&S.tp.g===d.g){S.tp=null;tkRender();return}const p=find("care",S.tkId),c=p&&cartOf(p).find(x=>x.key==="t:"+d.v);S.tp={n:d.v,g:d.g,e:c?c.every:(TPRE_EV[d.v]??4),at:c?c.at:0};tkRender()},
  tpcustom:()=>{S.tp=S.tp&&S.tp.custom?null:{n:"",custom:true,e:4,at:0};tkRender()},tpclose:()=>{S.tp=null;tkRender()},
  tpev:()=>{S.tp.e=+d.v;tkRender()},
- tpat:()=>{const v=+d.v;if(d.tgt==="rx"){S.rx.atMs=v;rxRefresh()}else{S.tp.at=v;tkRender()}},
- tpdet:()=>{if(d.tgt==="rx"){S.rx.det=true;rxRefresh()}else{S.tp.det=true;tkRender()}},
+ tpat:()=>{const v=+d.v;if(d.tgt==="rx"){S.rx.atMs=v;rxRefresh()}else if(d.tgt==="po"){S.po.at=v;rxRefresh()}else{S.tp.at=v;tkRender()}},
+ tpdet:()=>{if(d.tgt==="rx"){S.rx.det=true;rxRefresh()}else if(d.tgt==="po"){S.po.det=true;rxRefresh()}else{S.tp.det=true;tkRender()}},
  tpput:()=>{const p=find("care",id),T=S.tp;if(!p||!T)return;const n=(T.custom?(($("#tpName")||{}).value||T.n):T.n).trim();if(!n){toast("처치 이름을 넣어 주세요");return}
   const C=cartOf(p),it={key:"t:"+n,kind:"t",name:n.slice(0,60),every:+T.e,at:T.at||0},i=C.findIndex(x=>x.key===it.key);if(i>=0)C[i]=it;else C.push(it);S.tp=null;tkRender()},
  tput:()=>{const p=find("care",id);if(!p)return;cartPut(p,{key:"t:"+d.v,kind:"t",name:d.v,every:TPRE_EV[d.v]??4});tkRender()},
